@@ -1,0 +1,114 @@
+{
+  "title": "diagramme_de_sequence_03_filtres_et_tri_covoiturages",
+  "diagramType": "sequence",
+  "participants": [
+    {
+      "id": "2026-01-18T20:20:58.048Z",
+      "type": "actor",
+      "alias": "Visiteur",
+      "label": "Visiteur"
+    },
+    {
+      "id": "2026-01-18T20:21:28.247Z",
+      "type": "participant",
+      "alias": "IHM",
+      "label": "Interface (UI)"
+    },
+    {
+      "id": "2026-01-18T20:21:42.779Z",
+      "type": "participant",
+      "alias": "API",
+      "label": "Serveur"
+    },
+    {
+      "id": "2026-01-18T20:22:07.112Z",
+      "type": "database",
+      "alias": "BDD",
+      "label": "BDD (PostgreSQL)"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "message",
+      "from": "Visiteur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Applique filtres + tri (prix_max, note_min, eco, duree_max, tri)",
+      "id": "722916e1-454c-4d65-93da-254e83217268"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "GET /covoiturages?filtres=...&tri=...",
+      "id": "d16ed945-952f-4d48-9c89-9b8a83f29837"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "SELECT covoiturages WHERE filtres + ORDER BY tri",
+      "id": "25d10ede-3388-4ccd-8b62-6ade47f8da82"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "Liste filtrée (ou vide)",
+      "id": "c8f78da6-e5ea-4ff7-875e-f113e353c7d7"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "alt",
+      "label": "[OUI] Résultats filtrés trouvés",
+      "id": "d0827d73-18f0-45e3-9911-0316bfebbcb2"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Retourne liste filtrée",
+      "id": "72bbab36-6384-4587-8180-466a1339fcec"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Visiteur",
+      "arrow": "-->",
+      "label": "Affiche liste filtrée et tri appliqué",
+      "id": "6c046230-ab31-4f34-9a2d-5d21f570aa29"
+    },
+    {
+      "type": "fragment_else",
+      "kind": "alt",
+      "label": "[NON] Aucun résultat après filtres",
+      "id": "567e6df4-bd44-4469-91a9-dbd2b4495009"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Retourne liste vide",
+      "id": "29b64461-bc11-4afd-bf72-4dd6375a856c"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Visiteur",
+      "arrow": "-->",
+      "label": "Affiche \"Aucun résultat\" + bouton \"Réinitialiser filtres\"",
+      "id": "5b6fdbc5-d63d-4429-a9f7-805f581ae9af"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "alt",
+      "label": "",
+      "id": "fcf1025b-e915-4b9b-a8e8-e1f8e18ee734"
+    }
+  ]
+}

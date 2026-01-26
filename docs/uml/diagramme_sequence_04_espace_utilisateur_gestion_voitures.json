@@ -1,0 +1,352 @@
+{
+  "title": "diagramme_sequence_04_espace_utilisateur_gestion_voitures",
+  "diagramType": "sequence",
+  "participants": [
+    {
+      "id": "2026-01-18T20:48:16.639Z",
+      "type": "actor",
+      "alias": "Utilisateur",
+      "label": "Utilisateur"
+    },
+    {
+      "id": "2026-01-18T20:48:32.819Z",
+      "type": "participant",
+      "alias": "IHM",
+      "label": "Interface (UI)"
+    },
+    {
+      "id": "2026-01-18T20:48:44.052Z",
+      "type": "participant",
+      "alias": "API",
+      "label": "Serveur"
+    },
+    {
+      "id": "2026-01-18T20:49:01.048Z",
+      "type": "database",
+      "alias": "BDD",
+      "label": "BDD (PostgreSQL)"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Ouvre \"Espace utilisateur\"",
+      "id": "91a0d7ca-ae48-45b2-acbb-627799f426be"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "GET /espace-utilisateur",
+      "id": "d152a935-d9b8-4faa-a319-9dbc27d3cf7c"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "SELECT profil + rôle + voitures WHERE utilisateur_id = ?",
+      "id": "65986dd6-7cfd-429e-aeba-6a340cdf42d1"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "Profil + rôle + liste voitures (ou vide)",
+      "id": "0e7a5058-786f-456a-8b7e-43de1340320a"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Retourne profil + rôle + voitures",
+      "id": "48c405c2-4c24-4073-a47a-8c10703051d9"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche espace utilisateur + rôle + liste voitures",
+      "id": "b64fc483-ef6e-4332-bea3-c0cdc1e511cf"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "opt",
+      "label": "Modifier le rôle",
+      "id": "0c78d4de-f8c7-4b8e-bd2c-86750826740a"
+    },
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Choisi ou modifie rôle (Chauffeur ou les deux)",
+      "id": "3fb2e2d3-e039-4269-8850-2b30e3aa887f"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "PUT /utilisateurs/{id}/role (rôle)",
+      "id": "3b5cdf1d-7078-4c90-97b7-77525495c084"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "UPDATE utilisateur SET role = ?",
+      "id": "605b09b5-a6a7-401a-a0d5-f3a740298efc"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK",
+      "id": "a108fb45-8848-4978-8996-38a3bf2884a6"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Rôle mis à jour",
+      "id": "9f877298-9bce-48a7-9fe6-a1ec46e4ae1c"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche rôle mis à jour",
+      "id": "71d5bd81-9b37-4067-868f-fdbc8b12cb8a"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "opt",
+      "label": "",
+      "id": "fef3d636-23c4-4127-9688-f13bdda8a75c"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "opt",
+      "label": "Ajouter une voiture",
+      "id": "4288006c-5a44-48a1-a22b-9f331379e0f8"
+    },
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Clique sur \"Ajouter une voiture\"",
+      "id": "6f3e8d17-dc88-4089-91b1-3f0757dc4a2f"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche formulaire voiture (immatriculation, date_1ere_mise_en_circulation, marque, modele, energie, couleur, places_total, preferences : fumeur, animal)",
+      "id": "f38adf53-1c16-43a7-8188-cb03266f878a"
+    },
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Renseigne formulaire et valide",
+      "id": "6f304465-1340-48c5-a402-c65003db10a0"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "POST /voitures (immatriculation, date_1ere_mise_en_circulation, marque, modele, energie, couleur, places_total, fumeur, animal)",
+      "id": "267cd1cf-c8c3-4f37-9bc0-e97a34a526d7"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "INSERT voiture (proprietaire_id, immatriculation, date_1ere_mise_en_circulation, marque, modele, energie, couleur, places_total, fumeur, animal)",
+      "id": "b78382f6-dc91-4c11-a2eb-e56af66442ad"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK - voiture_id créé",
+      "id": "e51f52b1-f45f-47a5-9421-7ea2382732e7"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Voiture ajoutée",
+      "id": "23b53110-3a8b-4dd1-afd9-7b6b79397d25"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche voiture dans la liste",
+      "id": "4d8b6687-0c13-4c87-9069-677b7d28d526"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "opt",
+      "label": "",
+      "id": "31b2cbb8-ba0b-404e-889a-745f0d282a84"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "opt",
+      "label": "Modifier une voiture",
+      "id": "e528a513-c0d7-4167-b26e-ecb18509ec94"
+    },
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Clique \"Modifier\"",
+      "id": "49176166-7c95-47ee-b391-74925570042e"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche formulaire prérempli",
+      "id": "2a0dabd6-801f-4d39-a9cd-ea824f890e0d"
+    },
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Valide modifications",
+      "id": "6c8447ad-beb7-432b-97b0-2af639e74246"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "PUT /voitures/{id} (...)",
+      "id": "94ef4cb3-f413-4531-88fa-e5ace2d6fdfa"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "UPDATE voiture SET ... WHERE id=? AND proprietaire_id=?",
+      "id": "b4cde0be-05e4-4c85-b2cc-97814d8ef948"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK",
+      "id": "ad88faef-a163-495a-a497-3bfe90a3fd52"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Voiture mise à jour",
+      "id": "4ed4ab52-fe37-460b-bdb2-a7db2c80dc55"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche liste mise à jour",
+      "id": "49d336ad-aaef-4cdc-9b0e-85fd288af972"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "opt",
+      "label": "",
+      "id": "e347cb38-bda2-4cb7-b4cc-2efdc2956bc3"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "opt",
+      "label": "Supprimer une voiture",
+      "id": "3d45a2a8-01fa-4875-b973-b43e0248138b"
+    },
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Clique \"Supprimer\"",
+      "id": "98875a30-1bef-4249-9abf-7a4252c2aae0"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "DELETE /voitures/{id}",
+      "id": "7b9bb513-518b-45bf-b08f-f96042b8e50a"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "DELETE FROM voiture WHERE id=? AND proprietaire_id=?",
+      "id": "67191091-dd3b-498e-bfb2-a20a98090801"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK",
+      "id": "77f0d3f3-1ffa-46cd-b084-087da6c376c6"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Voiture supprimée",
+      "id": "6c272137-baa9-4ce3-825f-297efac81a51"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche liste mise à jour",
+      "id": "a12789a0-bb53-41f5-9825-44fa53020acb"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "opt",
+      "label": "",
+      "id": "9c709ad8-90f0-4882-8822-5acac8385195"
+    }
+  ]
+}

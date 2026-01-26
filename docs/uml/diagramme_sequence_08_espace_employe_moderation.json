@@ -1,0 +1,502 @@
+{
+  "title": "diagramme_sequence_08_espace_employe_moderation",
+  "diagramType": "sequence",
+  "participants": [
+    {
+      "id": "2026-01-19T11:50:05.582Z",
+      "type": "actor",
+      "alias": "Employe",
+      "label": "Employé"
+    },
+    {
+      "id": "2026-01-19T11:50:22.713Z",
+      "type": "participant",
+      "alias": "IHM",
+      "label": "Interface (UI)"
+    },
+    {
+      "id": "2026-01-19T11:50:34.642Z",
+      "type": "participant",
+      "alias": "API",
+      "label": "Serveur"
+    },
+    {
+      "id": "2026-01-19T11:50:52.648Z",
+      "type": "database",
+      "alias": "BDD",
+      "label": "BDD (PostgreSQL)"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "message",
+      "from": "Employe",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Ouvre \"Espace employé\"",
+      "id": "5a41ea72-c53d-44a9-ab8e-b7a7ce9127f9"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "GET /espace-employe",
+      "id": "4495939b-8696-4e17-9503-469ba03d3aa4"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "SELECT profil_employe WHERE employe_id = ?",
+      "id": "2dc64f59-6a39-494a-b616-afdc2bc7a2c0"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "Profil employe",
+      "id": "59261fe6-fc83-423a-9255-15daa3fc96bb"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": " Retourne profil",
+      "id": "97b43518-0f12-476d-8dca-61a6270e5786"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Employe",
+      "arrow": "-->",
+      "label": "Affiche écran employé (onglets Avis / Signalements)",
+      "id": "709d624b-a506-45de-95d0-059728701aa6"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "opt",
+      "label": "Modérer un avis",
+      "id": "c8ff6f95-1fe6-448f-b03d-b2b6543ac90a"
+    },
+    {
+      "type": "message",
+      "from": "Employe",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Ouvre onglet \"Avis\"",
+      "id": "dbf2057c-d8d6-4246-8b2d-a2239a1e265d"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "GET /moderation/avis?statut=en_attente",
+      "id": "0e70af01-67f4-4538-b98c-455d2ab6d37c"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "SELECT avis WHERE statut = \"en_attente\"",
+      "id": "200e06ee-0a8b-4923-b9be-6de21cc254a3"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "Liste avis",
+      "id": "e2a8011e-1c5d-4660-933f-acbf09f97fb4"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Retourne liste avis",
+      "id": "37124204-06f1-454f-9d3e-5295d74b6d34"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Employe",
+      "arrow": "-->",
+      "label": "Affiche liste avis + actions (Valider / Refuser)",
+      "id": "e04fa477-7482-4989-b7ef-61f10510d985"
+    },
+    {
+      "type": "message",
+      "from": "Employe",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Ouvre un avis (détail)",
+      "id": "498e8ea9-792f-4fb9-a75f-33d0d365688f"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "GET /avis/{id}",
+      "id": "708a4910-4a94-41f4-bd9f-c2f86367721e"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "SELECT avis + covoiturage + auteur",
+      "id": "5b22aae3-6210-412f-829b-4e56afac2853"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "Détails avis",
+      "id": "9591ae27-dc7d-4407-8178-1fa68810ef3f"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Retourne détails",
+      "id": "80748558-84c0-470b-a24a-8d0f8b39ba2a"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Employe",
+      "arrow": "-->",
+      "label": "Affiche détail + boutons (Valider / Refuser)",
+      "id": "58f3d5ae-e1a2-43f5-b2ed-76a5532e5df4"
+    },
+    {
+      "type": "message",
+      "from": "Employe",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Choisit Valider ou Refuser",
+      "id": "91ffb619-0dc6-47ce-86eb-d6977939f1a8"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "PUT /moderation/avis/{id} (decision)",
+      "id": "08f18076-55bd-4892-8074-67cc3d9b9229"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "alt",
+      "label": "[OUI] Avis validé",
+      "id": "5b407089-d44c-4ba8-af45-454e5821837c"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "UPDATE avis SET statut=\"valide\" WHERE id=?",
+      "id": "d84a0b96-feca-4316-9ea2-4ec8b377921f"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK",
+      "id": "6c09d29d-cfdc-4b71-a19d-bf5668024603"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Avis validé",
+      "id": "1d9d2001-efa8-4226-b0b1-865cb4b8fe49"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Employe",
+      "arrow": "-->",
+      "label": "Confirmation + avis retiré de la liste",
+      "id": "59daa6c3-8dc0-46e7-bb10-067db84dda39"
+    },
+    {
+      "type": "fragment_else",
+      "kind": "alt",
+      "label": "[NON] Avis refusé",
+      "id": "e3223f82-43be-4e1d-a48c-141b90729eac"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "UPDATE avis SET statut=\"refuse\" WHERE id=?",
+      "id": "97be6ef8-e5de-46b6-8be0-4669064ee050"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK",
+      "id": "292ec04e-847d-4ce6-8dda-b51d3a406f59"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Avis refusé",
+      "id": "1f0adff0-e43e-4466-8639-5852926de164"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Employe",
+      "arrow": "-->",
+      "label": " Confirmation + avis retiré de la liste",
+      "id": "fe4ec88a-8e83-4db9-b244-bbec039821d3"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "alt",
+      "label": "",
+      "id": "1f2f10fb-869d-42b9-86ad-ac5f3990d2c2"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "opt",
+      "label": "",
+      "id": "b01f9da2-8798-4f2f-aa62-06992d5a55db"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "opt",
+      "label": "Traiter un signalement",
+      "id": "82ac93e6-5da6-472f-8630-35e286811768"
+    },
+    {
+      "type": "message",
+      "from": "Employe",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Ouvre onglet \"Signalements\"",
+      "id": "33a3a9a4-5d23-4a66-8e21-79cf7544bb8b"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "GET /moderation/signalements?statut=en_attente",
+      "id": "6a49c6fa-eeca-4bd3-84af-8cff9322c16a"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "SELECT signalements WHERE statut = \"en_attente\"",
+      "id": "ccab6aba-4747-4bac-a87e-95522bc01a56"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "Liste signalements",
+      "id": "06207f9d-760e-4c0f-90dd-49b0b8ce061c"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Retourne liste signalements",
+      "id": "855dbaf2-54d4-482d-a604-77fac6052f93"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Employe",
+      "arrow": "-->",
+      "label": "Affiche liste signalements + bouton \"Détail\"",
+      "id": "bfb01378-243a-4651-bebc-5dc88b2dbc13"
+    },
+    {
+      "type": "message",
+      "from": "Employe",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Ouvre un signalement (détail)",
+      "id": "45719325-2a19-4ab7-823a-bd79bdda8973"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "GET /signalements/{id}",
+      "id": "06e22f5f-1a0a-4a44-846c-099bb1299f3c"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "SELECT signalement + covoiturage + auteurs",
+      "id": "9af3c76a-68ee-4e16-b5ca-931c0d7d61c4"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "Détails signalement",
+      "id": "8b6960bd-1000-42e8-b0bc-317ab087f113"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Retourne détails",
+      "id": "8f069669-e88d-4a89-91fe-12e709cbb0d6"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Employe",
+      "arrow": "-->",
+      "label": "Affiche détail + actions (Marquer traité) + champ note",
+      "id": "d436be62-d0e6-4a92-b9be-f077280ccf38"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "opt",
+      "label": "Ajouter une note interne",
+      "id": "215dfc88-55fa-4be1-9ac0-e73ff57e595a"
+    },
+    {
+      "type": "message",
+      "from": "Employe",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Saisit une note et valide",
+      "id": "756b15ed-6a50-4f6f-9773-40efe8e275c1"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "PUT /signalements/{id}/note (note)",
+      "id": "aa3327d6-fa96-4aa3-b62d-f41ab2ce46e8"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "UPDATE signalement SET note_interne=? WHERE id=?",
+      "id": "8e8d1ba1-e03e-4521-abab-226f08dd0be0"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK",
+      "id": "872c4c71-9412-43fd-95b5-2abb29fbb557"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Note enregistrée",
+      "id": "0eca8465-0c4a-461f-b775-f92fc094ae72"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Employe",
+      "arrow": "-->",
+      "label": "Confirmation note",
+      "id": "795b5d91-8e07-42d9-8faa-12aec39f8b05"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "opt",
+      "label": "",
+      "id": "c2088456-0b1c-4a61-9655-bdb1701e5b32"
+    },
+    {
+      "type": "message",
+      "from": "Employe",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Marque le signalement comme traité",
+      "id": "463af741-13e2-4dfe-aa0e-01e5badf9ac6"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "PUT /signalements/{id} (statut=\"traite\")",
+      "id": "9bd8e996-3a0e-4d09-aa59-1bc3622b0b9a"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "UPDATE signalement SET statut=\"traite\" WHERE id=?",
+      "id": "051df44d-3ddc-443b-817e-3e1505652ebe"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK",
+      "id": "82f18374-9c48-400f-959d-b481a112c4b9"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Signalement traité",
+      "id": "ece6c301-f0d0-4132-9c06-a5784f6cb338"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Employe",
+      "arrow": "-->",
+      "label": "Confirmation et signalement retiré de la liste",
+      "id": "83655850-cb4a-4016-8fe0-6a9a89ee62cd"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "opt",
+      "label": "",
+      "id": "af758f05-0374-411f-9494-c678821d4bf3"
+    }
+  ]
+}

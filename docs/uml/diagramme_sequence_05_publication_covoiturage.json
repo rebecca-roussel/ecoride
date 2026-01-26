@@ -1,0 +1,178 @@
+{
+  "title": "diagramme_sequence_05_publication_covoiturage",
+  "diagramType": "sequence",
+  "participants": [
+    {
+      "id": "2026-01-18T23:21:34.696Z",
+      "type": "actor",
+      "alias": "Utilisateur",
+      "label": "Utilisateur"
+    },
+    {
+      "id": "2026-01-18T23:21:46.996Z",
+      "type": "participant",
+      "alias": "IHM",
+      "label": "Interface (UI)"
+    },
+    {
+      "id": "2026-01-18T23:21:59.270Z",
+      "type": "participant",
+      "alias": "API",
+      "label": "Serveur"
+    },
+    {
+      "id": "2026-01-18T23:22:20.546Z",
+      "type": "database",
+      "alias": "BDD",
+      "label": "BDD (PostgreSQL)"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Ouvre \"Publier un covoiturage\"",
+      "id": "347ae11d-5cc4-46f3-aa82-4337d68f2db2"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "GET /voitures (chauffeur connecté)",
+      "id": "1227f520-1afe-42e5-aa76-7ba1fdd44cd4"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "SELECT voitures WHERE proprietaire_id = ?",
+      "id": "ddc92e4b-a9cd-4ecc-8c29-80da5b222f58"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "Liste voitures",
+      "id": "74390f3b-ea77-4b84-bf4e-075a14357bc4"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Retourne liste voitures",
+      "id": "56fc5c1b-e52c-4d07-9a1a-0f91b6c0e942"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche formulaire publication",
+      "id": "7a44e086-9838-42a3-aac4-414ec611f4a5"
+    },
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Renseigne covoiturage et valide",
+      "id": "f66b4ea9-8809-4554-83f7-edba05ed2042"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "POST /covoiturages (covoiturage + voiture_id + places)",
+      "id": "0c388564-2c39-42fc-9e39-a21e2403141d"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "Vérifie crédits chauffeur",
+      "id": "61288e79-9f11-498e-a999-74e64919aac2"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "Solde crédits",
+      "id": "b987344e-da26-4824-9276-23a1ff47ab7a"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "alt",
+      "label": "[OUI] Crédits suffisants",
+      "id": "0fda3f74-54eb-4730-b2e0-49728148724d"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "INSERT covoiturage",
+      "id": "cf5eb768-0531-4008-b179-a34189a01b2b"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK",
+      "id": "5add164d-48ef-4e89-9a4f-2edf9adb5fc9"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Covoiturage publié",
+      "id": "c3bd925d-1a8a-499b-a526-6b41b562f043"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Confirmation publication",
+      "id": "260ddb6e-830c-4247-b920-34ee5682c9c7"
+    },
+    {
+      "type": "fragment_else",
+      "kind": "alt",
+      "label": "[NON] Crédits insuffisants",
+      "id": "420a00d7-b2af-46a7-94de-5787f89a20d2"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Refus publication",
+      "id": "4af56033-5bbf-4cb8-ab2a-ba57df4ee9f8"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Message \"Crédits insuffisants\"",
+      "id": "834e459a-7ecc-4fc2-856d-8eaa0a964766"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "alt",
+      "label": "",
+      "id": "90bbb875-ddac-4f11-b13a-1c39bcdcd548"
+    }
+  ]
+}

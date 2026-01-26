@@ -1,0 +1,370 @@
+{
+  "title": "diagramme_sequence_07_deroulement_covoiturage_retour",
+  "diagramType": "sequence",
+  "participants": [
+    {
+      "id": "2026-01-19T00:46:14.296Z",
+      "type": "actor",
+      "alias": "Utilisateur",
+      "label": "Utilisateur"
+    },
+    {
+      "id": "2026-01-19T00:46:28.262Z",
+      "type": "participant",
+      "alias": "IHM",
+      "label": "Interface (UI)"
+    },
+    {
+      "id": "2026-01-19T00:46:37.371Z",
+      "type": "participant",
+      "alias": "API",
+      "label": "Serveur"
+    },
+    {
+      "id": "2026-01-19T00:46:50.607Z",
+      "type": "database",
+      "alias": "BDD",
+      "label": "BDD (PostgreSQL)"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Ouvre \"Mes covoiturages\" (chauffeur)",
+      "id": "87436694-c826-4109-b6d6-6cb89943d2ce"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "GET /covoiturages/mes-publications",
+      "id": "c3367c9e-3860-4473-be67-dbe8519ea93f"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "SELECT covoiturages WHERE chauffeur_id = ?",
+      "id": "c1ff048b-5a09-4f3b-815f-4f185bd71432"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "Liste covoiturages",
+      "id": "8a3fbc10-328c-4071-9c0c-304088cc0d98"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Retourne liste",
+      "id": "aa7202c2-97d7-4fc5-9885-aeb2175b70dd"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche liste + actions",
+      "id": "ee37c1f6-11b1-4c53-a013-fa635f7dbb2e"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "opt",
+      "label": "Démarrer le covoiturage",
+      "id": "3ab441e1-5396-4b79-9aaa-69724802deb2"
+    },
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Clique \"Démarrer\"",
+      "id": "001cd732-c96a-414d-8398-ecf8106ee2c9"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "POST /covoiturages/{id}/demarrer",
+      "id": "0d92e456-1c63-4368-8914-6a380990ab4f"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "UPDATE covoiturage SET statut = \"en_cours\"",
+      "id": "78eb2d4c-66d8-467d-96a8-6665e428184f"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK",
+      "id": "4009a01a-9edf-41fd-b893-a20968ab439d"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Statut mis à jour",
+      "id": "fc415d9c-ce9b-4f75-a623-fa71ce03e953"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche statut \"en cours\"",
+      "id": "f0bfe530-fe07-4cbf-b5cb-0063fdf33566"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "opt",
+      "label": "",
+      "id": "2da2dd8f-df4b-4970-a6a8-46508ca3ccab"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "opt",
+      "label": "Terminer le covoiturage",
+      "id": "c722a600-b5f7-454d-beb0-6395bd66d2eb"
+    },
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Clique \"Terminer\"",
+      "id": "d6fa33ee-08ec-4413-a6ee-907b43cb0592"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "POST /covoiturages/{id}/terminer",
+      "id": "28d933fe-5f1a-41bf-a7f2-2a46eab06d7c"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "UPDATE covoiturage SET statut = \"termine\"",
+      "id": "cebabf34-4cab-4640-8620-a7e35bcdf2a3"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "Autorise retour passager (covoiturage termine)",
+      "id": "26e5003d-5000-4db5-a999-4e1d7531019e"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK",
+      "id": "78e99881-d3f5-40f5-8193-f42ca6b05a40"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Covoiturage terminé",
+      "id": "66d6f047-1209-4f25-82d5-a86cf7d6b8fc"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche statut \"terminé\"",
+      "id": "c3ccba28-40e8-45fe-bd89-e3182018cb52"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "opt",
+      "label": "",
+      "id": "a0e3c5ab-8c18-4e53-9b16-35608da2daf1"
+    },
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Ouvre \"Historique\" (passager)",
+      "id": "de371525-ebec-4d7b-8675-9b9b3042289c"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "GET /historique",
+      "id": "cd8f1768-188e-4c7d-82ef-58912f8ead89"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "SELECT participations WHERE passager_id = ?",
+      "id": "5fbcca34-60ea-439d-9286-7e53127b9e35"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "Liste participations",
+      "id": "2c81ea51-54e1-4431-bd40-670812db9fe7"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Retourne historique",
+      "id": "4948ba21-79b4-4521-914c-b90be08873f8"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche covoiturages terminés + action \"Donner un retour\"",
+      "id": "0bd92592-5227-415d-ae5d-9346e923de22"
+    },
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Clique \"Donner un retour\"",
+      "id": "3749f822-acb2-4098-9ecb-9f025751c874"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Affiche formulaire retour (note + commentaire OU motif + détails)",
+      "id": "71fee7e8-ca13-487d-983b-8970a3830a3a"
+    },
+    {
+      "type": "message",
+      "from": "Utilisateur",
+      "to": "IHM",
+      "arrow": "->",
+      "label": "Renseigne formulaire et valide",
+      "id": "f73caa27-85cb-4a38-a1f9-79faf8006930"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "API",
+      "arrow": "->",
+      "label": "POST /covoiturages/{id}/retour (bien_passe=true/false + données)",
+      "id": "6f4be5d8-67be-43dc-9ee6-fe8f6f6164d0"
+    },
+    {
+      "type": "fragment_start",
+      "kind": "alt",
+      "label": "[OUI] Bien passé (avis)",
+      "id": "7fe8c0b4-0db3-489c-84a7-1a4aebc14ebf"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "INSERT avis (note, commentaire, covoiturage_id, auteur_id)",
+      "id": "0124415d-f417-4c50-a761-d20e88b89f4b"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK",
+      "id": "b3c87f39-b6a9-4d3d-bf2d-ecbb2761fd7b"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Avis enregistré",
+      "id": "37057390-8d10-4f04-93f2-580630a70299"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Confirmation avis",
+      "id": "60b8cc8e-05d3-4335-87b6-d5347a3d58f4"
+    },
+    {
+      "type": "fragment_else",
+      "kind": "alt",
+      "label": "[NON] Mal passé (signalement)",
+      "id": "efa9dc84-b8dd-4c7f-9dc3-c6d38bdfc09c"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "BDD",
+      "arrow": "->",
+      "label": "INSERT signalement (motif, details, covoiturage_id, auteur_id)",
+      "id": "80ecbaa1-eaa8-4ca6-b894-bbccb0f05ae4"
+    },
+    {
+      "type": "message",
+      "from": "BDD",
+      "to": "API",
+      "arrow": "-->",
+      "label": "OK",
+      "id": "61368175-d0fc-487f-849e-89b5f5915a8d"
+    },
+    {
+      "type": "message",
+      "from": "API",
+      "to": "IHM",
+      "arrow": "-->",
+      "label": "Signalement enregistré",
+      "id": "d27272bd-e2a8-486b-9336-eca632c25d91"
+    },
+    {
+      "type": "message",
+      "from": "IHM",
+      "to": "Utilisateur",
+      "arrow": "-->",
+      "label": "Confirmation signalement",
+      "id": "3ac844bc-f98a-4fd4-ac51-9b34578e06c7"
+    },
+    {
+      "type": "fragment_end",
+      "kind": "alt",
+      "label": "",
+      "id": "536cf499-1858-4c27-a063-e89190ea2aff"
+    }
+  ]
+}
