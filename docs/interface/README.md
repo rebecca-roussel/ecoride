@@ -26,7 +26,7 @@ Ce document sert de base pour toutes les interfaces de l’application.
 
 ### 2. Maquettes
 
-- **`maquettes/maquettes.pdf`**
+- **`maquettes.pdf`**
 
 Les maquettes présentent les interfaces utilisateur de l’application en version **desktop et mobile**.  
 Elles couvrent les parcours principaux :
@@ -40,22 +40,6 @@ Elles couvrent les parcours principaux :
 - espace administrateur.
 
 Les maquettes sont réalisées conformément à la charte graphique et permettent de préparer l’intégration front-end.
-
----
-
-### 3. Ressources graphiques
-
-- **`ressources/`**
-
-Ce dossier regroupe les éléments graphiques utilisés lors de la conception de l’interface, tels que :
-
-- logos,
-- icônes,
-- captures d’écran,
-- exports d’écrans issus de Figma,
-- palettes de couleurs en images.
-
-Il permet de centraliser les ressources visuelles sans les mélanger aux documents finaux (PDF).
 
 ---
 
