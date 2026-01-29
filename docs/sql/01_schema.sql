@@ -1,5 +1,4 @@
 BEGIN;
-
 CREATE TABLE utilisateur (
   id_utilisateur INTEGER GENERATED ALWAYS AS IDENTITY,
  
@@ -234,5 +233,4 @@ CREATE TABLE avis (
 
   PRIMARY KEY (id_avis)
 );
-
 COMMIT;
