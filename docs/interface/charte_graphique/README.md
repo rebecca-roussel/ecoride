@@ -1,80 +1,62 @@
-# Charte graphique — EcoRide
+# Interface – EcoRide
 
-Cette charte graphique définit les choix visuels retenus pour le projet EcoRide.
-Elle vise à garantir une identité graphique cohérente, sobre et alignée avec
-les valeurs écologiques mises en avant dans l’énoncé du projet.
+Ce dossier regroupe l’ensemble des éléments liés à l’interface utilisateur de l’application **EcoRide**.  
+Il couvre la réflexion graphique, les choix visuels et les supports de conception nécessaires au développement du front-end.
 
-Elle constitue une base volontairement minimaliste, adaptée à un projet
-fonctionnel et orienté vers la lisibilité.
+Ces documents constituent des **livrables du TP** et servent de référence pour l’implémentation HTML, CSS et JavaScript de l’application.
 
-## Principes généraux
+---
 
-L’identité visuelle d’EcoRide repose sur les principes suivants :
+## Contenu du dossier
 
-- sobriété visuelle afin de limiter la fatigue de lecture,
-- cohérence avec la thématique écologique du projet,
-- utilisation de couleurs peu saturées afin de réduire l’intensité lumineuse
-  affichée à l’écran.
+### 1. Charte graphique
 
-Aucun élément graphique décoratif superflu n’est recherché. L’accent est mis
-sur la clarté de l’information et l’accessibilité.
+- **`charte_graphique.pdf`**
 
-## Palette de couleurs
+La charte graphique définit l’identité visuelle d’EcoRide.  
+Elle repose sur une démarche de **sobriété numérique**, avec :
 
-La palette graphique du projet est volontairement restreinte à trois couleurs :
+- une palette sombre et peu saturée (réduction de l’intensité lumineuse),
+- des couleurs cohérentes avec les valeurs écologiques du projet,
+- des règles de typographie et de composants UI assurant lisibilité et cohérence.
 
-- **Noir** : couleur principale pour les textes et certains fonds,
-  garantissant un contraste suffisant et une bonne lisibilité.
-- **Vert kaki** : couleur d’accent, associée à l’écologie, à la mobilité
-  responsable et à l’identité du projet.
-- **Beige** : couleur secondaire, utilisée pour alléger certains fonds et
-  apporter un contraste doux sans recours à des couleurs vives.
+Ce document sert de base pour toutes les interfaces de l’application.
 
-Les couleurs saturées ou trop lumineuses sont volontairement exclues.
+---
 
-## Typographie
+### 2. Maquettes
 
-La typographie retenue pour le projet EcoRide est la police **Inter**.
+- **`maquettes.pdf`**
 
-Ce choix s’appuie sur les critères suivants :
+Les maquettes présentent les interfaces utilisateur de l’application en version **desktop et mobile**.  
+Elles couvrent les parcours principaux :
 
-- excellente lisibilité sur écran,
-- design sobre et fonctionnel,
-- absence d’ornementation inutile,
-- adaptation aux interfaces web modernes.
+- page d’accueil,
+- recherche et liste de covoiturages,
+- détail d’un covoiturage,
+- authentification,
+- espace utilisateur,
+- espace employé,
+- espace administrateur.
 
-La police Inter est utilisée pour l’ensemble de l’interface
-(titres, textes courants et éléments d’interface), avec une hiérarchie
-classique basée sur la taille et le poids de la police.
+Les maquettes sont réalisées conformément à la charte graphique et permettent de préparer l’intégration front-end.
 
-Aucune typographie décorative n’est utilisée.
+---
 
-## Interface et composants
+## Rôle dans le projet
 
-L’interface d’EcoRide repose sur un thème à fond sombre, avec un arrière-plan
-principal noir, afin de limiter la fatigue visuelle et l’intensité lumineuse
-affichée à l’écran.
+Le dossier `interface` permet :
 
-La lisibilité du contenu est assurée par :
+- de valider la compétence de **maquettage d’interfaces utilisateur**,
+- d’assurer une cohérence visuelle sur l’ensemble de l’application,
+- de servir de support de référence pour le développement front-end.
 
-- une taille de texte minimale fixée à 16 px pour le texte principal,
-- des contrastes suffisants entre le texte et les arrière-plans,
-- une palette de couleurs volontairement restreinte.
+Il s’inscrit dans la phase de conception et précède l’implémentation technique des pages web.
 
-Les informations d’état (succès, erreur, validation ou refus) sont systématiquement
-présentées sous forme de messages explicites. La couleur ne constitue jamais
-le seul moyen de transmettre une information.
+---
 
-Des interactions dynamiques légères sont utilisées lorsque cela est pertinent,
-notamment pour répondre aux exigences fonctionnelles du projet et justifier
-l’utilisation de JavaScript. Ces effets restent discrets et ne conditionnent
-jamais l’accès aux fonctionnalités.
+## Emplacement
 
-Les boutons conservent une apparence stable et cohérente, sans variation visuelle
-superflue, afin de garantir une compréhension immédiate des actions possibles.
+`docs/interface/`
 
-## Portée de la charte
-
-Cette charte graphique constitue une base stable pour le projet EcoRide.
-Elle pourra être adaptée ultérieurement si nécessaire, sans remettre en cause
-les principes initiaux de sobriété et de cohérence écologique.
+Ce dossier fait partie intégrante du dépôt EcoRide, lequel constitue le livrable global du TP.
