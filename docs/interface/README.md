@@ -14,7 +14,7 @@ Ces documents constituent des **livrables du TP** et servent de référence pour
 - **`charte_graphique.pdf`**
 
 La charte graphique définit l’identité visuelle d’EcoRide.  
-Elle repose sur une démarche de **sobriété numérique**, avec :
+Elle repose sur une démarche de **sobriété numérique**, en cohérence avec la vision écologique de l'application avec :
 
 - une palette sombre et peu saturée (réduction de l’intensité lumineuse),
 - des couleurs cohérentes avec les valeurs écologiques du projet,
@@ -28,18 +28,13 @@ Ce document sert de base pour toutes les interfaces de l’application.
 
 - **`maquettes.pdf`**
 
-Les maquettes présentent les interfaces utilisateur de l’application en version **desktop et mobile**.  
-Elles couvrent les parcours principaux :
+Les maquettes présentent les interfaces utilisateur de l’application en version **pc et mobile** :
 
-- page d’accueil,
-- recherche et liste de covoiturages,
-- détail d’un covoiturage,
-- authentification,
-- espace utilisateur,
-- espace employé,
-- espace administrateur.
+- rechercher un covoiturage,
+- résultats recherche,
+- tableau de bord.
 
-Les maquettes sont réalisées conformément à la charte graphique et permettent de préparer l’intégration front-end.
+Les wireframes ont été créer via l'appplication Balsamiq et les mockups avec l'application Figma, elles sont toutes au format .png et .pdf, rangées en sous-dossier, ces dossiers sont nommés par écrans présentés.
 
 ---
 
@@ -47,8 +42,8 @@ Les maquettes sont réalisées conformément à la charte graphique et permetten
 
 Le dossier `interface` permet :
 
-- de valider la compétence de **maquettage d’interfaces utilisateur**,
-- d’assurer une cohérence visuelle sur l’ensemble de l’application,
+- de donner l'identitée visuelle de l'application,
+- d’avoir une cohérence visuelle sur l’ensemble de l’application,
 - de servir de support de référence pour le développement front-end.
 
 Il s’inscrit dans la phase de conception et précède l’implémentation technique des pages web.
@@ -59,4 +54,4 @@ Il s’inscrit dans la phase de conception et précède l’implémentation tech
 
 `docs/interface/`
 
-Ce dossier fait partie intégrante du dépôt EcoRide, lequel constitue le livrable global du TP.
+Ce dossier fait partie du dépôt EcoRide, lequel constitue le livrable.
