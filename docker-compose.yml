@@ -22,7 +22,14 @@ services:
             APP_ENV: dev
             APP_DEBUG: "1"
             DEFAULT_URI: "http://localhost:8080"
-            DATABASE_URL: "pgsql://ecoride:ecoride@postgresql:5432/ecoride"
+
+            # Connexion PDO
+            BDD_HOTE: "postgresql"
+            BDD_PORT: "5432"
+            BDD_NOM: "ecoride"
+            BDD_UTILISATEUR: "ecoride"
+            BDD_MOT_DE_PASSE: "ecoride"
+
             MONGODB_URL: "mongodb://mongodb:27017"
         depends_on:
             - postgresql
