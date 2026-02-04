@@ -34,9 +34,6 @@ services:
             MONGODB_URI: "mongodb://mongodb:27017"
             MONGODB_BASE: "ecoride_journal"
             MONGODB_COLLECTION: "journal_evenements"
-
-
-            MONGODB_URL: "mongodb://mongodb:27017"
         depends_on:
             - postgresql
             - mongodb
@@ -64,3 +61,4 @@ services:
 volumes:
     donnees_postgresql:
     donnees_mongodb:
+
