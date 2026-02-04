@@ -55,24 +55,21 @@ Les conventions UML retenues sont volontairement simples :
 - des flux clairement identifiés,
 - un point de fin explicite.
 
-## 3. Diagrammes de séquence
+## Diagrammes de séquence
 
-Les diagrammes de séquence décrivent les échanges chronologiques entre les
-acteurs, l’interface et le système pour les principaux scénarios
-fonctionnels de l’application.
+Les diagrammes de séquence modélisent les échanges chronologiques entre les acteurs, l’interface utilisateur et le système pour les principaux scénarios fonctionnels de l’application.
 
-Chaque diagramme correspond à un scénario précis
-(inscription, recherche, participation, publication, annulation, modération, etc.).
+Chaque diagramme correspond à un scénario clairement identifié (inscription et connexion, recherche de covoiturage, participation, publication, annulation, modération, gestion des espaces utilisateur, employé et administrateur).
 
-Les alternatives possibles sont représentées à l’aide de blocs `[alt]`,
-tandis que les actions optionnelles sont modélisées par des blocs `[opt]`.
+Les variantes de comportement sont représentées à l’aide de fragments d’alternative (alt), tandis que les comportements conditionnels ou optionnels sont modélisés par des fragments optionnels (opt), conformément à la notation UML.
 
 Pour chaque diagramme sont fournis :
 
-- un fichier source,
-- une version PDF,
-- une image PNG,
-- une description écrite du scénario et des choix de modélisation.
+- une version lisible au format PDF,
+
+- une image PNG destinée à la consultation rapide.
+
+une description écrite du scénario et des choix de modélisation associés.
 
 ## 4. Diagramme de classes
 

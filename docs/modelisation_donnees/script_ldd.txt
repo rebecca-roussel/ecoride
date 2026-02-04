@@ -1,0 +1,91 @@
+Sub Create_Tables()
+
+DoCmd.RunSQL "CREATE TABLE UTILISATEUR(" & _
+   "Id_UTILISATEUR COUNTER," & _
+   "pseudo VARCHAR(50) NOT NULL," & _
+   "email VARCHAR(255) NOT NULL," & _
+   "mot_de_passe_hash VARCHAR(255) NOT NULL," & _
+   "credits INT NOT NULL," & _
+   "role_chauffeur LOGICAL NOT NULL," & _
+   "role_passager LOGICAL NOT NULL," & _
+   "photo_path VARCHAR(255)," & _
+   "statut VARCHAR(20) NOT NULL," & _
+   "PRIMARY KEY(Id_UTILISATEUR)," & _
+   "UNIQUE(pseudo)," & _
+   "UNIQUE(email)" & _
+");"   
+
+DoCmd.RunSQL "CREATE TABLE VOITURE(" & _
+   "Id_VOITURE COUNTER," & _
+   "immatriculation VARCHAR(15) NOT NULL," & _
+   "date_1ere_mise_en_circulation DATE NOT NULL," & _
+   "marque VARCHAR(50) NOT NULL," & _
+   "couleur VARCHAR(30) NOT NULL," & _
+   "energie VARCHAR(20) NOT NULL," & _
+   "nb_places INT NOT NULL," & _
+   "Id_UTILISATEUR INT NOT NULL," & _
+   "PRIMARY KEY(Id_VOITURE)," & _
+   "UNIQUE(immatriculation)," & _
+   "FOREIGN KEY(Id_UTILISATEUR) REFERENCES UTILISATEUR(Id_UTILISATEUR)" & _
+");"   
+
+DoCmd.RunSQL "CREATE TABLE COVOITURAGE(" & _
+   "Id_COVOITURAGE COUNTER," & _
+   "date_heure_depart DATETIME NOT NULL," & _
+   "date_heure_arrivee DATETIME NOT NULL," & _
+   "adresse_arrivee VARCHAR(255) NOT NULL," & _
+   "adresse_depart VARCHAR(255) NOT NULL," & _
+   "ville_depart VARCHAR(80) NOT NULL," & _
+   "ville_arrivee VARCHAR(80) NOT NULL," & _
+   "nb_places_dispo INT NOT NULL," & _
+   "prix_credits INT NOT NULL," & _
+   "commission_credits INT NOT NULL," & _
+   "statut_covoiturage VARCHAR(20) NOT NULL," & _
+   "incident_commentaire VARCHAR(1000)," & _
+   "incident_resolu LOGICAL NOT NULL," & _
+   "Id_UTILISATEUR INT NOT NULL," & _
+   "Id_VOITURE INT NOT NULL," & _
+   "PRIMARY KEY(Id_COVOITURAGE)," & _
+   "FOREIGN KEY(Id_UTILISATEUR) REFERENCES UTILISATEUR(Id_UTILISATEUR)," & _
+   "FOREIGN KEY(Id_VOITURE) REFERENCES VOITURE(Id_VOITURE)" & _
+");"   
+
+DoCmd.RunSQL "CREATE TABLE PARTICIPATION(" & _
+   "Id_PARTICIPATION COUNTER," & _
+   "date_heure_confirmation DATETIME NOT NULL," & _
+   "credits_utilises INT NOT NULL," & _
+   "est_annulee LOGICAL NOT NULL," & _
+   "Id_UTILISATEUR INT NOT NULL," & _
+   "Id_COVOITURAGE INT NOT NULL," & _
+   "PRIMARY KEY(Id_PARTICIPATION)," & _
+   "FOREIGN KEY(Id_UTILISATEUR) REFERENCES UTILISATEUR(Id_UTILISATEUR)," & _
+   "FOREIGN KEY(Id_COVOITURAGE) REFERENCES COVOITURAGE(Id_COVOITURAGE)" & _
+");"   
+
+DoCmd.RunSQL "CREATE TABLE EMPLOYE(" & _
+   "Id_UTILISATEUR INT," & _
+   "PRIMARY KEY(Id_UTILISATEUR)," & _
+   "FOREIGN KEY(Id_UTILISATEUR) REFERENCES UTILISATEUR(Id_UTILISATEUR)" & _
+");"   
+
+DoCmd.RunSQL "CREATE TABLE ADMINISTRATEUR(" & _
+   "Id_UTILISATEUR INT," & _
+   "PRIMARY KEY(Id_UTILISATEUR)," & _
+   "FOREIGN KEY(Id_UTILISATEUR) REFERENCES UTILISATEUR(Id_UTILISATEUR)" & _
+");"   
+
+DoCmd.RunSQL "CREATE TABLE AVIS(" & _
+   "Id_AVIS COUNTER," & _
+   "note INT NOT NULL," & _
+   "commentaire VARCHAR(1000)," & _
+   "date_depot DATETIME NOT NULL," & _
+   "statut_moderation VARCHAR(20) NOT NULL," & _
+   "Id_PARTICIPATION INT NOT NULL," & _
+   "Id_UTILISATEUR INT," & _
+   "PRIMARY KEY(Id_AVIS)," & _
+   "UNIQUE(Id_PARTICIPATION)," & _
+   "FOREIGN KEY(Id_PARTICIPATION) REFERENCES PARTICIPATION(Id_PARTICIPATION)," & _
+   "FOREIGN KEY(Id_UTILISATEUR) REFERENCES EMPLOYE(Id_UTILISATEUR)" & _
+");"   
+
+End Sub
