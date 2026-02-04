@@ -1,167 +1,129 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Application;
+namespace App\Controleur;
 
+use App\Application\CreerCovoiturage;
 use DateTimeImmutable;
 use InvalidArgumentException;
-use PDO;
 use PDOException;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
 
-/**
- * Service métier : créer un covoiturage.
+/*
+ * Je garde ce fichier simple :
+ * - Ici je m'occupe uniquement de l'entrée "web" (requête HTTP).
+ * - Je lis le JSON, je le transforme en données utilisables.
+ * - Ensuite j'appelle CreerCovoiturage, qui fait le travail sérieux (règles + SQL).
  *
- * Objectif :
- * - vérifier une cohérence métier importante : la voiture doit appartenir au conducteur (id_utilisateur)
- * - insérer le covoiturage dans PostgreSQL (transaction)
- * - forcer statut_covoiturage = 'PLANIFIE' (car NOT NULL sans DEFAULT dans mon schema.sql)
- * - retourner l'id du covoiturage créé (RETURNING id_covoiturage)
- *
- * IMPORTANT :
- * - Ici je fais la logique de création "côté back", sans front.
- * - Le contrôleur reçoit le JSON, puis appelle ce service.
+ * Exemple de JSON à envoyer :
+ * {
+ *   "id_utilisateur": 3,
+ *   "id_voiture": 12,
+ *   "date_heure_depart": "2026-02-05T10:30:00",
+ *   "date_heure_arrivee": "2026-02-05T11:15:00",
+ *   "adresse_depart": "12 rue des Fleurs",
+ *   "adresse_arrivee": "1 avenue du Lac",
+ *   "ville_depart": "Annemasse",
+ *   "ville_arrivee": "Genève",
+ *   "nb_places_dispo": 3,
+ *   "prix_credits": 8
+ * }
  */
-final class CreerCovoiturage
+final class CreerCovoiturageControleur
 {
-    private PDO $pdo;
-
-    /**
-     * Symfony va injecter PDO (à condition que tu aies un service PDO configuré).
-     */
-    public function __construct(PDO $pdo)
+    public function __construct(private CreerCovoiturage $service)
     {
-        // Je force PDO à lever des exceptions en cas d'erreur SQL (plus simple à gérer)
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->pdo = $pdo;
     }
 
-    /**
-     * Crée un covoiturage et renvoie son id.
-     *
-     * @throws InvalidArgumentException si les règles métiers ne sont pas respectées
-     * @throws PDOException si la base a un problème
-     */
-    public function executer(
-        int $id_utilisateur,
-        int $id_voiture,
-        DateTimeImmutable $date_heure_depart,
-        DateTimeImmutable $date_heure_arrivee,
-        string $adresse_depart,
-        string $adresse_arrivee,
-        string $ville_depart,
-        string $ville_arrivee,
-        int $nb_places_dispo,
-        int $prix_credits
-    ): int {
-        // Par sécurité, je refais une vérification logique (même si le contrôleur l'a déjà faite)
-        if ($date_heure_arrivee <= $date_heure_depart) {
-            throw new InvalidArgumentException("La date d'arrivée doit être après la date de départ.");
+    #[Route('/api/covoiturages', name: 'api_creer_covoiturage', methods: ['POST'])]
+    public function __invoke(Request $requete): JsonResponse
+    {
+        // Je récupère le texte brut envoyé par le client
+        $contenu = $requete->getContent();
+
+        if ($contenu === '') {
+            return new JsonResponse(['erreur' => 'Je n’ai rien reçu (JSON attendu).'], 400);
         }
 
-        // Début de transaction : soit tout passe, soit rien n'est enregistré
-        $this->pdo->beginTransaction();
+        // Je transforme le JSON en tableau PHP
+        $donnees = json_decode($contenu, true);
 
+        if (!is_array($donnees)) {
+            return new JsonResponse(['erreur' => 'Le JSON est invalide (impossible à lire).'], 400);
+        }
+
+        // Je vérifie vite fait que les champs existent (sinon ça plantera plus loin)
+        $champs_obligatoires = [
+            'id_utilisateur',
+            'id_voiture',
+            'date_heure_depart',
+            'date_heure_arrivee',
+            'adresse_depart',
+            'adresse_arrivee',
+            'ville_depart',
+            'ville_arrivee',
+            'nb_places_dispo',
+            'prix_credits',
+        ];
+
+        foreach ($champs_obligatoires as $champ) {
+            if (!array_key_exists($champ, $donnees)) {
+                return new JsonResponse(['erreur' => "Il manque : {$champ}."], 400);
+            }
+        }
+
+        // Je force les types (ça évite des surprises : "12" devient 12)
+        $id_utilisateur = (int) $donnees['id_utilisateur'];
+        $id_voiture = (int) $donnees['id_voiture'];
+        $nb_places_dispo = (int) $donnees['nb_places_dispo'];
+        $prix_credits = (int) $donnees['prix_credits'];
+
+        // Je nettoie les textes (je retire les espaces inutiles)
+        $adresse_depart = trim((string) $donnees['adresse_depart']);
+        $adresse_arrivee = trim((string) $donnees['adresse_arrivee']);
+        $ville_depart = trim((string) $donnees['ville_depart']);
+        $ville_arrivee = trim((string) $donnees['ville_arrivee']);
+
+        // Je transforme les dates en vrais objets DateTime (sinon je ne peux pas comparer correctement)
         try {
-            /*
-             * 1) Sécurité métier : vérifier que la voiture appartient bien à l'utilisateur (conducteur)
-             * Sinon on pourrait créer un covoiturage avec la voiture de quelqu'un d'autre.
-             */
-            $sql_verif = "
-                SELECT 1
-                FROM voiture
-                WHERE id_voiture = :id_voiture
-                  AND id_utilisateur = :id_utilisateur
-            ";
-            $stmt_verif = $this->pdo->prepare($sql_verif);
-            $stmt_verif->execute([
-                ':id_voiture' => $id_voiture,
-                ':id_utilisateur' => $id_utilisateur,
-            ]);
-
-            $existe = $stmt_verif->fetchColumn();
-
-            if ($existe === false) {
-                // Je préfère une erreur claire côté API (400)
-                throw new InvalidArgumentException("La voiture sélectionnée n'appartient pas à cet utilisateur.");
-            }
-
-            /*
-             * 2) Insertion du covoiturage
-             * IMPORTANT : statut_covoiturage est NOT NULL sans DEFAULT dans le schema.sql
-             * Donc j'impose ici 'PLANIFIE' (valeur autorisée par ck_covoiturage_statut).
-             *
-             * Je ne fournis pas :
-             * - commission_credits => DEFAULT 2
-             * - incident_resolu => DEFAULT false
-             * - incident_commentaire => NULL (autorisé tant que statut != 'INCIDENT')
-             * - latitude/longitude => NULL (optionnel)
-             */
-            $sql_insert = "
-                INSERT INTO covoiturage (
-                    date_heure_depart,
-                    date_heure_arrivee,
-                    adresse_depart,
-                    adresse_arrivee,
-                    ville_depart,
-                    ville_arrivee,
-                    nb_places_dispo,
-                    prix_credits,
-                    statut_covoiturage,
-                    id_utilisateur,
-                    id_voiture
-                )
-                VALUES (
-                    :date_heure_depart,
-                    :date_heure_arrivee,
-                    :adresse_depart,
-                    :adresse_arrivee,
-                    :ville_depart,
-                    :ville_arrivee,
-                    :nb_places_dispo,
-                    :prix_credits,
-                    'PLANIFIE',
-                    :id_utilisateur,
-                    :id_voiture
-                )
-                RETURNING id_covoiturage
-            ";
-
-            $stmt_insert = $this->pdo->prepare($sql_insert);
-
-            // Je formate les DateTime en texte compatible TIMESTAMP
-            $stmt_insert->execute([
-                ':date_heure_depart'  => $date_heure_depart->format('Y-m-d H:i:s'),
-                ':date_heure_arrivee' => $date_heure_arrivee->format('Y-m-d H:i:s'),
-                ':adresse_depart'     => $adresse_depart,
-                ':adresse_arrivee'    => $adresse_arrivee,
-                ':ville_depart'       => $ville_depart,
-                ':ville_arrivee'      => $ville_arrivee,
-                ':nb_places_dispo'    => $nb_places_dispo,
-                ':prix_credits'       => $prix_credits,
-                ':id_utilisateur'     => $id_utilisateur,
-                ':id_voiture'         => $id_voiture,
-            ]);
-
-            // RETURNING => on récupère directement l'id créé
-            $id_covoiturage = $stmt_insert->fetchColumn();
-
-            if ($id_covoiturage === false) {
-                // Cas très rare, mais je préfère gérer proprement
-                throw new PDOException("Impossible de récupérer l'id du covoiturage créé.");
-            }
-
-            // Si tout est OK, on valide la transaction
-            $this->pdo->commit();
-
-            return (int) $id_covoiturage;
+            $date_heure_depart = new DateTimeImmutable((string) $donnees['date_heure_depart']);
+            $date_heure_arrivee = new DateTimeImmutable((string) $donnees['date_heure_arrivee']);
         } catch (\Throwable $e) {
-            // En cas d'erreur, on annule la transaction (rollback)
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
+            return new JsonResponse(['erreur' => 'Dates illisibles. Exemple attendu : 2026-02-05T10:30:00'], 400);
+        }
 
-            // On relance l'erreur pour que le contrôleur réponde 400 ou 500 selon le cas
-            throw $e;
+        // Ici, je passe la main au service (lui gère la logique + la base PostgreSQL)
+        try {
+            $id_covoiturage = $this->service->executer(
+                $id_utilisateur,
+                $id_voiture,
+                $date_heure_depart,
+                $date_heure_arrivee,
+                $adresse_depart,
+                $adresse_arrivee,
+                $ville_depart,
+                $ville_arrivee,
+                $nb_places_dispo,
+                $prix_credits
+            );
+
+            // 201 = création OK
+            return new JsonResponse(
+                ['id_covoiturage' => $id_covoiturage],
+                201
+            );
+        } catch (InvalidArgumentException $e) {
+            // Erreur "utilisateur" : données incohérentes (ex : voiture pas à lui)
+            return new JsonResponse(['erreur' => $e->getMessage()], 400);
+        } catch (PDOException $e) {
+            // Erreur côté base (je reste vague volontairement)
+            return new JsonResponse(['erreur' => 'Erreur serveur (base de données).'], 500);
+        } catch (\Throwable $e) {
+            // Tout le reste : je renvoie une erreur serveur générique
+            return new JsonResponse(['erreur' => 'Erreur serveur.'], 500);
         }
     }
 }
+
