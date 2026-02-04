@@ -23,12 +23,18 @@ services:
             APP_DEBUG: "1"
             DEFAULT_URI: "http://localhost:8080"
 
-            # Connexion PDO
-            BDD_HOTE: "postgresql"
-            BDD_PORT: "5432"
-            BDD_NOM: "ecoride"
-            BDD_UTILISATEUR: "ecoride"
-            BDD_MOT_DE_PASSE: "ecoride"
+            # Connexion PostgreSQL (aligné sur ConnexionPostgresql.php)
+            PG_HOST: "postgresql"
+            PG_PORT: "5432"
+            PG_DB: "ecoride"
+            PG_USER: "ecoride"
+            PG_PASSWORD: "ecoride"
+
+            # Connexion MongoDB (aligné sur JournalEvenementsMongodb.php)
+            MONGODB_URI: "mongodb://mongodb:27017"
+            MONGODB_BASE: "ecoride_journal"
+            MONGODB_COLLECTION: "journal_evenements"
+
 
             MONGODB_URL: "mongodb://mongodb:27017"
         depends_on:
