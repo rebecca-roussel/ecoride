@@ -14,7 +14,7 @@
 
     <nav class="navigation" aria-label="Navigation principale">
       <a class="lien actif" href="{{ path('accueil') }}">Accueil</a>
-      <a class="lien" href="#">Rechercher</a>
+      <a class="lien" href="{{ path('recherche') }}">Rechercher</a>
       <a class="lien" href="#">Connexion</a>
     </nav>
   </header>
@@ -23,7 +23,7 @@
     <h1 id="titre-hero">Covoiturage responsable entre particuliers</h1>
     <p class="sous-texte">Partagez un trajet simplement, avec une approche responsable</p>
 
-    <a class="bouton-principal" href="#">
+    <a class="bouton-principal" href="{{ path('recherche') }}">
       Rechercher un covoiturage
     </a>
   </section>
@@ -45,60 +45,13 @@
     </article>
 
     <div class="route" aria-hidden="true"></div>
-  </
+  </section>
 
+  <footer class="pied">
+    <a class="pied-lien" href="mailto:contact@ecoride.fr">contact@ecoride.fr</a>
+    <span class="pied-centre">© EcoRide – 2026</span>
+    <a class="pied-lien" href="#">Mentions légales</a>
+  </footer>
 
-q
-cat > templates/accueil/index.html.twig <<'TWIG'
-{% extends 'base.html.twig' %}
-
-{% block title %}EcoRide – Accueil{% endblock %}
-
-{% block stylesheets %}
-  <link rel="stylesheet" href="{{ asset('css/accueil.css') }}">
+</main>
 {% endblock %}
-
-{% block body %}
-<main class="accueil">
-
-  <header class="entete">
-    <div class="logo">EcoRide</div>
-
-    <nav class="navigation" aria-label="Navigation principale">
-      <a class="lien actif" href="{{ path('accueil') }}">Accueil</a>
-      <a class="lien" href="#">Rechercher</a>
-      <a class="lien" href="#">Connexion</a>
-    </nav>
-  </header>
-
-  <section class="hero" aria-labelledby="titre-hero">
-    <h1 id="titre-hero">Covoiturage responsable entre particuliers</h1>
-    <p class="sous-texte">Partagez un trajet simplement, avec une approche responsable</p>
-
-    <a class="bouton-principal" href="#">
-      Rechercher un covoiturage
-    </a>
-  </section>
-
-  <section class="arguments" aria-label="Atouts EcoRide">
-    <article class="argument">
-      <h2>Système de crédits</h2>
-      <p>Un mécanisme de crédits garantissant l’équité des échanges entre utilisateurs.</p>
-    </article>
-
-    <article class="argument argument-centre">
-      <h2>Mobilité durable</h2>
-      <p>Valorisation des véhicules à faible impact environnemental.</p>
-    </article>
-
-    <article class="argument">
-      <h2>Fiabilité</h2>
-      <p>Avis et modération assurent des trajets sûrs et de confiance.</p>
-    </article>
-
-    <div class="route" aria-hidden="true"></div>
-  </
-
-
-qTWIG
-

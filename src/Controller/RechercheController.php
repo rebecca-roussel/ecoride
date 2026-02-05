@@ -16,3 +16,4 @@ final class RechercheController extends AbstractController
         return $this->render('recherche/index.html.twig');
     }
 }
+
