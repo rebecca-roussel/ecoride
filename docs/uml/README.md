@@ -71,6 +71,8 @@ Pour chaque diagramme sont fournis :
 
 une description écrite du scénario et des choix de modélisation associés.
 
+Le diagramme de séquence a été entièrement refondu afin de réunir en un seul schéma toutes les interactions essentielles de l’application (inscription, recherche de covoiturage, participation, publication, annulation, modération et gestion des espaces utilisateurs). Cette version unique améliore la lisibilité et l’uniformité en utilisant des fragments alt et opt pour représenter les variantes et conditions. Les anciens diagrammes sont conservés dans le répertoire, mais cette version finale fait foi.
+
 ## 4. Diagramme de classes
 
 Le diagramme de classes présente la structure statique du projet EcoRide.
