@@ -73,7 +73,9 @@ les comportements optionnels, notamment la journalisation MongoDB, via des fragm
 les interactions techniques réelles (transactions SQL, envoi de mails via Symfony Mailer).
 
 La version finale du diagramme de séquence, nommé `diagramme_de_sequence_ecoride` dans ce dossier, est celle faisant foi pour l’évaluation du TP.
-Elle a été réalisée avec Visual Paradigm et fournie dans les formats suivants :
+Elle a été réalisée avec IntelliJ et fournie dans les formats suivants :
+
+une version SVG (pour un meilleur zoom),
 
 une version PNG pour la consultation rapide,
 
