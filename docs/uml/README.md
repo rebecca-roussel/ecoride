@@ -57,19 +57,29 @@ Les conventions UML retenues sont volontairement simples :
 
 ## Diagrammes de séquence
 
-Les diagrammes de séquence modélisent les échanges chronologiques entre les acteurs, l’interface utilisateur et le système pour les principaux scénarios fonctionnels de l’application.
+Les diagrammes de séquence modélisent les échanges chronologiques entre les acteurs, l’interface utilisateur et le système pour les principaux scénarios fonctionnels de l’application EcoRide.
 
-Chaque diagramme correspond à un scénario clairement identifié (inscription et connexion, recherche de covoiturage, participation, publication, annulation, modération, gestion des espaces utilisateur, employé et administrateur).
+Les premières versions des diagrammes ont permis d’identifier et de cadrer les grands scénarios fonctionnels. Elles sont conservées à titre de travail intermédiaire.
+Cependant, une version consolidée et finale a été réalisée afin de refléter fidèlement l’état abouti du projet, le schéma de données définitif et les règles métier effectivement retenues.
 
-Les variantes de comportement sont représentées à l’aide de fragments d’alternative (alt), tandis que les comportements conditionnels ou optionnels sont modélisés par des fragments optionnels (opt), conformément à la notation UML.
+Cette version finale regroupe l’ensemble des scénarios principaux dans un diagramme de séquence cohérent et complet, intégrant explicitement :
 
-Pour chaque diagramme sont fournis :
+les règles métier critiques (gestion des crédits, des places disponibles, des statuts),
 
-- une version lisible au format PDF,
+les cas d’erreur et scénarios alternatifs à l’aide de fragments alt,
 
-- une image PNG destinée à la consultation rapide.
+les comportements optionnels, notamment la journalisation MongoDB, via des fragments opt,
 
-une description écrite du scénario et des choix de modélisation associés.
+les interactions techniques réelles (transactions SQL, envoi de mails via Symfony Mailer).
+
+La version finale du diagramme de séquence, nommé `diagramme_de_sequence_ecoride` dans ce dossier, est celle faisant foi pour l’évaluation du TP.
+Elle a été réalisée avec Visual Paradigm et fournie dans les formats suivants :
+
+une version PNG pour la consultation rapide,
+
+une version PDF pour la lecture détaillée et l’archivage.
+
+Chaque diagramme est accompagné d’une description écrite expliquant le scénario couvert et les choix de modélisation associés.
 
 ## 4. Diagramme de classes
 
