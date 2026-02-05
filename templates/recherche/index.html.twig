@@ -1,0 +1,82 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}EcoRide – Recherche{% endblock %}
+
+{% block stylesheets %}
+  <link rel="stylesheet" href="{{ asset('css/recherche.css') }}">
+{% endblock %}
+
+{% block body %}
+<main class="recherche">
+
+  <header class="entete">
+    <div class="logo">EcoRide</div>
+
+    <nav class="navigation" aria-label="Navigation principale">
+      <a class="lien" href="{{ path('accueil') }}">Accueil</a>
+      <a class="lien actif" href="{{ path('recherche') }}">Rechercher</a>
+      <a class="lien" href="#">Connexion</a>
+    </nav>
+  </header>
+
+  <section class="bloc-titre" aria-labelledby="titre-recherche">
+    <h1 id="titre-recherche">Rechercher un covoiturage</h1>
+    <p class="sous-texte">Renseignez votre trajet et vos critères</p>
+  </section>
+
+  <section class="carte-formulaire" aria-label="Formulaire de recherche">
+    <form class="formulaire" method="get" action="#">
+      <div class="grille">
+
+        <div class="champ">
+          <label for="depart">Départ</label>
+          <input id="depart" name="depart" type="text" placeholder="Ex : Annemasse" autocomplete="address-level2">
+        </div>
+
+        <div class="champ">
+          <label for="arrivee">Arrivée</label>
+          <input id="arrivee" name="arrivee" type="text" placeholder="Ex : Genève" autocomplete="address-level2">
+        </div>
+
+        <div class="champ">
+          <label for="date_depart">Date</label>
+          <input id="date_depart" name="date_depart" type="date">
+        </div>
+
+        <div class="champ">
+          <label for="passagers">Passagers</label>
+          <input id="passagers" name="passagers" type="number" min="1" max="8" value="1">
+        </div>
+
+        <div class="champ">
+          <label for="prix_max">Prix maximum (crédits)</label>
+          <input id="prix_max" name="prix_max" type="number" min="0" step="1" placeholder="Ex : 20">
+        </div>
+
+        <div class="champ">
+          <label for="energie">Énergie</label>
+          <select id="energie" name="energie">
+            <option value="">Toutes</option>
+            <option value="electrique">Électrique</option>
+            <option value="hybride">Hybride</option>
+            <option value="essence">Essence</option>
+            <option value="diesel">Diesel</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="actions">
+        <button class="bouton-principal" type="submit">Lancer la recherche</button>
+        <a class="bouton-secondaire" href="{{ path('recherche') }}">Réinitialiser</a>
+      </div>
+    </form>
+  </section>
+
+  <section class="zone-resultats" aria-label="Résultats">
+    <h2 class="titre-resultats">Résultats</h2>
+    <p class="texte-aide">Les résultats seront affichés ici (page suivante : liste + filtres).</p>
+  </section>
+
+</main>
+{% endblock %}
