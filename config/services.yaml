@@ -21,3 +21,9 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    # PDO n’est pas un service Symfony “automatique”.
+    # Donc je dis à Symfony comment le fabriquer :
+    # -> il doit appeler ConnexionPostgresql->obtenir()
+    PDO:
+        class: PDO
+        factory: ['@App\Infrastructure\ConnexionPostgresql', 'obtenir']
