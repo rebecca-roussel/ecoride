@@ -1,47 +1,43 @@
-<svg width="900" height="260" viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <style>
-      .path { fill: none; stroke: #C7C3B8; stroke-width: 10; stroke-linecap: round; }
-      .dots { fill: none; stroke: #E5E7EB; stroke-width: 6; stroke-linecap: round; stroke-dasharray: 1 18; }
-      .nodeOuter { fill: #3F5D4A; }
-      .nodeInner { fill: #0F172A; opacity: 0.25; }
-      .treeGreen { fill: #3F5D4A; }
-      .treeTrunk { fill: #2F4A3B; }
-    </style>
-
-    <!-- Un sapin réutilisable -->
-    <g id="tree">
-      <polygon class="treeGreen" points="30,0 12,26 48,26"></polygon>
-      <polygon class="treeGreen" points="30,14 8,46 52,46"></polygon>
-      <polygon class="treeGreen" points="30,30 4,66 56,66"></polygon>
-      <rect class="treeTrunk" x="26" y="66" width="8" height="14" rx="2"></rect>
-    </g>
-  </defs>
-
-  <!-- Chemin ondulé -->
-  <path class="path" d="M110 170
-           C 220 110, 310 110, 400 170
-           S 580 230, 670 170
-           S 800 110, 860 150"></path>
-
-  <!-- Pointillés au centre -->
-  <path class="dots" d="M110 170
-           C 220 110, 310 110, 400 170
-           S 580 230, 670 170
-           S 800 110, 860 150"></path>
-
-  <!-- 3 étapes (pastilles) -->
-  <circle class="nodeOuter" cx="130" cy="170" r="16"></circle>
-  <circle class="nodeInner" cx="130" cy="170" r="9"></circle>
-
-  <circle class="nodeOuter" cx="470" cy="190" r="16"></circle>
-  <circle class="nodeInner" cx="470" cy="190" r="9"></circle>
-
-  <circle class="nodeOuter" cx="820" cy="145" r="16"></circle>
-  <circle class="nodeInner" cx="820" cy="145" r="9"></circle>
-
-  <!-- 3 sapins (placés au-dessus de la route) -->
-  <use href="#tree" x="100" y="70"></use>
-  <use href="#tree" x="440" y="90"></use>
-  <use href="#tree" x="790" y="45"></use>
+<svg width="1078" height="362" viewBox="0 0 1078 362" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_179_20)">
+<path d="M122.201 222.3C244.433 143.835 344.441 143.835 444.449 222.3C544.456 300.765 644.464 300.765 744.472 222.3C844.48 143.835 888.927 143.835 955.6 196.145" stroke="#C7C3B8" stroke-width="10.0006" stroke-linecap="round"/>
+</g>
+<g clip-path="url(#clip1_179_20)">
+<path d="M122.2 222.301C244.433 143.844 344.44 143.844 444.448 222.301C544.456 300.758 644.464 300.758 744.472 222.301C844.48 143.844 888.927 143.844 955.6 196.149" stroke="#E5E7EB" stroke-width="6.00005" stroke-linecap="round" stroke-dasharray="1 18"/>
+</g>
+<g clip-path="url(#clip2_179_20)">
+<path d="M160.8 97.4375L144.808 124.977H176.792L160.8 97.4375Z" fill="#3F5D4A"/>
+<path d="M160.8 112.267L141.254 146.162H180.346L160.8 112.267Z" fill="#3F5D4A"/>
+<path d="M160.8 129.214L137.7 167.346H183.9L160.8 129.214Z" fill="#3F5D4A"/>
+<path d="M162.577 167.346H159.023C158.042 167.346 157.246 168.294 157.246 169.464V180.057C157.246 181.227 158.042 182.175 159.023 182.175H162.577C163.558 182.175 164.354 181.227 164.354 180.057V169.464C164.354 168.294 163.558 167.346 162.577 167.346Z" fill="#BFA97A"/>
+</g>
+<g clip-path="url(#clip3_179_20)">
+<path d="M565.6 182.163L549.608 209.702H581.592L565.6 182.163Z" fill="#3F5D4A"/>
+<path d="M565.6 196.992L546.054 230.887H585.146L565.6 196.992Z" fill="#3F5D4A"/>
+<path d="M565.6 213.939L542.5 252.071H588.7L565.6 213.939Z" fill="#3F5D4A"/>
+<path d="M567.377 252.071H563.823C562.842 252.071 562.046 253.019 562.046 254.189V264.782C562.046 265.952 562.842 266.9 563.823 266.9H567.377C568.358 266.9 569.154 265.952 569.154 264.782V254.189C569.154 253.019 568.358 252.071 567.377 252.071Z" fill="#BFA97A"/>
+</g>
+<g clip-path="url(#clip4_179_20)">
+<path d="M819.1 75.9875L803.108 103.539H835.092L819.1 75.9875Z" fill="#3F5D4A"/>
+<path d="M819.1 90.8232L799.554 124.733H838.646L819.1 90.8232Z" fill="#3F5D4A"/>
+<path d="M819.1 107.778L796 145.927H842.2L819.1 107.778Z" fill="#3F5D4A"/>
+<path d="M820.877 145.927H817.323C816.342 145.927 815.546 146.876 815.546 148.046V158.643C815.546 159.814 816.342 160.762 817.323 160.762H820.877C821.858 160.762 822.654 159.814 822.654 158.643V148.046C822.654 146.876 821.858 145.927 820.877 145.927Z" fill="#BFA97A"/>
+</g>
+<defs>
+<clipPath id="clip0_179_20">
+<rect width="843.4" height="131.462" fill="white" transform="translate(117.2 154.688)"/>
+</clipPath>
+<clipPath id="clip1_179_20">
+<rect width="839.4" height="127.062" fill="white" transform="translate(119.2 156.862)"/>
+</clipPath>
+<clipPath id="clip2_179_20">
+<rect width="46.2" height="84.7375" fill="white" transform="translate(137.7 97.4375)"/>
+</clipPath>
+<clipPath id="clip3_179_20">
+<rect width="46.2" height="84.7375" fill="white" transform="translate(542.5 182.163)"/>
+</clipPath>
+<clipPath id="clip4_179_20">
+<rect width="46.2" height="84.775" fill="white" transform="translate(796 75.9875)"/>
+</clipPath>
+</defs>
 </svg>

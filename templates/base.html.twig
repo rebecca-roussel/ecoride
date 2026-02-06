@@ -3,15 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>{% block title %}EcoRide{% endblock %}</title>
+
+  {# Styles globaux : charte graphique (couleurs, polices, focus) #}
   <link rel="stylesheet" href="{{ asset('css/global.css') }}">
+
+  {# Styles spécifiques à chaque page (accueil.css, recherche.css, etc.) #}
   {% block stylesheets %}{% endblock %}
-
-<!-- Police --!>
-
-
-
 </head>
+
 <body>
   {% block body %}{% endblock %}
 </body>
