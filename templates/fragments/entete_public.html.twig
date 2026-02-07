@@ -1,0 +1,37 @@
+{# templates/fragments/entete_public.html.twig #}
+<header class="entete">
+  <div class="conteneur entete_contenu">
+
+    <p class="logo">EcoRide</p>
+
+    <button
+      class="bouton_menu"
+      type="button"
+      aria-controls="navigation_principale"
+      aria-expanded="false"
+    >
+      <span class="bouton_menu_icone" aria-hidden="true"></span>
+      <span class="bouton_menu_texte">Menu</span>
+    </button>
+
+    <nav
+      id="navigation_principale"
+      class="navigation"
+      aria-label="Navigation principale"
+      data-ouvert="false"
+    >
+      <a class="nav_lien {% if app.request.attributes.get('_route') == 'accueil' %}actif{% endif %}"
+         {% if app.request.attributes.get('_route') == 'accueil' %}aria-current="page"{% endif %}
+         href="{{ path('accueil') }}">Accueil</a>
+
+      <a class="nav_lien {% if app.request.attributes.get('_route') == 'recherche' %}actif{% endif %}"
+         {% if app.request.attributes.get('_route') == 'recherche' %}aria-current="page"{% endif %}
+         href="{{ path('recherche') }}">Accès aux covoiturages</a>
+
+      <a class="nav_lien" href="#" aria-disabled="true">Connexion</a>
+
+      <a class="nav_lien" href="#contact">Contact</a>
+    </nav>
+
+  </div>
+</header>

@@ -1,125 +1,111 @@
-.recherche{
-  min-height: 100vh;
-  padding: 48px 64px 60px;
+/*
+  recherche.css
+  Objectif : styliser uniquement la zone centrale (carte + formulaire).
+  Le header + footer doivent rester identiques à l’accueil => gérés par accueil.css.
+*/
+
+/* Zone centrale : carte centrée entre header et footer */
+.zone_centrale {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    box-sizing: border-box;
 }
 
-.entete{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+/* Carte formulaire */
+.carte_recherche {
+    width: 100%;
+    max-width: 768px;
+    background: #c7c3b8;
+    border-radius: 24px;
+    padding: 48px;
+    box-sizing: border-box;
 }
 
-.logo{
-  font-size: 28px;
-  letter-spacing: 0.5px;
+/* Titre dans la carte */
+.titre_carte {
+    margin: 0 0 32px 0;
+    text-align: center;
+    font-family: "Montserrat", "Inter", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    color: #0f172a;
 }
 
-.navigation{
-  display: flex;
-  gap: 40px;
-  font-size: 16px;
-  opacity: 0.9;
+/* Formulaire */
+.formulaire_recherche_maquette {
+    display: grid;
+    gap: 20px;
 }
 
-.lien{ padding: 6px 0; }
-.lien.actif{ opacity: 1; }
-
-.bloc-titre{
-  margin-top: 70px;
-  text-align: center;
+.groupe_champ {
+    display: grid;
+    gap: 8px;
 }
 
-.bloc-titre h1{
-  margin: 0 0 10px;
-  font-size: 34px;
+.groupe_champ label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
 }
 
-.sous-texte{
-  margin: 0;
-  color: rgba(255,255,255,0.78);
+.groupe_champ input {
+    width: 100%;
+    height: 48px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    background: #e5e7eb;
+    color: #0f172a;
+    font-family:
+        "Inter",
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+    font-size: 16px;
+    box-sizing: border-box;
 }
 
-.carte-formulaire{
-  margin: 38px auto 0;
-  max-width: 980px;
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 16px;
-  background: rgba(0,0,0,0.18);
-  backdrop-filter: blur(6px);
-  padding: 22px;
+.groupe_champ input:focus-visible {
+    outline: 3px solid var(--anneau_focus);
+    outline-offset: 3px;
 }
 
-.grille{
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
+.ligne_deux_champs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
 }
 
-.champ label{
-  display: block;
-  font-size: 14px;
-  margin-bottom: 8px;
-  color: rgba(255,255,255,0.86);
+.actions_recherche {
+    display: flex;
+    justify-content: center;
+    padding-top: 12px;
 }
 
-.champ input,
-.champ select{
-  width: 100%;
-  padding: 12px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.22);
-  background: rgba(5,15,25,0.45);
-  color: #fff;
-  outline: none;
+/* Bouton : on garde la classe globale, mais on la rend plus grande sur cette page */
+.actions_recherche .bouton_principal {
+    width: 320px;
+    min-height: 56px;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    border-radius: 12px;
 }
 
-.champ input::placeholder{
-  color: rgba(255,255,255,0.55);
-}
+/* Responsive */
+@media (max-width: 900px) {
+    .carte_recherche {
+        padding: 28px 18px;
+    }
 
-.actions{
-  margin-top: 18px;
-  display: flex;
-  gap: 14px;
-  justify-content: center;
-  align-items: center;
-}
-
-.bouton-principal{
-  display: inline-block;
-  padding: 12px 22px;
-  border-radius: 10px;
-  background: rgba(63,107,79,0.92);
-  border: 1px solid rgba(255,255,255,0.35);
-  color: #fff;
-  cursor: pointer;
-}
-
-.bouton-secondaire{
-  display: inline-block;
-  padding: 12px 22px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.28);
-  background: transparent;
-}
-
-.zone-resultats{
-  margin: 38px auto 0;
-  max-width: 980px;
-}
-
-.titre-resultats{
-  margin: 0 0 8px;
-  font-size: 18px;
-}
-
-.texte-aide{
-  margin: 0;
-  color: rgba(255,255,255,0.78);
-}
-
-@media (max-width: 900px){
-  .recherche{ padding: 28px 20px 50px; }
-  .navigation{ gap: 18px; }
-  .grille{ grid-template-columns: 1fr; }
+    .ligne_deux_champs {
+        grid-template-columns: 1fr;
+    }
 }

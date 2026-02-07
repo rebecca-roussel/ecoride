@@ -6,14 +6,29 @@
 
   <title>{% block title %}EcoRide{% endblock %}</title>
 
-  {# Styles globaux : charte graphique (couleurs, polices, focus) #}
   <link rel="stylesheet" href="{{ asset('css/global.css') }}">
-
-  {# Styles spécifiques à chaque page (accueil.css, recherche.css, etc.) #}
   {% block stylesheets %}{% endblock %}
 </head>
 
 <body>
+
+  {# Par défaut : header public. Une page pourra le remplacer #}
+  {% block entete %}
+    {% include 'fragments/entete_public.html.twig' %}
+  {% endblock %}
+
   {% block body %}{% endblock %}
+
+  {# Par défaut : pied de page commun #}
+  {% block pied_de_page %}
+    {% include 'fragments/pied_de_page.html.twig' %}
+  {% endblock %}
+
+  {# JS commun menu mobile #}
+  <script src="{{ asset('js/menu_navigation.js') }}"></script>
+
+  {% block javascripts %}{% endblock %}
 </body>
 </html>
+
+

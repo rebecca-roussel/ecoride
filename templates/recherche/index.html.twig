@@ -1,82 +1,86 @@
+{# templates/recherche/index.html.twig #}
+
+{# Plan (structure de la page recherche/index.html.twig) :
+
+  1) En-tête : fourni par base.html.twig (fragment entete_public.html.twig)
+
+  2) Zone centrale :
+     - carte de formulaire centrée
+     - titre centré dans la carte
+     - bouton centré
+     - formulaire (départ, arrivée, date + heure)
+
+  3) Pied de page : fourni par base.html.twig (fragment pied_de_page.html.twig)
+#}
+
 {% extends 'base.html.twig' %}
 
-{% block title %}EcoRide – Recherche{% endblock %}
+{% block title %}EcoRide – Rechercher{% endblock %}
 
 {% block stylesheets %}
+  <link rel="stylesheet" href="{{ asset('css/accueil.css') }}">
   <link rel="stylesheet" href="{{ asset('css/recherche.css') }}">
 {% endblock %}
 
 {% block body %}
-<main class="recherche">
+  <div class="page_recherche">
+    <main class="zone_centrale">
+      <section class="carte_recherche" aria-label="Recherche de covoiturage">
+        <h1 class="titre_carte">Rechercher un covoiturage</h1>
 
-  <header class="entete">
-    <div class="logo">EcoRide</div>
+        <form class="formulaire_recherche_maquette" method="get" action="{{ path('recherche') }}">
 
-    <nav class="navigation" aria-label="Navigation principale">
-      <a class="lien" href="{{ path('accueil') }}">Accueil</a>
-      <a class="lien actif" href="{{ path('recherche') }}">Rechercher</a>
-      <a class="lien" href="#">Connexion</a>
-    </nav>
-  </header>
+          <div class="groupe_champ">
+            <label for="depart">Départ (ville)</label>
+            <input
+              type="text"
+              id="depart"
+              name="depart"
+              placeholder="Ville de départ"
+              value="{{ app.request.query.get('depart') ?? '' }}"
+            >
+          </div>
 
-  <section class="bloc-titre" aria-labelledby="titre-recherche">
-    <h1 id="titre-recherche">Rechercher un covoiturage</h1>
-    <p class="sous-texte">Renseignez votre trajet et vos critères</p>
-  </section>
+          <div class="groupe_champ">
+            <label for="arrivee">Arrivée (ville)</label>
+            <input
+              type="text"
+              id="arrivee"
+              name="arrivee"
+              placeholder="Ville d'arrivée"
+              value="{{ app.request.query.get('arrivee') ?? '' }}"
+            >
+          </div>
 
-  <section class="carte-formulaire" aria-label="Formulaire de recherche">
-    <form class="formulaire" method="get" action="#">
-      <div class="grille">
+          <div class="ligne_deux_champs">
+            <div class="groupe_champ">
+              <label for="date_depart">Date de départ</label>
+              <input
+                type="date"
+                id="date_depart"
+                name="date_depart"
+                value="{{ app.request.query.get('date_depart') ?? '' }}"
+              >
+            </div>
 
-        <div class="champ">
-          <label for="depart">Départ</label>
-          <input id="depart" name="depart" type="text" placeholder="Ex : Annemasse" autocomplete="address-level2">
-        </div>
+            <div class="groupe_champ">
+              <label for="heure_depart">Heure de départ</label>
+              <input
+                type="time"
+                id="heure_depart"
+                name="heure_depart"
+                value="{{ app.request.query.get('heure_depart') ?? '' }}"
+              >
+            </div>
+          </div>
 
-        <div class="champ">
-          <label for="arrivee">Arrivée</label>
-          <input id="arrivee" name="arrivee" type="text" placeholder="Ex : Genève" autocomplete="address-level2">
-        </div>
+          <div class="actions_recherche">
+            <button type="submit" class="bouton_principal">Rechercher</button>
+          </div>
 
-        <div class="champ">
-          <label for="date_depart">Date</label>
-          <input id="date_depart" name="date_depart" type="date">
-        </div>
-
-        <div class="champ">
-          <label for="passagers">Passagers</label>
-          <input id="passagers" name="passagers" type="number" min="1" max="8" value="1">
-        </div>
-
-        <div class="champ">
-          <label for="prix_max">Prix maximum (crédits)</label>
-          <input id="prix_max" name="prix_max" type="number" min="0" step="1" placeholder="Ex : 20">
-        </div>
-
-        <div class="champ">
-          <label for="energie">Énergie</label>
-          <select id="energie" name="energie">
-            <option value="">Toutes</option>
-            <option value="electrique">Électrique</option>
-            <option value="hybride">Hybride</option>
-            <option value="essence">Essence</option>
-            <option value="diesel">Diesel</option>
-          </select>
-        </div>
-
-      </div>
-
-      <div class="actions">
-        <button class="bouton-principal" type="submit">Lancer la recherche</button>
-        <a class="bouton-secondaire" href="{{ path('recherche') }}">Réinitialiser</a>
-      </div>
-    </form>
-  </section>
-
-  <section class="zone-resultats" aria-label="Résultats">
-    <h2 class="titre-resultats">Résultats</h2>
-    <p class="texte-aide">Les résultats seront affichés ici (page suivante : liste + filtres).</p>
-  </section>
-
-</main>
+        </form>
+      </section>
+    </main>
+  </div>
 {% endblock %}
+

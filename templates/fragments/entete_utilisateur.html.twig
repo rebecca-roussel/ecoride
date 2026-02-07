@@ -1,0 +1,33 @@
+{# templates/fragments/entete_utilisateur.html.twig #}
+<header class="entete">
+  <div class="conteneur entete_contenu">
+
+    <p class="logo">EcoRide</p>
+
+    <button
+      class="bouton_menu"
+      type="button"
+      aria-controls="navigation_principale"
+      aria-expanded="false"
+    >
+      <span class="bouton_menu_icone" aria-hidden="true"></span>
+      <span class="bouton_menu_texte">Menu</span>
+    </button>
+
+    <nav
+      id="navigation_principale"
+      class="navigation"
+      aria-label="Navigation principale"
+      data-ouvert="false"
+    >
+      <a class="nav_lien" href="{{ path('espace_utilisateur') }}">Mon espace</a>
+
+      <a class="nav_lien" href="{{ path('recherche') }}">Rechercher</a>
+
+      <a class="nav_lien" href="{{ path('deconnexion') }}">Déconnexion</a>
+
+      <a class="nav_lien" href="#contact">Contact</a>
+    </nav>
+
+  </div>
+</header>

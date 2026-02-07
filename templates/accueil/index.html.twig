@@ -1,70 +1,119 @@
+
 {# templates/accueil/index.html.twig #}
+{# Page d’accueil 
+  Plan (structure de la page html) :
+
+  1. En-tête :
+     - logo EcoRide
+     - navigation (Accueil / Accès aux covoiturages / Connexion / Contact)
+     - bouton "Menu" pour mobile ou rétrécissemnt de page
+     - lien "Accès aux covoiturages" vers page Recherche (formulaire seul)
+     - lien "Connexion" vers page de connexion
+     
+
+  2. Hero :
+     - accroche et description avec image de fond
+     - petit formulaire de recherche rapide (départ, arrivée, date, heure)
+     - bouton rechercher CTA lien vers page de résultats
+     - envoyer en GET vers la recherche :
+       si critères remplis → afficher les résultats
+       sinon → afficher la page Recherche (formulaire seul)
+
+  3. Atouts :
+     - 3 points forts (crédits / durable / fiabilité)
+     - icônes + titres + texte
+
+  4. Bannière bas :
+     - image décorative de transition
+
+  5. Pied de page :
+     - contact mail
+     - année + EcoRide
+     - lien mentions légales
+#}
+
+
 {% extends 'base.html.twig' %}
 
+{# Titre de l’onglet du navigateur #}
 {% block title %}EcoRide – Accueil{% endblock %}
 
+{# Feuille de style spécifique à la page d’accueil #}
 {% block stylesheets %}
   <link rel="stylesheet" href="{{ asset('css/accueil.css') }}">
 {% endblock %}
 
+{# EN-TÊTE / NAVIGATION #}
+{# IMPORTANT : l’en-tête est géré par base.html.twig #}
+{# Ici on garde un header identique à la recherche en incluant le fragment public #}
+{% block entete %}
+  {% include 'fragments/entete_public.html.twig' %}
+{% endblock %}
+
 {% block body %}
-
-<header class="entete">
-  <div class="conteneur entete_contenu">
-    <p class="logo" aria-label="EcoRide">EcoRide</p>
-
-    <button
-      class="bouton_menu"
-      type="button"
-      aria-controls="navigation_principale"
-      aria-expanded="false"
-    >
-      <span class="bouton_menu_icone" aria-hidden="true"></span>
-      <span class="bouton_menu_texte">Menu</span>
-    </button>
-
-    <nav id="navigation_principale" class="navigation" aria-label="Navigation principale" data-ouvert="false">
-      <a class="nav_lien actif" href="#">Accueil</a>
-      <a class="nav_lien" href="#">Accès aux covoiturages</a>
-      <a class="nav_lien" href="#">Connexion</a>
-      <a class="nav_lien" href="#contact">Contact</a>
-    </nav>
-  </div>
-</header>
 
 <main>
 
+{# HERO (ACCROCHE + RECHERCHE) #}
   <section class="section_hero" aria-labelledby="titre_principal">
+
+{# Décors visuels #}
     <div class="hero_image" aria-hidden="true"></div>
     <div class="hero_filtre" aria-hidden="true"></div>
 
     <div class="conteneur hero_contenu">
       <div class="hero_centre">
+
+{# Titre principal #}
         <h1 id="titre_principal">Voyagez ensemble, agissez pour demain</h1>
 
+{# Texte court pour expliquer le service #}
         <p class="hero_description">
           EcoRide vous connecte à des conducteurs partageant vos valeurs.
           Réduisez votre empreinte carbone tout en économisant sur vos trajets quotidiens.
         </p>
 
-        <form class="formulaire_recherche" method="get" action="{{ path('recherche') }}" aria-label="Rechercher un covoiturage">
+{# Formulaire de recherche de covoiturage #}
+{# GET = pratique car les critères se retrouvent dans l’URL (partageable) #}
+        <form
+          class="formulaire_recherche"
+          method="get"
+          action="{{ path('recherche') }}"
+          aria-label="Rechercher un covoiturage"
+        >
           <div class="formulaire_grille">
 
+{# Ville de départ #}
             <div class="champ_groupe">
               <label for="depart">Ville de départ</label>
-              <input type="text" id="depart" name="depart" autocomplete="address-level2" placeholder="Ex : Paris">
+              <input
+                type="text"
+                id="depart"
+                name="depart"
+                autocomplete="address-level2"
+                placeholder="Ex : Paris"
+              >
             </div>
 
+{# Ville d’arrivée #}
             <div class="champ_groupe">
               <label for="arrivee">Ville d’arrivée</label>
-              <input type="text" id="arrivee" name="arrivee" autocomplete="address-level2" placeholder="Ex : Lyon">
+              <input
+                type="text"
+                id="arrivee"
+                name="arrivee"
+                autocomplete="address-level2"
+                placeholder="Ex : Lyon"
+              >
             </div>
 
+{# Date de départ #}
             <div class="champ_groupe">
               <label for="date_depart">Date de départ</label>
               <input type="date" id="date_depart" name="date_depart">
             </div>
 
+{# Heure de départ #}
             <div class="champ_groupe">
               <label for="heure_depart">Heure de départ</label>
               <input type="time" id="heure_depart" name="heure_depart">
@@ -72,6 +121,7 @@
 
           </div>
 
+{# Bouton principal CTA #}
           <button type="submit" class="bouton_principal">Rechercher</button>
         </form>
 
@@ -79,42 +129,37 @@
     </div>
   </section>
 
+{# ATOUTS #}
   <section class="section_atouts" aria-labelledby="titre_atouts">
     <div class="conteneur">
+
       <h2 id="titre_atouts">Atouts EcoRide</h2>
 
       <div class="atouts_grille">
 
+{# Atout : crédits #}
         <article class="atout_bloc">
+          {# Icône décorative : l’info est déjà dans le titre #}
           <div class="atout_icone" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="8" cy="8" r="6"/>
-              <path d="M18.09 10.37A6 6 0 1 1 10.34 18"/>
-              <path d="M7 6h1v4"/>
-              <path d="m16.71 13.88.7.71-2.82 2.82"/>
-            </svg>
+            <img class="atout_image" src="{{ asset('icones/credits.svg') }}" alt="">
           </div>
           <h3>Système de crédits</h3>
           <p>Un mécanisme de crédits garantissant l’équité des échanges entre utilisateurs.</p>
         </article>
 
+{# Atout : durable #}
         <article class="atout_bloc">
           <div class="atout_icone" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
-              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
-            </svg>
+            <img class="atout_image" src="{{ asset('icones/durable.svg') }}" alt="">
           </div>
           <h3>Mobilité durable</h3>
           <p>Valorisation des véhicules à faible impact environnemental.</p>
         </article>
 
+{# Atout : fiabilité #}
         <article class="atout_bloc">
           <div class="atout_icone" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-              <path d="m9 12 2 2 4-4"/>
-            </svg>
+            <img class="atout_image" src="{{ asset('icones/fiabilite.svg') }}" alt="">
           </div>
           <h3>Fiabilité</h3>
           <p>Avis et modération assurent des trajets sûrs et de confiance.</p>
@@ -124,6 +169,7 @@
     </div>
   </section>
 
+{# BANNIÈRE BAS IMAGE #}
   <section class="banniere_pied" aria-hidden="true">
     <div class="banniere_image"></div>
     <div class="banniere_filtre"></div>
@@ -131,22 +177,14 @@
 
 </main>
 
-<footer id="contact" class="pied_de_page" aria-label="Pied de page">
-  <div class="conteneur">
-    <div class="pied_contenu">
-      <div class="pied_contact">
-        Contact : <a href="mailto:contact@ecoride.fr">contact@ecoride.fr</a>
-      </div>
-
-      <div class="pied_licence">
-        © 2026 EcoRide
-      </div>
-
-      <div class="pied_mentions">
-        <a href="#">Mentions légales</a>
-      </div>
-    </div>
-  </div>
-</footer>
-
 {% endblock %}
+
+{# PIED DE PAGE #}
+{# IMPORTANT : le footer est géré par base.html.twig #}
+{# Ici on garde explicitement le footer commun via le fragment #}
+{% block pied_de_page %}
+  {% include 'fragments/pied_de_page.html.twig' %}
+{% endblock %}
+
+
+
