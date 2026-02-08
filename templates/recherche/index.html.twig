@@ -2,15 +2,15 @@
 
 {# Plan (structure de la page recherche/index.html.twig) :
 
-  1) En-tête : fourni par base.html.twig (fragment entete_public.html.twig)
+  1. En-tête : fourni par base.html.twig (fragment entete_public.html.twig)
 
-  2) Zone centrale :
+  2. Zone centrale :
      - carte de formulaire centrée
      - titre centré dans la carte
      - bouton centré
      - formulaire (départ, arrivée, date + heure)
 
-  3) Pied de page : fourni par base.html.twig (fragment pied_de_page.html.twig)
+  3. Pied de page : fourni par base.html.twig (fragment pied_de_page.html.twig)
 #}
 
 {% extends 'base.html.twig' %}
@@ -28,7 +28,7 @@
       <section class="carte_recherche" aria-label="Recherche de covoiturage">
         <h1 class="titre_carte">Rechercher un covoiturage</h1>
 
-        <form class="formulaire_recherche_maquette" method="get" action="{{ path('recherche') }}">
+        <form class="formulaire_recherche_maquette" method="get" action="{{ path('resultats') }}">
 
           <div class="groupe_champ">
             <label for="depart">Départ (ville)</label>

@@ -24,9 +24,21 @@
          {% if app.request.attributes.get('_route') == 'accueil' %}aria-current="page"{% endif %}
          href="{{ path('accueil') }}">Accueil</a>
 
-      <a class="nav_lien {% if app.request.attributes.get('_route') == 'recherche' %}actif{% endif %}"
-         {% if app.request.attributes.get('_route') == 'recherche' %}aria-current="page"{% endif %}
-         href="{{ path('recherche') }}">Accès aux covoiturages</a>
+      <a class="nav_lien
+          {% if app.request.attributes.get('_route') in ['recherche', 'resultats'] %}
+            actif
+          {% endif %}"
+   {% if app.request.attributes.get('_route') in ['recherche', 'resultats'] %}
+     aria-current="page"
+   {% endif %}
+   href="{{ path('recherche') }}">
+  Accès aux covoiturages
+</a>
+
+<a class="nav_lien {% if app.request.attributes.get('_route') == 'contact' %}actif{% endif %}"
+   {% if app.request.attributes.get('_route') == 'contact' %}aria-current="page"{% endif %}
+   href="{{ path('contact') }}">Contact</a>
+
 
       <a class="nav_lien" href="#" aria-disabled="true">Connexion</a>
 
@@ -35,3 +47,6 @@
 
   </div>
 </header>
+
+
+

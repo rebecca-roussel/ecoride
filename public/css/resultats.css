@@ -1,0 +1,296 @@
+/* public/css/resultats.css */ 
+/*
+  A FAIRE (mise en forme resultats.css) :
+
+  1) PAGE / CONTENEUR
+     - garder le fond global sombre (global.css)
+     - ajouter une zone centrale avec du padding autour
+     - limiter la largeur de la zone centrale (max-width) et la centrer
+
+  2) PANNEAU PRINCIPAL (bulle beige)
+     - afficher un panneau beige clair (surface_beige)
+     - bordure arrondie + bordure fine (bordure)
+     - ombre portée douce
+     - texte sombre à l’intérieur (fond_principal)
+
+  3) EN-TÊTE DE LA PAGE RESULTATS
+     - titre : "Résultats de recherche" (h1)
+     - ligne de rappel : départ / arrivée / date / heure (texte secondaire)
+     - bouton "Filtrer les résultats" : style bouton principal (charte)
+
+  4) LISTE DES RESULTATS
+     - empiller les cartes verticalement
+     - espacement régulier entre les cartes (24px)
+
+  5) CARTE COVOITURAGE (une carte = un résultat)
+     - fond gris-vert (texte_secondaire ou couleur dédiée)
+     - coins arrondis + ombre douce
+     - disposition horizontale : photo à gauche, contenu au centre, bouton à droite
+     - aligner verticalement les éléments pour un rendu propre
+
+  6) CONTENU DE LA CARTE
+     - ligne identité : prénom + étoile + note
+     - préférences : texte secondaire
+     - trajet : plus visible (hiérarchie)
+     - date/heure : lisible
+     - bas de carte : énergie + places restantes + prix en crédits
+
+  7) ACTIONS
+     - bouton "Voir détails" aligné à droite
+     - taille confortable + arrondis + hover (charte)
+*/
+
+
+/* PAGE / ZONE CENTRALE */
+
+/* on aère autour du panneau */
+.page_resultats{
+  padding: 40px 24px 40px;
+}
+
+
+/* PANNEAU PRINCIPAL */
+
+/* Le grand panneau beige au centre */
+.panneau_resultats{
+  max-width: 1060px;
+  padding: 31px 32px;
+  margin: 0 auto;
+
+  background: var(--surface_beige);
+  color: var(--fond_principal);
+
+  border: 1px solid var(--bordure);
+  border-radius: 12px;
+  box-shadow: 0 0 18px rgba(0,0,0,0.30);
+}
+
+/* espace sous le titre */
+.panneau_resultats h1{
+  margin: 0 0 12px;
+}
+
+/* Ligne “Départ / Arrivée / Date / Heure”. */
+.rappel_recherche{
+  margin: 0 0 22px;
+}
+
+/* Zone du bouton “Filtrer les résultats”. */
+.actions_resultats{
+  margin: 0 0 26px;
+}
+
+
+/* LISTE DES RESULTATS */
+
+/* Les cartes sont empilées */
+.liste_covoiturages{
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+
+/* CARTE COVOITURAGE */
+
+/* Une carte = un résultat*/
+.carte_covoiturage{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 24px;
+  align-items: start;
+
+  background: var(--texte_secondaire);
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid rgba(15,23,42,0.10);
+  box-shadow: 0 8px 14px rgba(0,0,0,0.16);
+}
+
+
+
+/* INFOS CHAUFFEUR */
+
+/*photo + (pseudo ★ note) sur une même ligne
+  et préférences juste en dessous*/
+.bloc_chauffeur{
+  display: flex;
+
+  /* clé : aligner le haut du texte avec le haut de la photo */
+  align-items: flex-start;
+
+  gap: 16px;
+
+  /* évite les débordements si un texte devient long */
+  min-width: 0;
+}
+
+/* Photo ronde + taille fixe. */
+.photo_profil{
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  object-fit: cover;
+  flex: 0 0 64px;
+}
+
+
+/* Bloc texte chauffeur à droite de la photo */
+.chauffeur_texte{
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Ligne identité : pseudo + étoile + note sur UNE seule ligne */
+.ligne_identite{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  /* stabilise l’alignement (évite “ça flotte”) */
+  line-height: 1.2;
+}
+
+.pseudo_chauffeur{
+  font-weight: 600;
+}
+
+.note_chauffeur{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--action_principale);
+}
+
+.etoile{
+  font-size: 16px;
+  line-height: 1;
+}
+
+.preferences_chauffeur{
+  line-height: 1.2;
+}
+
+
+/* CONTENU TRAJET */
+
+/*Le bloc d’infos prend toute la place disponible au centre*/
+.contenu_carte{
+  min-width: 0;
+}
+
+.trajet{
+  margin: 8px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+
+.date_heure{
+  margin: 6px 0 0;
+}
+
+/* Ligne du bas : énergie + places + prix */
+.details_bas{
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Séparateur visuel discret */
+.separateur{
+  opacity: 0.55;
+}
+
+/* Prix : un peu plus visible */
+.prix{
+  font-weight: 600;
+}
+
+
+/* BOUTON “VOIR DETAILS” */
+
+
+.zone_bouton_details{
+  align-self: end;
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 6px;
+  min-width: auto;
+}
+
+.bouton_details{
+  text-decoration: none;
+  margin-top: 10px;
+  max-width: 100%;
+}
+
+.chauffeur_texte,
+.contenu_carte{
+  min-width: 0;
+}
+
+.trajet,
+.rappel_recherche{
+  overflow-wrap: anywhere;
+}
+
+/* RESPONSIVE */
+
+/*
+  Sur écran plus petit :
+  - panneau avec padding plus léger
+  - cartes en colonne (chauffeur, contenu, bouton)
+*/
+@media (max-width: 900px){
+  .panneau_resultats{
+    padding: 28px 18px 28px;
+  }
+
+  .carte_covoiturage{
+    grid-template-columns: 1fr;
+    row-gap: 16px;
+  }
+
+  .zone_bouton_details{
+    min-width: auto;
+    justify-content: flex-start;
+  }
+}
+
+/* Dans une carte gris-vert, la couleur "texte_secondaire" de la charte devient illisible.
+   Donc, à l'intérieur des cartes, je force un texte secondaire plus sombre. */
+.carte_covoiturage .texte_secondaire{
+  color: rgba(15, 23, 42, 0.65);
+}
+
+@media (max-height: 850px){
+  .page_resultats{
+    padding: 24px 18px 24px;
+  }
+
+  .panneau_resultats{
+    padding: 24px 24px;
+  }
+}
+
+
+/* Sur très petits écrans (hauteur faible), on garde la lisibilité mais on évite le scroll */
+@media (max-height: 720px){
+  .panneau_resultats{
+    padding: 24px 24px;
+  }
+
+  .liste_covoiturages{
+    gap: 16px; 
+  }
+
+  .carte_covoiturage{
+    padding: 12px; 
+  }
+}
+

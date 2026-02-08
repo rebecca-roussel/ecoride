@@ -1,0 +1,257 @@
+/* public/css/details.css */
+/*
+  A FAIRE (mise en forme details.css) :
+
+  1) PAGE / CONTENEUR
+     - garder le fond global sombre (global.css)
+     - ajouter une zone centrale avec du padding autour
+     - limiter la largeur du panneau et le centrer
+
+  2) PANNEAU PRINCIPAL (beige)
+     - panneau beige clair, bordure fine, ombre douce
+     - padding plus compact que la page résultats (éviter l'effet "trop gros")
+
+  3) EN-TÊTE PANNEAU
+     - titre + sous-titre à gauche
+     - résumé chauffeur à droite (photo + note)
+
+  4) BLOCS DE CONTENU
+     - départ / arrivée en 2 colonnes
+     - indicateurs en 3 colonnes
+     - voiture en 4 colonnes
+     - préférences en dessous
+
+  Rappel convention :
+  - Chauffeur = la personne qui conduit
+  - Covoiturage = l’annonce publiée
+  - Trajet = le chemin départ → arrivée (texte)
+*/
+
+/* PAGE */
+.page_details{
+  padding: 40px 24px 40px;
+}
+
+/* PANNEAU */
+.panneau_details{
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 28px 32px 28px;
+
+  background: var(--surface_beige);
+  color: var(--fond_principal);
+
+  border: 1px solid var(--bordure);
+  border-radius: 12px;
+  box-shadow: 0 0 18px rgba(0,0,0,0.30);
+}
+
+/* EN-TÊTE PANNEAU */
+.entete_details{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.entete_details_texte{
+  min-width: 0;
+}
+
+.panneau_details h1{
+  margin: 0 0 6px;
+  font-size: 40px;     /* <- c’est ici que ça “dégonfle” */
+  line-height: 1.1;
+  letter-spacing: -0.2px;
+}
+
+.sous_titre{
+  margin: 0;
+}
+
+/* Chauffeur (droite) */
+.chauffeur_resume{
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.chauffeur_photo{
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.chauffeur_note{
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.chauffeur_note .etoile{
+  color: #f4b400;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Séparateurs */
+.separateur_details{
+  border: 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.12);
+  margin: 18px 0;
+}
+
+/* Départ / Arrivée */
+.bloc_lieux{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 26px;
+}
+
+.lieu_titre{
+  margin: 0 0 4px;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.lieu_ville{
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.lieu_date{
+  margin: 0;
+}
+
+/* Indicateurs */
+.bloc_indicateurs{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.indicateur_titre{
+  margin: 0 0 6px;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.indicateur_valeur{
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Voiture */
+.voiture_titre{
+  margin: 0 0 12px;
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.voiture_grille{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.champ_titre{
+  margin: 0 0 6px;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.champ_valeur{
+  margin: 0;
+}
+
+/* Préférences */
+.preferences_titre{
+  margin: 16px 0 10px;  /* <- air au-dessus pour éviter la "collure" */
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+
+
+.preferences_liste{
+  margin: 0;
+  padding-left: 18px;
+}
+
+.preferences_liste li{
+  margin: 0 0 8px;
+}
+
+/* Action */
+.actions_details{
+  margin-top: 18px;
+}
+
+/* Le bouton centré + long */
+.actions_details .bouton_principal{
+  width: min(520px, 100%);
+  min-height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto;        
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+
+
+/* Responsive */
+@media (max-width: 900px){
+  .panneau_details{
+    padding: 22px 18px 22px;
+  }
+
+  .entete_details{
+    align-items: flex-start;
+  }
+
+  .panneau_details h1{
+    font-size: 32px;
+  }
+
+  .bloc_lieux{
+    grid-template-columns: 1fr;
+  }
+
+  .bloc_indicateurs{
+    grid-template-columns: 1fr;
+  }
+
+  .voiture_grille{
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Hauteur faible : on compacte (sans casser) */
+@media (max-height: 820px){
+  .page_details{
+    padding: 24px 18px 24px;
+  }
+
+  .panneau_details{
+    padding: 22px 24px 22px;
+  }
+
+  .panneau_details h1{
+    font-size: 34px;
+  }
+
+  .separateur_details{
+    margin: 14px 0;
+  }
+}

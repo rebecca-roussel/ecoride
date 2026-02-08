@@ -1,0 +1,150 @@
+{# templates/details/index.html.twig #}
+{# Plan (structure de la page details/index.html.twig) :
+
+  1. En-tête : fourni par base.html.twig
+     - fragment : fragments/entete_public.html.twig
+
+  2. Zone centrale (contenu principal) :
+     - un grand panneau beige centré (panneau_details)
+     - en-tête du panneau :
+       - titre : "Détail du covoiturage :"
+       - sous-texte : "Annonce publiée par …"
+       - bloc chauffeur à droite : photo + note
+
+  3. Contenu du panneau :
+     - grille départ / arrivée + dates/heures
+     - ligne d’indicateurs : places / crédits / durée
+     - section voiture : marque / couleur / carburant / ancienneté
+     - préférences du chauffeur
+     - action : bouton "Participer"
+
+  4. Pied de page : fourni par base.html.twig
+     - fragment : fragments/pied_de_page.html.twig
+
+  Rappel convention :
+  - Chauffeur = la personne qui conduit
+  - Covoiturage = l’annonce publiée
+  - Trajet = le chemin départ → arrivée (texte)
+#}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Détail du covoiturage - EcoRide{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/details.css') }}">
+{% endblock %}
+
+{% block body %}
+
+  <main class="page_details">
+
+    <section class="panneau_details" aria-labelledby="titre_details">
+
+      {# En-tête du panneau : titre + chauffeur #}
+      <div class="entete_details">
+        <div class="entete_details_texte">
+          <h1 id="titre_details">Détail du covoiturage :</h1>
+          <p class="sous_titre texte_secondaire">Annonce publiée par Benjamin</p>
+        </div>
+
+        <div class="chauffeur_resume" aria-label="Chauffeur et note">
+          <img class="chauffeur_photo" src="{{ asset('images/img_benj.jpg') }}" alt="Photo de Benjamin">
+          <p class="chauffeur_note" aria-label="Note 4,6 sur 5">
+            <span class="etoile" aria-hidden="true">★</span>
+            <span class="valeur_note">4.6</span>
+          </p>
+        </div>
+      </div>
+
+      {# Départ / Arrivée #}
+      <div class="bloc_lieux">
+
+        <div class="lieu">
+          <h2 class="lieu_titre">Départ</h2>
+          <p class="lieu_ville">Annemasse, 74100</p>
+          <p class="lieu_date texte_secondaire">Le 31 janvier 2026 à 09:00</p>
+        </div>
+
+        <div class="lieu">
+          <h2 class="lieu_titre">Arrivée</h2>
+          <p class="lieu_ville">Genève, 1201</p>
+          <p class="lieu_date texte_secondaire">Le 31 janvier 2026 à 09:30</p>
+        </div>
+
+      </div>
+
+      <hr class="separateur_details" aria-hidden="true">
+
+      {# Indicateurs covoiturage #}
+      <div class="bloc_indicateurs">
+
+        <div class="indicateur">
+          <h3 class="indicateur_titre">Places disponibles</h3>
+          <p class="indicateur_valeur">4 places</p>
+        </div>
+
+        <div class="indicateur">
+          <h3 class="indicateur_titre">Crédits par place</h3>
+          <p class="indicateur_valeur">12</p>
+        </div>
+
+        <div class="indicateur">
+          <h3 class="indicateur_titre">Durée</h3>
+          <p class="indicateur_valeur">00h 30min</p>
+        </div>
+
+      </div>
+
+      <hr class="separateur_details" aria-hidden="true">
+
+      {# Voiture du chauffeur #}
+      <div class="bloc_voiture">
+        <h2 class="voiture_titre">Voiture de Benjamin</h2>
+
+        <div class="voiture_grille">
+          <div class="champ">
+            <h3 class="champ_titre">Marque</h3>
+            <p class="champ_valeur">Ford Ranger</p>
+          </div>
+
+          <div class="champ">
+            <h3 class="champ_titre">Couleur</h3>
+            <p class="champ_valeur">Orange</p>
+          </div>
+
+          <div class="champ">
+            <h3 class="champ_titre">Carburant</h3>
+            <p class="champ_valeur">Diesel</p>
+          </div>
+
+          <div class="champ">
+            <h3 class="champ_titre">Ancienneté</h3>
+            <p class="champ_valeur">5 ans</p>
+          </div>
+        </div>
+      </div>
+
+      {# Préférences du chauffeur #}
+      <div class="bloc_preferences">
+        <h3 class="preferences_titre">Préférences de Benjamin</h3>
+        <ul class="preferences_liste">
+          <li>Fumeurs non-acceptés</li>
+          <li>Animaux acceptés</li>
+        </ul>
+      </div>
+
+      <hr class="separateur_details" aria-hidden="true">
+
+      {# Action #}
+      <div class="actions_details">
+        <button type="button" class="bouton_principal">Participer</button>
+      </div>
+
+    </section>
+
+  </main>
+
+{% endblock %}
+

@@ -1,0 +1,188 @@
+{# templates/resultats/index.html.twig #}
+{# Plan (structure de la page resultats/index.html.twig) :
+
+  1. En-tête : fourni par base.html.twig
+     - fragment : fragments/entete_public.html.twig
+
+  2. Zone centrale (contenu principal) :
+     - un grand panneau beige centré (panneau_resultats)
+     - titre de la page : "Résultats de recherche"
+     - ligne de rappel : Départ / Arrivée / Date / Heure
+     - zone d’actions : bouton "Filtrer les résultats"
+
+  3. Liste des résultats :
+     - une liste de cartes de covoiturage empilées
+     - chaque carte contient :
+       b. informations conducteur :
+          - photo + pseudo + étoile + note
+          - préférences du chauffeur (ex : non-fumeur / sans animaux)
+       c. informations covoiturage :
+          - trajet (Départ → Arrivée)
+          - date et heure
+       d. détails bas :
+          - énergie / carburant (si électrique : afficher "écologique" dans le texte)
+          - places restantes
+          - prix en crédits
+       e. action :
+          - bouton/lien "Voir détails" vers la page "Détails du covoiturage"
+
+  4. Pied de page : fourni par base.html.twig
+     - fragment : fragments/pied_de_page.html.twig
+#}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Résultats de recherche - EcoRide{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/accueil.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/resultats.css') }}">
+{% endblock %}
+
+{# EN-TÊTE / NAVIGATION #}
+{# IMPORTANT : l’en-tête est géré par base.html.twig #}
+{% block entete %}
+  {% include 'fragments/entete_public.html.twig' %}
+{% endblock %}
+
+{% block body %}
+
+{# Zone centrale : tout le contenu de la page résultats est dans ce <main> #}
+  <main class="page_resultats">
+
+{# Panneau principal beige (carte centrale) #}
+    <section class="panneau_resultats" aria-labelledby="titre_resultats">
+
+{# Titre de la page #}
+      <h1 id="titre_resultats">Résultats de recherche</h1>
+
+{# Ligne de rappel de la recherche (statique pour le moment) #}
+      <p class="rappel_recherche">
+        Départ : Annemasse - Arrivée : Genève — Le 31/01/2026 autour de 08:30
+      </p>
+
+{# Zone d’actions : bouton filtre (pas encore fonctionnel) #}
+      <div class="actions_resultats">
+        <button type="button" class="bouton_principal">Filtrer les résultats</button>
+      </div>
+
+{# Liste des résultats : cartes empilées #}
+      <div class="liste_covoiturages">
+
+{# Carte 1 : Benjamin #}
+<article class="carte_covoiturage">
+
+{# Ligne identité : photo + pseudo + étoile + note #}
+  <div class="bloc_chauffeur">
+
+{# Photo de profil (ronde) #}
+    <img
+      class="photo_profil"
+      src="{{ asset('images/img_benj.jpg') }}"
+      alt="Photo de Benjamin"
+    >
+
+    <div class="chauffeur_texte">
+      <div class="ligne_identite">
+        <span class="pseudo_chauffeur">Benjamin</span>
+
+        <span class="note_chauffeur" aria-label="Note 4,6 sur 5">
+          <span class="etoile" aria-hidden="true">★</span>
+          <span class="valeur_note">4.6</span>
+        </span>
+      </div>
+
+{# Préférences du chauffeur #}
+      <p class="preferences_chauffeur texte_secondaire">non-fumeur</p>
+
+{# Informations du covoiturage (chauffeur + trajet + détails) #}
+      <div class="contenu_carte">
+
+{# Trajet + date/heure #}
+        <p class="trajet">Annemasse → Genève</p>
+        <p class="date_heure">31/01/2026 à 09:00</p>
+
+{# Détails bas : énergie, places, prix #}
+        <p class="details_bas">
+          <span class="energie">Énergie : Diesel</span>
+          <span class="separateur" aria-hidden="true">•</span>
+          <span class="places texte_secondaire">4 places restantes</span>
+          <span class="separateur" aria-hidden="true">•</span>
+          <span class="prix">8 crédits</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+{# Action : lien vers la page détails #}
+  <div class="zone_bouton_details">
+   <a class="bouton_principal bouton_details" href="{{ path('details') }}">Voir détails</a>
+  </div>
+</article>
+
+
+{# Carte 2 : Muriel #}
+<article class="carte_covoiturage">
+
+{# Ligne identité : photo + pseudo + étoile + note #}
+  <div class="bloc_chauffeur">
+
+{# Photo de profil (ronde) #}
+    <img
+      class="photo_profil"
+      src="{{ asset('images/img_muriel.jpg') }}"
+      alt="Photo de Muriel"
+    >
+
+    <div class="chauffeur_texte">
+      <div class="ligne_identite">
+        <span class="pseudo_chauffeur">Muriel</span>
+
+        <span class="note_chauffeur" aria-label="Note 4,8 sur 5">
+          <span class="etoile" aria-hidden="true">★</span>
+          <span class="valeur_note">4.8</span>
+        </span>
+      </div>
+
+{# Préférences du chauffeur #}
+      <p class="preferences_chauffeur texte_secondaire">sans animaux</p>
+
+{# Informations du covoiturage (chauffeur + trajet + détails) #}
+      <div class="contenu_carte">
+
+{# Trajet + date/heure #}
+        <p class="trajet">Annemasse → Genève</p>
+        <p class="date_heure">31/01/2026 à 08:30</p>
+
+{# Détails bas : énergie, places, prix (+ mention écologique dans le texte) #}
+        <p class="details_bas">
+          <span class="energie">Énergie : Électrique (écologique)</span>
+          <span class="separateur" aria-hidden="true">•</span>
+          <span class="places texte_secondaire">1 place restante</span>
+          <span class="separateur" aria-hidden="true">•</span>
+          <span class="prix">10 crédits</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+{# Action : lien vers la page détails #}
+  <div class="zone_bouton_details">
+    <a class="bouton_principal bouton_details" href="{{ path('details') }}">Voir détails</a>
+  </div>
+</article>
+
+      </div>
+
+    </section>
+  </main>
+
+{% endblock %}
+
+{# PIED DE PAGE #}
+{# IMPORTANT : le footer est géré par base.html.twig #}
+{% block pied_de_page %}
+  {% include 'fragments/pied_de_page.html.twig' %}
+{% endblock %}
+
