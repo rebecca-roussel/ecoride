@@ -1,3 +1,5 @@
+--ROLLBACK;
+
 BEGIN;
 /*
 -- Script d'insertion de données de démonstration BDD EcoRide
@@ -18,11 +20,12 @@ RESTART IDENTITY CASCADE;
 */
 INSERT INTO utilisateur (pseudo, email, mot_de_passe_hash, credits, role_chauffeur, role_passager, photo_path, statut)
 VALUES
-('jose',     'jose@ecoride.fr',     '$2y$10$2yW4Acq9GFz6Y1t9EwL56nGisiWgNZq6ITZM5jtgUe52RvEJgwBuN', 20, false, true,  NULL, 'ACTIF'),
-('sophie',   'sophie@ecoride.fr',   '$2y$10$O6n9JEC3HqdZ6J6afU1zT0YQOaNF03vpUuT3em6KopZ9jZICffu4G', 20, false, true,  NULL, 'ACTIF'),
-('muriel',   'muriel@ecoride.fr',   '$2y$10$7FgtJsThJv07In9ZMJLsCfMZyuKpslm0lcNQqEefRWi4j7c1f5S71', 20, true,  true,  'photos/muriel.jpg', 'ACTIF'),
-('benjamin', 'benjamin@ecoride.fr', '$2y$10$IRz1THrHZp2n5RL08ALrCFQPS6YwfuNhFLOv2mpbUrhToxYkvB0dg', 20, true,  false, NULL, 'ACTIF'),
-('raoul',    'raoul@ecoride.fr',    '$2y$10$Yj2Soc0KO67IMRebhOmM1Khzfx1hcMbm9lThEnUZd7RbIBNg1qeoe', 20, false, true,  NULL, 'ACTIF');
+('jose', 'jose@ecoride.fr', '$2y$10$2yW4Acq9GFz6Y1t9EwL56nGisiWgNZq6ITZM5jtgUe52RvEJgwBuN', 20, false, true, NULL, 'ACTIF'),
+('sophie', 'sophie@ecoride.fr', '$2y$10$O6n9JEC3HqdZ6J6afU1zT0YQOaNF03vpUuT3em6KopZ9jZICffu4G', 20, false, true, NULL, 'ACTIF'),
+('muriel', 'muriel@ecoride.fr', '$2y$10$7FgtJsThJv07In9ZMJLsCfMZyuKpslm0lcNQqEefRWi4j7c1f5S71', 20, true, true, 'photos/muriel.jpg', 'ACTIF'),
+('benjamin', 'benjamin@ecoride.fr', '$2y$10$IRz1THrHZp2n5RL08ALrCFQPS6YwfuNhFLOv2mpbUrhToxYkvB0dg', 20, true, false, NULL, 'ACTIF'),
+('raoul', 'raoul@ecoride.fr', '$2y$10$Yj2Soc0KO67IMRebhOmM1Khzfx1hcMbm9lThEnUZd7RbIBNg1qeoe', 20, false, true, NULL, 'ACTIF');
+
 
 /*
 --2. ROLES UTILISATEUR > ADMINISTRATEUR > EMPLOYE
@@ -32,9 +35,11 @@ SELECT id_utilisateur FROM utilisateur WHERE pseudo = 'jose';
 
 INSERT INTO employe (id_utilisateur)
 SELECT id_utilisateur FROM utilisateur WHERE pseudo = 'sophie';
+
 /*
 --3. VOITURES > Muriel électrique > Benjamin diesel
 */
+
 INSERT INTO voiture (
   est_active, date_desactivation,
   immatriculation, date_1ere_mise_en_circulation,
@@ -42,8 +47,11 @@ INSERT INTO voiture (
   id_utilisateur
 )
 VALUES
-(true, NULL, 'AA123BB', '2021-03-10', 'TESLA',   'NOIR',  'ELECTRIQUE', 3, (SELECT id_utilisateur FROM utilisateur WHERE pseudo='muriel')),
-(true, NULL, 'CC456DD', '2016-06-22', 'RENAULT', 'BLEU',  'DIESEL',     2, (SELECT id_utilisateur FROM utilisateur WHERE pseudo='benjamin'));
+(true, NULL, 'AA123BB', '2021-03-10', 'TESLA', 'NOIR', 'ELECTRIQUE', 3, 
+  (SELECT id_utilisateur FROM utilisateur WHERE pseudo='muriel')),
+(true, NULL, 'CC456DD', '2016-06-22', 'RENAULT', 'BLEU', 'DIESEL', 2, 
+  (SELECT id_utilisateur FROM utilisateur WHERE pseudo='benjamin'));
+
 /*
 --4. COVOITURAGES > cohérence des dates > statut Planifié
 */
@@ -53,27 +61,17 @@ INSERT INTO covoiturage (
   latitude_depart, longitude_depart, latitude_arrivee, longitude_arrivee,
   nb_places_dispo, prix_credits, commission_credits,
   statut_covoiturage, incident_commentaire, incident_resolu,
-  id_utilisateur, id_voiture
+  id_utilisateur, id_voiture, id_chauffeur, id_passager
 )
 VALUES
-(
-  '2026-02-05 08:00:00', '2026-02-05 09:10:00',
-  'Gare Annemasse', 'Gare Genève', 'Annemasse', 'Genève',
-  NULL, NULL, NULL, NULL,
-  2, 12, 2,
-  'PLANIFIE', NULL, false,
+('2026-02-05 08:00:00', '2026-02-05 09:10:00', 'Gare Annemasse', 'Gare Genève', 'Annemasse', 'Genève', 
+  NULL, NULL, NULL, NULL, 2, 12, 2, 'PLANIFIE', NULL, false,
   (SELECT id_utilisateur FROM utilisateur WHERE pseudo='muriel'),
-  (SELECT id_voiture FROM voiture WHERE immatriculation='AA123BB')
-),
-(
-  '2026-02-06 18:30:00', '2026-02-06 19:20:00',
-  'Centre Annemasse', 'Cornavin', 'Annemasse', 'Genève',
-  NULL, NULL, NULL, NULL,
-  1, 8, 2,
-  'PLANIFIE', NULL, false,
-  (SELECT id_utilisateur FROM utilisateur WHERE pseudo='benjamin'),
-  (SELECT id_voiture FROM voiture WHERE immatriculation='CC456DD')
+  (SELECT id_voiture FROM voiture WHERE immatriculation='AA123BB'),
+  (SELECT id_utilisateur FROM utilisateur WHERE pseudo='muriel'),  -- id_chauffeur
+  (SELECT id_utilisateur FROM utilisateur WHERE pseudo='raoul')     -- id_passager
 );
+
 /*
 --5. PARTICIPATIONS > Raoul réserve le covoiturage de Muriel
 */
