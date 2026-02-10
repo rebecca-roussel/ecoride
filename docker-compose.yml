@@ -19,7 +19,7 @@ services:
     volumes:
       - ./:/var/www/html
     env_file:
-      - .env.dev
+      - .env.docker
     environment:
       COMPOSER_HOME: /tmp/composer
     user: "${UID}:${GID}"
@@ -31,7 +31,7 @@ services:
     image: postgres:16
     container_name: ecoride_postgresql
     env_file:
-      - .env.dev
+      - .env.docker
     ports:
       - "5432:5432"
     volumes:
