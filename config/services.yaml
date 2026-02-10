@@ -25,3 +25,16 @@ services:
             $dbName: '%env(MONGO_DB)%'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    
+    # Déclaration du service PDO pour la connexion PostgreSQL
+    PDO:
+        class: PDO
+        arguments:
+            - '%env(DATABASE_URL)%'  # Utilise la variable d'environnement DATABASE_URL pour la chaîne de connexion
+            - null                    # Nom d'utilisateur (la chaîne de connexion prend le relais)
+            - null                    # Mot de passe (la chaîne de connexion prend le relais)
+
+    # Déclaration du service PersistanceCovoituragePostgresql
+    App\Service\PersistanceCovoituragePostgresql:
+        arguments:
+            $pdo: '@PDO'  # Injection du service PDO ici
