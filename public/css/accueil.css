@@ -154,6 +154,41 @@
     pointer-events: none;
 }
 
+/* Déconnexion en POST : le <form> ne doit pas casser l'alignement de la navigation */
+.navigation_formulaire {
+    display: inline;
+    margin: 0;
+}
+
+/* Le <button> doit ressembler à un lien .nav_lien */
+.navigation_formulaire .nav_lien {
+    background: none;
+    border: 0;
+    padding: 6px 10px;
+    /* même padding que .nav_lien */
+    border-radius: 10px;
+    /* même arrondi */
+    color: var(--texte_secondaire);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.navigation_formulaire .nav_lien:hover {
+    color: var(--texte_principal);
+}
+
+/* Si un bouton de navigation reçoit aria-current, même style actif */
+.navigation_formulaire .nav_lien[aria-current="page"]{
+    color: var(--texte_principal);
+    text-decoration: underline;
+    text-underline-offset: 6px;
+    text-decoration-color: var(--action_principale);
+}
+
 /* BOUTON MENU (MOBILE) */
 
 /* caché en plein écran */
@@ -432,6 +467,7 @@
 
 /* Padding conteneur en mobile */
 @media (max-width: 900px) {
+
     .entete .conteneur,
     .pied_de_page .conteneur {
         padding-left: 16px;
@@ -486,6 +522,4 @@
         width: 100%;
     }
 }
-.pied_de_page {
-    border-top: none !important;
-}
+

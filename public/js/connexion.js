@@ -1,33 +1,50 @@
 /* public/js/connexion.js */
 /*
-  PLAN (erreur email) :
+  PLAN (connexion, confort UI) :
 
-  1) Au chargement, je récupère le champ email et le message d'erreur.
-  2) A chaque saisie, je vérifie le format HTML5 (validity).
-  3) Si c'est valide -> je cache le message.
-     Sinon -> je l'affiche (seulement si l'utilisateur a commencé à taper).
+  1. Erreur email :
+     - je récupère le champ email et le message d'erreur
+     - à chaque saisie, je vérifie le format HTML5 (validity)
+     - si c'est valide -> je cache le message
+       sinon -> je l'affiche (seulement si l'utilisateur a commencé à taper)
+
+  2. Mot de passe :
+     - bouton "œil" -> bascule password/text
+     - met aria-pressed + aria-label
 */
 
 (function () {
+  /* Email : erreur en direct */
   const champEmail = document.querySelector("#email");
   const erreurEmail = document.querySelector("#erreur_email");
 
-  if (!champEmail || !erreurEmail) {
-    return;
+  if (champEmail && erreurEmail) {
+    champEmail.addEventListener("input", function () {
+      const valeur = champEmail.value.trim();
+
+      if (valeur === "") {
+        erreurEmail.hidden = true;
+        return;
+      }
+
+      erreurEmail.hidden = champEmail.validity.valid;
+    });
   }
 
-  champEmail.addEventListener("input", function () {
-    const valeur = champEmail.value.trim();
+  /* Mot de passe : afficher / masquer */
+  const champMotDePasse = document.querySelector("#mot_de_passe");
+  const boutonOeil = document.querySelector("#toggle_mot_de_passe");
 
-    if (valeur === "") {
-      erreurEmail.hidden = true;
-      return;
-    }
+  if (champMotDePasse && boutonOeil) {
+    boutonOeil.addEventListener("click", function () {
+      const estMasque = (champMotDePasse.type === "password");
+      champMotDePasse.type = estMasque ? "text" : "password";
 
-    if (champEmail.validity.valid) {
-      erreurEmail.hidden = true;
-    } else {
-      erreurEmail.hidden = false;
-    }
-  });
+      boutonOeil.setAttribute("aria-pressed", estMasque ? "true" : "false");
+      boutonOeil.setAttribute(
+        "aria-label",
+        estMasque ? "Masquer le mot de passe" : "Afficher le mot de passe"
+      );
+    });
+  }
 })();

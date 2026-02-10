@@ -22,7 +22,7 @@
     padding: 48px 20px;
 }
 
-/*Carte */
+/* Carte */
 .panneau_connexion {
     width: 100%;
     max-width: 640px;
@@ -33,7 +33,7 @@
     padding: 46px 56px 40px;
 }
 
-/*En-tête */
+/* En-tête */
 .connexion_entete {
     text-align: center;
     margin-bottom: 30px;
@@ -53,9 +53,9 @@
     color: rgba(15, 23, 42, 0.55);
 }
 
-/*Formulaire / champs */
-.connexion_formulaire {
-    margin-top: 18px;
+/* Formulaire / champs */
+.connexion_formulaire * {
+    box-sizing: border-box;
 }
 
 .bloc_champ {
@@ -70,6 +70,7 @@
 }
 
 .champ_texte {
+    box-sizing: border-box;
     width: 100%;
     height: 44px;
     padding: 0 16px;
@@ -89,7 +90,7 @@
     box-shadow: 0 0 0 4px rgba(63, 107, 79, 0.18);
 }
 
-/*Erreur */
+/* Erreur */
 .champ_erreur {
     margin: 8px 0 0;
     font-size: 13px;
@@ -103,7 +104,52 @@
     justify-content: flex-end;
 }
 
-/*Bouton principal */
+/* Mot de passe : champ + bouton œil dans le champ */
+.champ_mdp {
+    position: relative;
+}
+
+/* On réserve de la place à droite pour le bouton */
+.champ_mdp .champ_texte {
+    padding-right: 56px;
+}
+
+/* Bouton œil */
+.bouton_oeil {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 44px;
+    height: 44px;
+
+    border: 0;
+    border-radius: transparent;
+
+    background-color: rgba(15, 23, 42, 0);
+    background-image: url("/icones/oeil.svg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 20px 20px;
+
+    cursor: pointer;
+    padding: 0;
+}
+
+/* Survol + focus */
+.bouton_oeil:hover {
+    background-color: #3f6b4f30;
+    border-radius: 12px;
+}
+
+.bouton_oeil:focus-visible {
+    outline: 3px solid var(--anneau_focus);
+    outline-offset: 3px;
+}
+
+
+/* Bouton principal */
 .bouton_principal {
     width: 100%;
     margin-top: 22px;
@@ -120,14 +166,13 @@
     cursor: pointer;
 }
 
-
 /* Pied */
 .connexion_pied {
     margin-top: 22px;
     text-align: center;
 }
 
-/* Liens (style discret)*/
+/* Liens (style discret) */
 .lien_secondaire {
     color: rgba(15, 23, 42, 0.65);
     text-decoration: underline;

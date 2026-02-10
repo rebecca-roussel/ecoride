@@ -4,27 +4,33 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>{% block title %}EcoRide{% endblock %}</title>
+  <title>
+  {% block title %}
+  EcoRide
+  {% endblock %}
+  </title>
 
 <link rel="stylesheet" href="{{ asset('css/global.css') }}">
 <link rel="stylesheet" href="{{ asset('css/accueil.css') }}">
-{% block stylesheets %}{% endblock %}
+{% block stylesheets %}
+{% endblock %}
 
 </head>
 
 <body>
 
-  {# En-tête conditionné en fonction de l'état de l'utilisateur (auth ounon ) #}
-{% block entete %}
-  {% if app.user %}
-    {% include 'fragments/entete_utilisateur.html.twig' %}
-  {% else %}
-    {% include 'fragments/entete_public.html.twig' %}
-  {% endif %}
-{% endblock %}
+ {# En-tête conditionné : tant qu'on n'a pas Security, on se base sur la session "maison" #}
+ {% block entete %}
+ {% if utilisateur_connecte is defined and utilisateur_connecte %}
+ {% include 'fragments/entete_utilisateur.html.twig' %}
+ {% else %}
+ {% include 'fragments/entete_public.html.twig' %}
+ {% endif %}
+ {% endblock %}
 
 
-  {% block body %}{% endblock %}
+  {% block body %}
+  {% endblock %}
 
   {# Par défaut : pied de page commun #}
   {% block pied_de_page %}
@@ -34,7 +40,9 @@
   {# JS commun menu mobile #}
   <script src="{{ asset('js/menu_navigation.js') }}"></script>
 
-  {% block javascripts %}{% endblock %}
+  {% block javascripts %}
+  {% endblock %}
+
 </body>
 </html>
 

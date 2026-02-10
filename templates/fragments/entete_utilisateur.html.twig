@@ -4,6 +4,7 @@
 
     <p class="logo">EcoRide</p>
 
+    {# Bouton menu mobile #}
     <button
       class="bouton_menu"
       type="button"
@@ -14,42 +15,44 @@
       <span class="bouton_menu_texte">Menu</span>
     </button>
 
+    {# Navigation principale utilisateur #}
     <nav
       id="navigation_principale"
       class="navigation"
       aria-label="Navigation principale"
       data-ouvert="false"
     >
-      <!-- Espace Utilisateur -->
-      <a class="nav_lien {% if app.request.attributes.get('_route') == 'espace_utilisateur' %}actif{% endif %}"
-         {% if app.request.attributes.get('_route') == 'espace_utilisateur' %}aria-current="page"{% endif %}
+
+      {# Lien espace utilisateur #}
+      <a class="nav_lien"
          href="{{ path('espace_utilisateur') }}">
         Mon espace
       </a>
 
-      <!-- Recherche -->
-      <a class="nav_lien {% if app.request.attributes.get('_route') == 'recherche' %}actif{% endif %}"
-         {% if app.request.attributes.get('_route') == 'recherche' %}aria-current="page"{% endif %}
+      {# Lien recherche #}
+      <a class="nav_lien"
          href="{{ path('recherche') }}">
         Rechercher
       </a>
 
-      <!-- Déconnexion -->
-      <a class="nav_lien {% if app.request.attributes.get('_route') == 'deconnexion' %}actif{% endif %}"
-         {% if app.request.attributes.get('_route') == 'deconnexion' %}aria-current="page"{% endif %}
-         href="{{ path('deconnexion') }}">
-        Déconnexion
-      </a>
+      {# Déconnexion : FORMULAIRE dans la navigation #}
+      <form
+        class="navigation_formulaire"
+        action="{{ path('deconnexion') }}"
+        method="post"
+      >
+        <button class="nav_lien" type="submit">
+          Déconnexion
+        </button>
+      </form>
 
-      <!-- Contact -->
-      <a class="nav_lien {% if app.request.attributes.get('_route') == 'contact' %}actif{% endif %}"
-         {% if app.request.attributes.get('_route') == 'contact' %}aria-current="page"{% endif %}
-         href="#contact">
+      {# Lien contact #}
+      <a class="nav_lien"
+         href="{{ path('contact') }}">
         Contact
       </a>
 
     </nav>
-
   </div>
 </header>
 
