@@ -20,15 +20,37 @@
       aria-label="Navigation principale"
       data-ouvert="false"
     >
-      <a class="nav_lien" href="{{ path('espace_utilisateur') }}">Mon espace</a>
+      <!-- Espace Utilisateur -->
+      <a class="nav_lien {% if app.request.attributes.get('_route') == 'espace_utilisateur' %}actif{% endif %}"
+         {% if app.request.attributes.get('_route') == 'espace_utilisateur' %}aria-current="page"{% endif %}
+         href="{{ path('espace_utilisateur') }}">
+        Mon espace
+      </a>
 
-      <a class="nav_lien" href="{{ path('recherche') }}">Rechercher</a>
+      <!-- Recherche -->
+      <a class="nav_lien {% if app.request.attributes.get('_route') == 'recherche' %}actif{% endif %}"
+         {% if app.request.attributes.get('_route') == 'recherche' %}aria-current="page"{% endif %}
+         href="{{ path('recherche') }}">
+        Rechercher
+      </a>
 
-      <a class="nav_lien" href="{{ path('deconnexion') }}">Déconnexion</a>
+      <!-- Déconnexion -->
+      <a class="nav_lien {% if app.request.attributes.get('_route') == 'deconnexion' %}actif{% endif %}"
+         {% if app.request.attributes.get('_route') == 'deconnexion' %}aria-current="page"{% endif %}
+         href="{{ path('deconnexion') }}">
+        Déconnexion
+      </a>
 
-      <a class="nav_lien" href="#contact">Contact</a>
+      <!-- Contact -->
+      <a class="nav_lien {% if app.request.attributes.get('_route') == 'contact' %}actif{% endif %}"
+         {% if app.request.attributes.get('_route') == 'contact' %}aria-current="page"{% endif %}
+         href="#contact">
+        Contact
+      </a>
+
     </nav>
 
   </div>
 </header>
+
 

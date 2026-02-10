@@ -40,138 +40,120 @@
   <link rel="stylesheet" href="{{ asset('css/resultats.css') }}">
 {% endblock %}
 
-{# EN-TÊTE / NAVIGATION #}
-{# IMPORTANT : l’en-tête est géré par base.html.twig #}
 {% block entete %}
   {% include 'fragments/entete_public.html.twig' %}
 {% endblock %}
 
 {% block body %}
 
-{# Zone centrale : tout le contenu de la page résultats est dans ce <main> #}
   <main class="page_resultats">
-
-{# Panneau principal beige (carte centrale) #}
     <section class="panneau_resultats" aria-labelledby="titre_resultats">
 
-{# Titre de la page #}
       <h1 id="titre_resultats">Résultats de recherche</h1>
 
-{# Ligne de rappel de la recherche (statique pour le moment) #}
       <p class="rappel_recherche">
-        Départ : Annemasse - Arrivée : Genève — Le 31/01/2026 autour de 08:30
+        {% if criteres is defined and (criteres.depart or criteres.arrivee or criteres.date_depart or criteres.heure_depart) %}
+          Départ : {{ criteres.depart ?: '—' }} - Arrivée : {{ criteres.arrivee ?: '—' }}
+          {% if criteres.date_depart %} — Le {{ criteres.date_depart }}{% endif %}
+          {% if criteres.heure_depart %} autour de {{ criteres.heure_depart }}{% endif %}
+        {% else %}
+          Départ : — - Arrivée : — — Le — autour de — 
+        {% endif %}
       </p>
 
-{# Zone d’actions : bouton filtre (pas encore fonctionnel) #}
       <div class="actions_resultats">
         <button type="button" class="bouton_principal">Filtrer les résultats</button>
       </div>
 
-{# Liste des résultats : cartes empilées #}
       <div class="liste_covoiturages">
 
-{# Carte 1 : Benjamin #}
-<article class="carte_covoiturage">
+        {% if covoiturages is defined and covoiturages|length > 0 %}
+          {% for c in covoiturages %}
+            <article class="carte_covoiturage">
+              <div class="bloc_chauffeur">
 
-{# Ligne identité : photo + pseudo + étoile + note #}
-  <div class="bloc_chauffeur">
+{# Photo : en attendant le champ photo_path en base, on met une image de démo stable #}
+                <img
+                  class="photo_profil"
+                  src="{{ asset('images/img_muriel.jpg') }}"
+                  alt="Photo de {{ c.pseudo_chauffeur }}"
+                >
 
-{# Photo de profil (ronde) #}
-    <img
-      class="photo_profil"
-      src="{{ asset('images/img_benj.jpg') }}"
-      alt="Photo de Benjamin"
-    >
+                <div class="chauffeur_texte">
+                  <div class="ligne_identite">
+                    <span class="pseudo_chauffeur">{{ c.pseudo_chauffeur }}</span>
 
-    <div class="chauffeur_texte">
-      <div class="ligne_identite">
-        <span class="pseudo_chauffeur">Benjamin</span>
+{# Note : Placeholder neutre, viendra via la table avis plus tard #}
+                    <span class="note_chauffeur" aria-label="Note non disponible pour l’instant">
+                      <span class="etoile" aria-hidden="true">★</span>
+                      <span class="valeur_note">—</span>
+                    </span>
+                  </div>
+                  
+{# Préférences du chauffeur (ex : non-fumeur, sans animaux) #}
+                  <p class="preferences_chauffeur texte_secondaire">Préférences : —</p>
 
-        <span class="note_chauffeur" aria-label="Note 4,6 sur 5">
-          <span class="etoile" aria-hidden="true">★</span>
-          <span class="valeur_note">4.6</span>
-        </span>
-      </div>
+                  <div class="contenu_carte">
+                    <p class="trajet">{{ c.ville_depart }} → {{ c.ville_arrivee }}</p>
 
-{# Préférences du chauffeur #}
-      <p class="preferences_chauffeur texte_secondaire">non-fumeur</p>
+                    <p class="date_heure">
+                      {{ c.date_heure_depart|date('d/m/Y \\à H:i') }}
+                    </p>
 
-{# Informations du covoiturage (chauffeur + trajet + détails) #}
-      <div class="contenu_carte">
+                    <p class="details_bas">
+                      <span class="energie">
+                        Énergie :
+                        {% set energie = c.energie ?? '' %}
+                        {% if energie %}
+                          {{ energie }}{% if energie == 'ELECTRIQUE' %} (écologique){% endif %}
+                        {% else %}
+                          — 
+                        {% endif %}
+                      </span>
 
-{# Trajet + date/heure #}
-        <p class="trajet">Annemasse → Genève</p>
-        <p class="date_heure">31/01/2026 à 09:00</p>
+                      <span class="separateur" aria-hidden="true">•</span>
 
-{# Détails bas : énergie, places, prix #}
-        <p class="details_bas">
-          <span class="energie">Énergie : Diesel</span>
-          <span class="separateur" aria-hidden="true">•</span>
-          <span class="places texte_secondaire">4 places restantes</span>
-          <span class="separateur" aria-hidden="true">•</span>
-          <span class="prix">8 crédits</span>
-        </p>
-      </div>
-    </div>
-  </div>
+                      <span class="places texte_secondaire">
+                        {{ c.nb_places_dispo }} place{% if c.nb_places_dispo > 1 %}s{% endif %}
+                        restante{% if c.nb_places_dispo > 1 %}s{% endif %}
+                      </span>
 
-{# Action : lien vers la page détails #}
-  <div class="zone_bouton_details">
-   <a class="bouton_principal bouton_details" href="{{ path('details') }}">Voir détails</a>
-  </div>
-</article>
+                      <span class="separateur" aria-hidden="true">•</span>
 
+                      <span class="prix">{{ c.prix_credits }} crédits</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-{# Carte 2 : Muriel #}
-<article class="carte_covoiturage">
+              <div class="zone_bouton_details">
+                <a class="bouton_principal bouton_details" href="{{ path('details', {'id': c.id_covoiturage}) }}">Voir détails</a>
+              </div>
+            </article>
+          {% endfor %}
 
-{# Ligne identité : photo + pseudo + étoile + note #}
-  <div class="bloc_chauffeur">
+        {% else %}
+{# Résultats vides : aucun covoiturage trouvé #}
+          <article class="carte_covoiturage">
+            <div class="bloc_chauffeur">
+              <div class="chauffeur_texte">
+                <div class="ligne_identite">
+                  <span class="pseudo_chauffeur">Aucun covoiturage disponible</span>
+                </div>
 
-{# Photo de profil (ronde) #}
-    <img
-      class="photo_profil"
-      src="{{ asset('images/img_muriel.jpg') }}"
-      alt="Photo de Muriel"
-    >
-
-    <div class="chauffeur_texte">
-      <div class="ligne_identite">
-        <span class="pseudo_chauffeur">Muriel</span>
-
-        <span class="note_chauffeur" aria-label="Note 4,8 sur 5">
-          <span class="etoile" aria-hidden="true">★</span>
-          <span class="valeur_note">4.8</span>
-        </span>
-      </div>
-
-{# Préférences du chauffeur #}
-      <p class="preferences_chauffeur texte_secondaire">sans animaux</p>
-
-{# Informations du covoiturage (chauffeur + trajet + détails) #}
-      <div class="contenu_carte">
-
-{# Trajet + date/heure #}
-        <p class="trajet">Annemasse → Genève</p>
-        <p class="date_heure">31/01/2026 à 08:30</p>
-
-{# Détails bas : énergie, places, prix (+ mention écologique dans le texte) #}
-        <p class="details_bas">
-          <span class="energie">Énergie : Électrique (écologique)</span>
-          <span class="separateur" aria-hidden="true">•</span>
-          <span class="places texte_secondaire">1 place restante</span>
-          <span class="separateur" aria-hidden="true">•</span>
-          <span class="prix">10 crédits</span>
-        </p>
-      </div>
-    </div>
-  </div>
-
-{# Action : lien vers la page détails #}
-  <div class="zone_bouton_details">
-    <a class="bouton_principal bouton_details" href="{{ path('details') }}">Voir détails</a>
-  </div>
-</article>
+                <div class="contenu_carte">
+                  <p class="trajet">
+                    {% if criteres is defined and (criteres.depart or criteres.arrivee or criteres.date_depart) %}
+                      Essayez de modifier la date de départ ou les villes.
+                    {% else %}
+                      Renseignez une ville de départ, une ville d’arrivée et une date pour lancer la recherche.
+                    {% endif %}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </article>
+        {% endif %}
 
       </div>
 
@@ -180,9 +162,12 @@
 
 {% endblock %}
 
-{# PIED DE PAGE #}
-{# IMPORTANT : le footer est géré par base.html.twig #}
 {% block pied_de_page %}
   {% include 'fragments/pied_de_page.html.twig' %}
 {% endblock %}
 
+{% block javascripts %}
+  {{ parent() }}
+  {# Si nécessaire, un script spécifique pour les résultats #}
+  {# <script src="{{ asset('js/resultats.js') }}" defer></script> #}
+{% endblock %}

@@ -14,10 +14,15 @@
 
 <body>
 
-  {# Par défaut : header public. Une page pourra le remplacer #}
-  {% block entete %}
+  {# En-tête conditionné en fonction de l'état de l'utilisateur (auth ounon ) #}
+{% block entete %}
+  {% if app.user %}
+    {% include 'fragments/entete_utilisateur.html.twig' %}
+  {% else %}
     {% include 'fragments/entete_public.html.twig' %}
-  {% endblock %}
+  {% endif %}
+{% endblock %}
+
 
   {% block body %}{% endblock %}
 
