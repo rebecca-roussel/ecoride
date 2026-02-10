@@ -1,0 +1,145 @@
+{# templates/inscription/index.html.twig #}
+{# Plan (structure inscription/index.html.twig) :
+  1. En-tête : base.html.twig (entete_public)
+  2. Zone centrale : panneau inscription centré, phrases d'accroches, crédits offerts, champs nécessaires, pas encore inscrit ?
+  3 Pied de page : base.html.twig
+#}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Inscription - EcoRide{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/inscription.css') }}">
+{% endblock %}
+
+{% block body %}
+  <main class="page_inscription">
+    <section class="panneau_inscription" aria-labelledby="titre_inscription">
+
+      <header class="inscription_entete">
+        <h1 id="titre_inscription" class="inscription_titre">Créer un compte</h1>
+
+        <p class="inscription_sous_titre texte_secondaire">
+          Rejoignez EcoRide et covoiturez de façon responsable.
+        </p>
+
+        <div class="badge_credits" role="note" aria-label="Avantage inscription">
+          <span class="badge_icone" aria-hidden="true"></span>
+          <span class="badge_texte">20 crédits offerts à l’inscription !</span>
+        </div>
+      </header>
+
+      <form class="inscription_formulaire" action="#" method="post" novalidate>
+
+        <div class="bloc_champ">
+          <p class="champ_libelle">Photo de profil <span class="texte_secondaire">(optionnel)</span></p>
+
+      <div class="bloc_photo">
+
+  {# Aperçu photo (caché tant qu'on n'a rien choisi) #}
+  <img id="apercu_photo" class="inscription_apercu_photo" alt="" hidden>
+
+  {# Rond décoratif (sert de "fallback" si pas de photo) #}
+  <div class="photo_rond" aria-hidden="true"></div>
+
+  {# Champ fichier réel (invisible) #}
+  <input
+    id="photo_profil"
+    name="photo_profil"
+    type="file"
+    accept="image/*"
+    hidden>
+
+  
+  <button class="bouton_secondaire" type="button" id="bouton_choisir_photo">
+    Ajouter une photo
+  </button>
+
+</div>
+
+
+        <div class="bloc_champ">
+          <label class="champ_libelle" for="pseudo">Pseudo</label>
+          <input class="champ_texte" id="pseudo" name="pseudo" type="text" autocomplete="nickname">
+        </div>
+
+        <div class="bloc_champ">
+          <label class="champ_libelle" for="email">Email</label>
+          <input class="champ_texte" id="email" name="email" type="email" autocomplete="email">
+        </div>
+
+
+<!-- MOT DE PASSE -->
+        <div class="bloc_champ">
+          <label class="champ_libelle" for="mot_de_passe">Mot de passe
+          </label>
+
+        <div class="champ_mdp">
+        <input class="champ_texte" id="mot_de_passe" name="mot_de_passe" type="password"
+        autocomplete="new-password">
+
+    <button class="bouton_oeil" type="button" id="toggle_mot_de_passe" aria-label="Afficher le mot de passe"
+    aria-pressed="false">
+    </button>
+  </div>
+</div>
+
+        <div class="bloc_champ">
+          <label class="champ_libelle" for="mot_de_passe_confirmation">Confirmer le mot de passe
+          </label>
+
+        <div class="champ_mdp">
+        <input class="champ_texte" id="mot_de_passe_confirmation" name="mot_de_passe_confirmation" type="password"
+        autocomplete="new-password">
+
+    <button class="bouton_oeil" type="button" id="toggle_mot_de_passe_confirmation" aria-label="Afficher la confirmation"
+    aria-pressed="false">
+  </button>
+</div>
+
+  <p id="erreur_confirmation" class="texte_erreur" hidden>
+    Les mots de passe ne correspondent pas.
+  </p>
+</div>
+
+
+        <fieldset class="bloc_roles">
+          <legend class="roles_titre texte_secondaire">Je souhaite utiliser EcoRide en tant que :</legend>
+
+          <label class="role_ligne">
+            <input type="checkbox" name="role_chauffeur">
+            <span>Je suis chauffeur</span>
+          </label>
+
+          <label class="role_ligne">
+            <input type="checkbox" name="role_passager">
+            <span>Je suis passager</span>
+          </label>
+        </fieldset>
+
+        <div class="actions_inscription">
+          <button class="bouton_principal" type="submit">Créer mon compte</button>
+        </div>
+
+        <p class="inscription_mentions texte_secondaire">
+          En créant un compte, vous acceptez les
+          <a href="{{ path('mentions_legales') }}">mentions légales</a>
+        </p>
+
+       <p class="inscription_deja">
+       <a class="lien_secondaire" href="{{ path('connexion') }}">J’ai déjà un compte</a>
+       </p>
+
+
+      </form>
+    </section>
+  </main>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script src="{{ asset('js/inscription.js') }}" defer></script>
+{% endblock %}
+

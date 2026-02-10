@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Connexion - EcoRide{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/connexion.css') }}">
+{% endblock %}
+
+{% block body %}
+  <main class="page_connexion">
+    <section class="panneau_connexion" aria-labelledby="titre_connexion">
+
+      <header class="connexion_entete">
+        <h1 id="titre_connexion" class="connexion_titre">Connexion</h1>
+        <p class="connexion_sous_titre">Accédez à votre espace EcoRide.</p>
+      </header>
+
+      <form class="connexion_formulaire" action="#" method="post" novalidate>
+
+        <div class="bloc_champ">
+          <label class="champ_libelle" for="email">Email</label>
+          <input class="champ_texte" id="email" name="email" type="email" autocomplete="email" placeholder="exemple@invalide">
+          <p class="champ_erreur" id="erreur_email" aria-live="polite" hidden>Adresse email invalide.</p>
+        </div>
+
+        <div class="bloc_champ">
+          <label class="champ_libelle" for="mot_de_passe">Mot de passe</label>
+          <input class="champ_texte" id="mot_de_passe" name="mot_de_passe" type="password" autocomplete="current-password" placeholder="••••••••">
+          <div class="actions_secondaires">
+            <a class="lien_secondaire" href="#">Mot de passe oublié ?</a>
+          </div>
+        </div>
+
+        <button class="bouton_principal" type="submit">Se connecter</button>
+
+        <div class="connexion_pied">
+          <a class="lien_secondaire" href="{{ path('mot_de_passe_oublie') }}">Mot de passe oublié ?</a>
+        </div>
+
+      </form>
+    </section>
+  </main>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script src="{{ asset('js/connexion.js') }}" defer></script>
+{% endblock %}
