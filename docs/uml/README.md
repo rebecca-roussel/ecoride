@@ -59,19 +59,21 @@ Les conventions UML retenues sont volontairement simples :
 
 Les diagrammes de séquence modélisent les échanges chronologiques entre les acteurs, l’interface utilisateur et le système pour les principaux scénarios fonctionnels de l’application.
 
-Chaque diagramme correspond à un scénario clairement identifié (inscription et connexion, recherche de covoiturage, participation, publication, annulation, modération, gestion des espaces utilisateur, employé et administrateur).
+Les scénarios couverts incluent notamment l’inscription et la connexion, la recherche de covoiturage, la participation, la publication et l’annulation de trajets, la modération, ainsi que la gestion des espaces utilisateur, employé et administrateur.
 
 Les variantes de comportement sont représentées à l’aide de fragments d’alternative (alt), tandis que les comportements conditionnels ou optionnels sont modélisés par des fragments optionnels (opt), conformément à la notation UML.
 
-Pour chaque diagramme sont fournis :
+Les diagrammes de séquence ont été entièrement refondu afin de regrouper, au sein d’un schéma unique, l’ensemble des interactions essentielles de l’application. Ce choix permet d’améliorer la lisibilité globale et d’assurer une vision cohérente et uniforme des échanges, tout en conservant les variantes et conditions de traitement via les fragments alt et opt.
 
-- une version lisible au format PDF,
+Les versions intermédiaires des diagrammes de séquence sont conservées dans le répertoire à titre d’historique, mais la version finale fait foi.
 
-- une image PNG destinée à la consultation rapide.
+Pour ce diagramme final, les livrables suivants sont fournis :
 
-une description écrite du scénario et des choix de modélisation associés.
+- un fichier SVG (format vectoriel, lisible à tout niveau de zoom),
 
-Le diagramme de séquence a été entièrement refondu afin de réunir en un seul schéma toutes les interactions essentielles de l’application (inscription, recherche de covoiturage, participation, publication, annulation, modération et gestion des espaces utilisateurs). Cette version unique améliore la lisibilité et l’uniformité en utilisant des fragments alt et opt pour représenter les variantes et conditions. Les anciens diagrammes sont conservés dans le répertoire, mais cette version finale fait foi.
+- un fichier PDF destiné à l’évaluation et à l’impression,
+
+- une image PNG pour une consultation rapide.
 
 ## 4. Diagramme de classes
 
