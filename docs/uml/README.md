@@ -59,11 +59,16 @@ Les conventions UML retenues sont volontairement simples :
 
 Les diagrammes de séquence modélisent les échanges chronologiques entre les acteurs, l’interface utilisateur et le système pour les principaux scénarios fonctionnels de l’application EcoRide.
 
+<<<<<<< Updated upstream
 Les premières versions des diagrammes ont permis d’identifier et de cadrer les grands scénarios fonctionnels. Elles sont conservées à titre de travail intermédiaire.
 Cependant, une version consolidée et finale a été réalisée afin de refléter fidèlement l’état abouti du projet, le schéma de données définitif et les règles métier effectivement retenues.
+=======
+Les scénarios couverts incluent notamment l’inscription et la connexion, la recherche de covoiturage, la participation, la publication et l’annulation de trajets, la modération, ainsi que la gestion des espaces utilisateur, employé et administrateur.
+>>>>>>> Stashed changes
 
 Cette version finale regroupe l’ensemble des scénarios principaux dans un diagramme de séquence cohérent et complet, intégrant explicitement :
 
+<<<<<<< Updated upstream
 les règles métier critiques (gestion des crédits, des places disponibles, des statuts),
 
 les cas d’erreur et scénarios alternatifs à l’aide de fragments alt,
@@ -82,6 +87,19 @@ une version PNG pour la consultation rapide,
 une version PDF pour la lecture détaillée et l’archivage.
 
 Chaque diagramme est accompagné d’une description écrite expliquant le scénario couvert et les choix de modélisation associés.
+=======
+Les diagrammes de séquence ont été entièrement refondu afin de regrouper, au sein d’un schéma unique, l’ensemble des interactions essentielles de l’application. Ce choix permet d’améliorer la lisibilité globale et d’assurer une vision cohérente et uniforme des échanges, tout en conservant les variantes et conditions de traitement via les fragments alt et opt.
+
+Les versions intermédiaires des diagrammes de séquence sont conservées dans le répertoire à titre d’historique, mais la version finale fait foi.
+
+Pour ce diagramme final, les livrables suivants sont fournis :
+
+- un fichier SVG (format vectoriel, lisible à tout niveau de zoom),
+
+- un fichier PDF destiné à l’évaluation et à l’impression,
+
+- une image PNG pour une consultation rapide.
+>>>>>>> Stashed changes
 
 ## 4. Diagramme de classes
 
