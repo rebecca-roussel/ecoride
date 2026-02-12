@@ -63,20 +63,20 @@ final class InscriptionController extends AbstractController
                         } elseif (null !== $photo->getSize() && $photo->getSize() > 2_000_000) {
                             $erreur = "L'image est trop lourde (max 2 Mo).";
                         } else {
-                            $dossierPublic = $this->getParameter('kernel.project_dir').'/public';
-                            $dossierPhotos = $dossierPublic.'/photos';
+                            $dossierPublic = $this->getParameter('kernel.project_dir') . '/public';
+                            $dossierPhotos = $dossierPublic . '/photos';
 
                             if (!is_dir($dossierPhotos)) {
-                                @mkdir($dossierPhotos, 0775, true);
+                                @mkdir($dossierPhotos, 0o775, true);
                             }
 
                             $extension = $photo->guessExtension() ?: 'jpg';
-                            $nomFichier = 'profil_'.bin2hex(random_bytes(8)).'.'.$extension;
+                            $nomFichier = 'profil_' . bin2hex(random_bytes(8)) . '.' . $extension;
 
                             $photo->move($dossierPhotos, $nomFichier);
 
                             /* Chemin relatif pour l’enregistrer en base */
-                            $photoPath = 'photos/'.$nomFichier;
+                            $photoPath = 'photos/' . $nomFichier;
                         }
                     }
                 }

@@ -6,9 +6,7 @@ namespace App\Service;
 
 final class PersistanceUtilisateurPostgresql
 {
-    public function __construct(private ConnexionPostgresql $connexionPostgresql)
-    {
-    }
+    public function __construct(private ConnexionPostgresql $connexionPostgresql) {}
 
     /**
      * Crée un utilisateur et retourne son id.

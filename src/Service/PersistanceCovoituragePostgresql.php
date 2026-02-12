@@ -6,9 +6,7 @@ namespace App\Service;
 
 final class PersistanceCovoituragePostgresql
 {
-    public function __construct(private ConnexionPostgresql $connexionPostgresql)
-    {
-    }
+    public function __construct(private ConnexionPostgresql $connexionPostgresql) {}
 
     /**
      * Recherche de covoiturages PLANIFIE avec places dispo.

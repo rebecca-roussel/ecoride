@@ -95,8 +95,8 @@ final class ResultatsController extends AbstractController
                 0
             );
 
-            $dateHeureMin = $dateHeureCible->modify('-'.$margeMinutes.' minutes');
-            $dateHeureMax = $dateHeureCible->modify('+'.$margeMinutes.' minutes');
+            $dateHeureMin = $dateHeureCible->modify('-' . $margeMinutes . ' minutes');
+            $dateHeureMax = $dateHeureCible->modify('+' . $margeMinutes . ' minutes');
 
             // On bloque dans la journée (évite veille/lendemain)
             $debutJournee = $dateObjet->setTime(0, 0, 0);
