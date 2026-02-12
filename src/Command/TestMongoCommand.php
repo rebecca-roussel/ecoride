@@ -26,7 +26,7 @@ final class TestMongoCommand extends Command
             'source' => 'commande_symfony',
         ]);
 
-        $output->writeln('OK — évènement inséré, id = ' . $id);
+        $output->writeln('OK — évènement inséré, id = '.$id);
 
         return Command::SUCCESS;
     }

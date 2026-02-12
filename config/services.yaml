@@ -22,7 +22,8 @@ services:
     App\Service\JournalEvenements:
         arguments:
             $mongoUri: '%env(MONGO_URI)%'
-            $dbName: '%env(MONGO_DB)%'
+            $nomBase: '%env(MONGO_DB)%'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
     

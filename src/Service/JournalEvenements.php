@@ -1,28 +1,37 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Service;
 
+use MongoDB\BSON\UTCDateTime;
 use MongoDB\Client;
 
 final class JournalEvenements
 {
     private Client $client;
-    private string $dbName;
+    private string $nomBase;
 
-    public function __construct(string $mongoUri, string $dbName)
+    public function __construct(string $mongoUri, string $nomBase)
     {
         $this->client = new Client($mongoUri);
-        $this->dbName = $dbName;
+        $this->nomBase = $nomBase; // ex : "ecoride_journal"
     }
 
-    public function enregistrer(string $type, array $donnees = []): string
-    {
-        $collection = $this->client->selectCollection($this->dbName, 'evenements');
+    public function enregistrer(
+        string $typeEvenement,
+        string $entite,
+        int $idEntite,
+        array $donnees = [],
+    ): string {
+        $collection = $this->client->selectCollection($this->nomBase, 'journal_evenements');
 
         $document = [
-            'type' => $type,
+            'type_evenement' => $typeEvenement,
+            'entite' => $entite,
+            'id_entite' => $idEntite,
             'donnees' => $donnees,
-            'date_utc' => new \MongoDB\BSON\UTCDateTime((int) (microtime(true) * 1000)),
+            'cree_le' => new UTCDateTime((int) (microtime(true) * 1000)),
         ];
 
         $resultat = $collection->insertOne($document);
@@ -30,4 +39,3 @@ final class JournalEvenements
         return (string) $resultat->getInsertedId();
     }
 }
-

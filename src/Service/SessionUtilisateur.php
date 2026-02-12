@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Service;
@@ -7,24 +8,28 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 final class SessionUtilisateur
 {
-    public function __construct(private RequestStack $requestStack) {}
+    public function __construct(private RequestStack $requestStack)
+    {
+    }
 
     public function estConnecte(): bool
     {
         $session = $this->requestStack->getSession();
-        return $session !== null && $session->has('utilisateur_id');
+
+        return null !== $session && $session->has('utilisateur_id');
     }
 
     public function pseudo(): ?string
     {
         $session = $this->requestStack->getSession();
+
         return $session?->get('utilisateur_pseudo');
     }
 
     public function connecter(int $idUtilisateur, string $pseudo): void
     {
         $session = $this->requestStack->getSession();
-        if ($session === null) {
+        if (null === $session) {
             return;
         }
         $session->set('utilisateur_id', $idUtilisateur);
