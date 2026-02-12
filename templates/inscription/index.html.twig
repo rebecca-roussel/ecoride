@@ -6,7 +6,10 @@
 #}
 
 {% extends 'base.html.twig' %}
-	{% block title %}
+
+	{% block entete %}
+{% include 'fragments/entete_public.html.twig' %}
+{% endblock %}{% block title %}
 Inscription - EcoRide
 {% endblock %}
 
@@ -138,5 +141,5 @@ Inscription - EcoRide
 
 {% block javascripts %}
 	{{ parent() }}
-	 <script src="{{ asset('js/inscription.js') }}" defer></script>
+	<script src="{{ asset('js/inscription.js') }}" defer></script>
 {% endblock %}

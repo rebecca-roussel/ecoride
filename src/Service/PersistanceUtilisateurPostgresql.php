@@ -6,7 +6,9 @@ namespace App\Service;
 
 final class PersistanceUtilisateurPostgresql
 {
-    public function __construct(private ConnexionPostgresql $connexionPostgresql) {}
+    public function __construct(private ConnexionPostgresql $connexionPostgresql)
+    {
+    }
 
     /**
      * Crée un utilisateur et retourne son id.
@@ -81,5 +83,32 @@ final class PersistanceUtilisateurPostgresql
         $requete->execute(['email' => $email]);
 
         return false !== $requete->fetchColumn();
+    }
+    public function trouverParEmail(string $email): ?array
+    {
+        $pdo = $this->connexionPostgresql->obtenirPdo();
+
+        $requete = $pdo->prepare('
+        SELECT
+            id_utilisateur,
+            pseudo,
+            email,
+            mot_de_passe_hash,
+            credits,
+            role_chauffeur,
+            role_passager,
+            role_interne,
+            photo_path,
+            statut
+        FROM utilisateur
+        WHERE email = :email
+        LIMIT 1
+    ');
+
+        $requete->execute(['email' => trim($email)]);
+
+        $ligne = $requete->fetch(\PDO::FETCH_ASSOC);
+
+        return $ligne === false ? null : $ligne;
     }
 }

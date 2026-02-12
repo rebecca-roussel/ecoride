@@ -117,7 +117,7 @@ final class ResultatsController extends AbstractController
         $criteres['heure_min'] = $heureMin;
         $criteres['heure_max'] = $heureMax;
 
-        // 7) Appel BDD (Persistance)
+        // 7) Appel BDD (Persistance) : recherche "stricte" (avec plage horaire si fournie)
         $resultats = $persistance->rechercherCovoiturages(
             $villeDepart,
             $villeArrivee,
@@ -130,9 +130,29 @@ final class ResultatsController extends AbstractController
             $noteMin
         );
 
+        // Repli automatique si aucun résultat dans la plage horaire
+        $recherche_elargie = false;
+
+        if (0 === count($resultats) && null !== $heureSouhaitee) {
+            $resultats = $persistance->rechercherCovoiturages(
+                $villeDepart,
+                $villeArrivee,
+                $dateObjet,
+                null,   // on retire le filtre heure
+                null,   // on retire le filtre heure
+                $prixMax,
+                $energie,
+                $ageMaxVoiture,
+                $noteMin
+            );
+
+            $recherche_elargie = true;
+        }
+
         return $this->render('resultats/index.html.twig', [
             'resultats' => $resultats,
             'criteres' => $criteres,
+            'recherche_elargie' => $recherche_elargie,
         ]);
     }
 }

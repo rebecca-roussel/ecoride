@@ -15,11 +15,9 @@ final class DetailsController extends AbstractController
     #[Route('/details', name: 'details')]
     public function index(Request $requeteHttp, PersistanceCovoituragePostgresql $persistance): Response
     {
-        // On lit l'id dans l'URL : /details?id=7
         $id = $requeteHttp->query->getInt('id', 0);
 
         if ($id <= 0) {
-            // Pas d'id (ou id invalide) = 404
             throw $this->createNotFoundException('Identifiant de covoiturage invalide.');
         }
 
@@ -29,8 +27,17 @@ final class DetailsController extends AbstractController
             throw $this->createNotFoundException('Covoiturage introuvable.');
         }
 
+        $avisChauffeur = [];
+
+        if (isset($detail['id_chauffeur'])) {
+            $avisChauffeur = $persistance->obtenirAvisValidesDuChauffeur((int) $detail['id_chauffeur'], 5);
+        }
+
         return $this->render('details/index.html.twig', [
             'detail' => $detail,
+            'avis_chauffeur' => $avisChauffeur,
         ]);
     }
 }
+
+

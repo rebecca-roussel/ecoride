@@ -96,10 +96,11 @@
 /* Inputs  */
 .champ_texte {
   width: 100%;
+  box-sizing: border-box;
   border: 1px solid rgba(15, 23, 42, 0.10);
   background: #ffffff;
   border-radius: 10px;
-  padding: 10px 0px;
+  padding: 12px 14px;
   font-size: 14px;
   outline: none;
 }

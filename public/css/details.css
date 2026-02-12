@@ -184,6 +184,34 @@
   margin: 0 0 8px;
 }
 
+/* AVIS */
+.bloc_avis{
+  margin-top: 26px;
+}
+
+.avis_entete{
+  margin: 0 0 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.avis_etoile{
+  color: var(--etat_avertissement);
+  font-size: 18px;
+  line-height: 1;
+  transform: translateY(1px);
+}
+
+.avis_item{
+  margin: 0 0 14px;
+}
+
+.avis_commentaire{
+  margin: 0;
+  color: var(--fond_principal);
+}
+
 /* ACTION */
 .actions_details {
   margin-top: 26px;

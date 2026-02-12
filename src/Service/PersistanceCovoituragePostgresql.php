@@ -6,7 +6,9 @@ namespace App\Service;
 
 final class PersistanceCovoituragePostgresql
 {
-    public function __construct(private ConnexionPostgresql $connexionPostgresql) {}
+    public function __construct(private ConnexionPostgresql $connexionPostgresql)
+    {
+    }
 
     /**
      * Recherche de covoiturages PLANIFIE avec places dispo.
@@ -210,5 +212,34 @@ final class PersistanceCovoituragePostgresql
         $ligne = $requete->fetch(\PDO::FETCH_ASSOC);
 
         return false !== $ligne ? $ligne : null;
+    }
+    public function obtenirAvisValidesDuChauffeur(int $idChauffeur, int $limite = 5): array
+    {
+        $pdo = $this->connexionPostgresql->obtenirPdo();
+
+        // Sécurité : on borne la limite (évite les valeurs absurdes)
+        $limite = max(1, min(20, (int) $limite));
+
+        $sql = "
+        SELECT
+            a.note,
+            a.commentaire,
+            a.date_depot,
+            u.pseudo AS pseudo_auteur
+        FROM avis a
+        JOIN participation p ON p.id_participation = a.id_participation
+        JOIN covoiturage c ON c.id_covoiturage = p.id_covoiturage
+        JOIN utilisateur u ON u.id_utilisateur = p.id_utilisateur
+        WHERE c.id_utilisateur = :id_chauffeur
+          AND a.statut_moderation = 'VALIDE'
+        ORDER BY a.date_depot DESC
+        LIMIT {$limite}
+    ";
+
+        $requete = $pdo->prepare($sql);
+        $requete->bindValue('id_chauffeur', $idChauffeur, \PDO::PARAM_INT);
+        $requete->execute();
+
+        return $requete->fetchAll(\PDO::FETCH_ASSOC);
     }
 }

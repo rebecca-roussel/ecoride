@@ -31,7 +31,7 @@ final class JournalEvenements
             'entite' => $entite,
             'id_entite' => $idEntite,
             'donnees' => $donnees,
-            'cree_le' => new UTCDateTime((int) (microtime(true) * 1000)),
+            'cree_le' => new UTCDateTime(),
         ];
 
         $resultat = $collection->insertOne($document);
