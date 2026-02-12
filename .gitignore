@@ -1,4 +1,3 @@
-
 ###> symfony/framework-bundle ###
 .env
 .env .dev
@@ -13,5 +12,7 @@
 
 # Sauvegardes
 *.bak
+
+# Outils locaux (à ne pas versionner)
 .php-cs-fixer.cache
 .vscode/
