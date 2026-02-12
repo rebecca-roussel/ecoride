@@ -9,98 +9,78 @@
   3. Pied de page : géré par base.html.twig
 #}
 
-{% extends 'base.html.twig' %}
-
-{% block title %}Connexion - EcoRide{% endblock %}
-
-{% block stylesheets %}
-  {{ parent() }}
-  <link rel="stylesheet" href="{{ asset('css/connexion.css') }}">
+{% extends 'base.html.twig' %}{% block title %}
+Connexion - EcoRide
 {% endblock %}
 
+	{% block stylesheets %}
+	{{ parent() }}
+<link rel="stylesheet" href="{{ asset('css/connexion.css') }}"> {% endblock %}
+
 {% block body %}
-  <main class="page_connexion">
-    <section class="panneau_connexion" aria-labelledby="titre_connexion">
+	<main class="page_connexion">
+		<section class="panneau_connexion" aria-labelledby="titre_connexion">
 
-      <header class="connexion_entete">
-        <h1 id="titre_connexion" class="connexion_titre">Connexion</h1>
-        <p class="connexion_sous_titre texte_secondaire">Accédez à votre espace EcoRide.</p>
-      </header>
+			<header class="connexion_entete">
+				<h1 id="titre_connexion" class="connexion_titre">Connexion</h1>
+				<p class="connexion_sous_titre texte_secondaire">Accédez à votre espace EcoRide.</p>
+			</header>
 
-      {# Formulaire POST vers la route Symfony "connexion" #}
-      <form class="connexion_formulaire" action="{{ path('connexion') }}" method="post" novalidate>
+			{# Formulaire POST vers la route Symfony "connexion" #}
+			<form
+				class="connexion_formulaire" action="{{ path('connexion') }}" method="post" novalidate>
 
-        {# Email #}
-        <div class="bloc_champ">
-          <label class="champ_libelle" for="email">Email</label>
+				{# Email #}
+				<div class="bloc_champ">
+					<label class="champ_libelle" for="email">Email</label>
 
-          {# Je ré-affiche l'email saisi en cas d'erreur (confort utilisateur) #}
-          <input
-            class="champ_texte"
-            id="email"
-            name="email"
-            type="email"
-            autocomplete="email"
-            placeholder="exemple@domaine.fr"
-            value="{{ email_saisi|default('')|e }}"
-          >
+					{# Je ré-affiche l'email saisi en cas d'erreur (confort utilisateur) #}
+					<input
+					class="champ_texte" id="email" name="email" type="email" autocomplete="email" placeholder="exemple@domaine.fr" value="{{ email_saisi|default('')|e }}">
 
-          {# Erreur côté JS (validation format) : masquée par défaut #}
-          <p class="champ_erreur" id="erreur_email" aria-live="polite" hidden>
-            Adresse email invalide.
-          </p>
-        </div>
+					{# Erreur côté JS (validation format) : masquée par défaut #}
+					<p class="champ_erreur" id="erreur_email" aria-live="polite" hidden>
+						Adresse email invalide.
+					</p>
+				</div>
 
-        {# Mot de passe #}
-        <div class="bloc_champ">
-          <label class="champ_libelle" for="mot_de_passe">Mot de passe</label>
+				{# Mot de passe #}
+				<div class="bloc_champ">
+					<label class="champ_libelle" for="mot_de_passe">Mot de passe</label>
 
-          <div class="champ_mdp">
-            <input
-              class="champ_texte"
-              id="mot_de_passe"
-              name="mot_de_passe"
-              type="password"
-              autocomplete="current-password"
-              placeholder="••••••••"
-            >
+					<div class="champ_mdp">
+						<input
+						class="champ_texte" id="mot_de_passe" name="mot_de_passe" type="password" autocomplete="current-password" placeholder="••••••••">
 
-            {# Le bouton "œil" est géré par connexion.js #}
-            <button
-              class="bouton_oeil"
-              type="button"
-              id="toggle_mot_de_passe"
-              aria-label="Afficher le mot de passe"
-              aria-pressed="false"
-            ></button>
-          </div>
+						{# Le bouton "œil" est géré par connexion.js #}
+						<button class="bouton_oeil" type="button" id="toggle_mot_de_passe" aria-label="Afficher le mot de passe" aria-pressed="false"></button>
+					  </div>
 
-          {# Erreur côté serveur (PDO) : identifiants invalides / compte suspendu / etc. #}
-          {% if erreur %}
-            <p class="champ_erreur" role="alert">{{ erreur }}</p>
-          {% endif %}
+					{# Erreur côté serveur (PDO) : identifiants invalides / compte suspendu / etc. #}
+					{% if erreur %}
+						<p class="champ_erreur" role="alert">{{ erreur }}</p>
+					{% endif %}
 
-          <div class="actions_secondaires">
-            <a class="lien_secondaire" href="{{ path('mot_de_passe_oublie') }}">Mot de passe oublié ?</a>
-          </div>
-        </div>
+					<div class="actions_secondaires">
+						<a class="lien_secondaire" href="{{ path('mot_de_passe_oublie') }}">Mot de passe oublié ?</a>
+					</div>
+				</div>
 
-        {# Bouton principal #}
-        <button class="bouton_principal" type="submit">Se connecter</button>
+				{# Bouton principal #}
+				<button class="bouton_principal" type="submit">Se connecter</button>
 
-        {# Optionnel : lien vers inscription #}
-        <p class="connexion_pied texte_secondaire">
-          Pas encore de compte ?
-          <a class="lien_secondaire" href="{{ path('inscription') }}">Créer un compte</a>
-        </p>
+				{# Optionnel : lien vers inscription #}
+				<p class="connexion_pied texte_secondaire">
+					Pas encore de compte ?
+					<a class="lien_secondaire" href="{{ path('inscription') }}">Créer un compte</a>
+				</p>
 
-      </form>
-    </section>
-  </main>
+			</form>
+		</section>
+	</main>
 {% endblock %}
 
 {% block javascripts %}
-  {{ parent() }}
-  <script src="{{ asset('js/connexion.js') }}" defer></script>
+	{{ parent() }}
+	 <script src="{{ asset('js/connexion.js') }}" defer></script>
 {% endblock %}
-

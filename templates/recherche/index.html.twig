@@ -13,74 +13,54 @@
   3. Pied de page : fourni par base.html.twig (fragment pied_de_page.html.twig)
 #}
 
-{% extends 'base.html.twig' %}
+{% extends 'base.html.twig' %}{% block title %}
+EcoRide – Rechercher
+{% endblock %}
 
-{% block title %}EcoRide – Rechercher{% endblock %}
-
-{% block stylesheets %}
-  <link rel="stylesheet" href="{{ asset('css/accueil.css') }}">
-  <link rel="stylesheet" href="{{ asset('css/recherche.css') }}">
+	{% block stylesheets %}
+	<link rel="stylesheet" href="{{ asset('css/accueil.css') }}"> <link rel="stylesheet" href="{{ asset('css/recherche.css') }}">
 {% endblock %}
 
 {% block body %}
-  <div class="page_recherche">
-    <main class="zone_centrale">
-      <section class="carte_recherche" aria-label="Recherche de covoiturage">
-        <h1 class="titre_carte">Rechercher un covoiturage</h1>
+	<div class="page_recherche">
+		<main class="zone_centrale">
+			<section class="carte_recherche" aria-label="Recherche de covoiturage">
+				<h1 class="titre_carte">Rechercher un covoiturage</h1>
 
-        <form class="formulaire_recherche_maquette" method="get" action="{{ path('resultats') }}">
+				{% if message_erreur is defined and message_erreur %}
+					<p class="champ_erreur" role="alert">{{ message_erreur }}</p>
+				{% endif %}
 
-          <div class="groupe_champ">
-            <label for="depart">Départ (ville)</label>
-            <input
-              type="text"
-              id="depart"
-              name="depart"
-              placeholder="Ville de départ"
-              value="{{ app.request.query.get('depart') ?? '' }}"
-            >
-          </div>
+				<form class="formulaire_recherche_maquette" method="get" action="{{ path('resultats') }}">
 
-          <div class="groupe_champ">
-            <label for="arrivee">Arrivée (ville)</label>
-            <input
-              type="text"
-              id="arrivee"
-              name="arrivee"
-              placeholder="Ville d'arrivée"
-              value="{{ app.request.query.get('arrivee') ?? '' }}"
-            >
-          </div>
+					<div class="groupe_champ">
+						<label for="depart">Départ (ville)</label>
+						<input type="text" id="depart" name="ville_depart" placeholder="Ville de départ" value="{{ criteres.ville_depart ?? app.request.query.get('ville_depart') ?? '' }}">
+					</div>
 
-          <div class="ligne_deux_champs">
-            <div class="groupe_champ">
-              <label for="date_depart">Date de départ</label>
-              <input
-                type="date"
-                id="date_depart"
-                name="date_depart"
-                value="{{ app.request.query.get('date_depart') ?? '' }}"
-              >
-            </div>
+					<div class="groupe_champ">
+						<label for="arrivee">Arrivée (ville)</label>
+						<input type="text" id="arrivee" name="ville_arrivee" placeholder="Ville d'arrivée" value="{{ criteres.ville_arrivee ?? app.request.query.get('ville_arrivee') ?? '' }}">
+					</div>
 
-            <div class="groupe_champ">
-              <label for="heure_depart">Heure de départ</label>
-              <input
-                type="time"
-                id="heure_depart"
-                name="heure_depart"
-                value="{{ app.request.query.get('heure_depart') ?? '' }}"
-              >
-            </div>
-          </div>
+					<div class="ligne_deux_champs">
+						<div class="groupe_champ">
+							<label for="date_depart">Date de départ</label>
+							<input type="date" id="date_depart" name="date" value="{{ criteres.date ?? app.request.query.get('date') ?? '' }}">
+						</div>
 
-          <div class="actions_recherche">
-            <button type="submit" class="bouton_principal">Rechercher</button>
-          </div>
+						<div class="groupe_champ">
+							<label for="heure_depart">Heure souhaitée</label>
+							<input type="time" id="heure_depart" name="heure_souhaitee" value="{{ criteres.heure_souhaitee ?? app.request.query.get('heure_souhaitee') ?? '' }}">
+						</div>
+					</div>
 
-        </form>
-      </section>
-    </main>
-  </div>
+					<div class="actions_recherche">
+						<button type="submit" class="bouton_principal">Rechercher</button>
+					</div>
+
+				</form>
+			</section>
+		</main>
+	</div>
 {% endblock %}
-

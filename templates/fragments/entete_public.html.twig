@@ -19,7 +19,7 @@
       aria-label="Navigation principale"
       data-ouvert="false">
 
-<!--ACCUEIL-->
+{# ACCUEIL #}
 
   <a class="nav_lien {% if app.request.attributes.get('_route') == 'accueil' %}actif{%endif %}"
     {% if app.request.attributes.get('_route') == 'accueil' %}aria-current="page"{% endif %}
@@ -27,7 +27,7 @@
     Accueil
     </a>
 
-<!--RECHERCHE-->
+{# RECHERCHE #}>
 
   <a class="nav_lien {% if app.request.attributes.get('_route') in ['recherche', 'resultats'] %}actif
   {% endif %}"
@@ -36,7 +36,7 @@
    Accès aux covoiturages
    </a>
 
-<!--CONTACT-->
+{# CONTACT #}
 
   <a class="nav_lien {% if app.request.attributes.get('_route') == 'contact' %}actif
   {% endif %}"
@@ -45,7 +45,7 @@
    Contact
    </a>
 
-<!--CONNEXION-->
+{# CONNEXION #}
 
   <a class="nav_lien {% if app.request.attributes.get('_route') == 'connexion' %}actif
   {% endif %}"
@@ -54,7 +54,7 @@
    Connexion
    </a>
 
-<!--INSCRIPTION-->
+{# INSCRIPTION #}
 
   <a class="nav_lien {% if app.request.attributes.get('_route') == 'inscription' %}actif{% endif %}"
    {% if app.request.attributes.get('_route') == 'inscription' %}aria-current="page"{% endif %}

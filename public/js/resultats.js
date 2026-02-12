@@ -1,37 +1,64 @@
-document.addEventListener('DOMContentLoaded', function () {
+/* public/js/resultats.js
+   Objectif :
+   - clic sur "Filtrer les résultats" : afficher/masquer le panneau
+   - Échap : fermer
+   - clic en dehors : fermer 
+*/
 
-    // Affichage ou masquage du formulaire de filtrage des résultats
-    const boutonFiltre = document.querySelector('.bouton_principal');
-    const formulaireFiltre = document.getElementById('filtre_formulaire');
+(function () {
+  const bouton = document.querySelector("#bouton_filtrer");
+  const panneau = document.querySelector("#panneau_filtres");
 
-    boutonFiltre.addEventListener('click', function() {
-        // Afficher ou masquer le formulaire de filtre
-        if (formulaireFiltre.style.display === 'none' || !formulaireFiltre.style.display) {
-            formulaireFiltre.style.display = 'block';
-        } else {
-            formulaireFiltre.style.display = 'none';
-        }
-    });
+  if (!bouton || !panneau) {
+    return;
+  }
 
-    // Soumettre le formulaire de filtre via AJAX (sans recharger la page)
-    const formulaire = document.getElementById('formulaire_filtre');
-    if (formulaire) {
-        formulaire.addEventListener('submit', function(e) {
-            e.preventDefault();  // Empêcher le comportement par défaut (rechargement de la page)
+  function ouvrir() {
+    panneau.hidden = false;
+    bouton.setAttribute("aria-expanded", "true");
 
-            const formData = new FormData(formulaire);  // Récupérer les données du formulaire
-            const url = window.location.href.split('?')[0] + '?' + new URLSearchParams(formData).toString();
-
-            // Envoi de la requête AJAX pour récupérer les résultats filtrés
-            fetch(url)
-                .then(response => response.text())
-                .then(data => {
-                    // Remplacer le contenu principal de la page avec les nouveaux résultats
-                    document.querySelector('main').innerHTML = data;
-                })
-                .catch(error => {
-                    console.error("Erreur lors du chargement des résultats :", error);
-                });
-        });
+    const premierChamp = panneau.querySelector("input, select, textarea, button");
+    if (premierChamp) {
+      premierChamp.focus();
     }
-});
+  }
+
+  function fermer() {
+    panneau.hidden = true;
+    bouton.setAttribute("aria-expanded", "false");
+    bouton.focus();
+  }
+
+  function estOuvert() {
+    return panneau.hidden === false;
+  }
+
+  bouton.addEventListener("click", function () {
+    if (estOuvert()) {
+      fermer();
+    } else {
+      ouvrir();
+    }
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && estOuvert()) {
+      fermer();
+    }
+  });
+
+  // clic en dehors = fermer
+  document.addEventListener("click", function (event) {
+    if (!estOuvert()) {
+      return;
+    }
+
+    const clicDansBouton = bouton.contains(event.target);
+    const clicDansPanneau = panneau.contains(event.target);
+
+    if (!clicDansBouton && !clicDansPanneau) {
+      fermer();
+    }
+  });
+})();
+

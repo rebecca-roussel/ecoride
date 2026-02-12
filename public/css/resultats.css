@@ -294,3 +294,43 @@
   }
 }
 
+/* PANNEAU FILTRES */
+
+.panneau_filtres{
+  margin: 0 0 18px;
+  padding: 14px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,0.12);
+  background: #C7C3B8;
+}
+
+.grille_filtres{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.champ_filtre{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.actions_filtres{
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.lien_reinitialiser{
+  color: var(--fond_principal);
+  text-decoration: underline;
+}
+
+@media (max-width: 900px){
+  .grille_filtres{
+    grid-template-columns: 1fr;
+  }
+}

@@ -9,7 +9,6 @@
      - bouton "Menu" pour mobile ou rétrécissemnt de page
      - lien "Accès aux covoiturages" vers page Recherche (formulaire seul)
      - lien "Connexion" vers page de connexion
-     
 
   2. Hero :
      - accroche et description avec image de fond
@@ -32,7 +31,6 @@
      - lien mentions légales
 #}
 
-
 {% extends 'base.html.twig' %}
 
 {# Titre de l’onglet du navigateur #}
@@ -54,82 +52,79 @@
 
 <main>
 
-{# HERO (ACCROCHE + RECHERCHE) #}
+  {# HERO (ACCROCHE + RECHERCHE) #}
   <section class="section_hero" aria-labelledby="titre_principal">
 
-{# Décors visuels #}
+    {# Décors visuels #}
     <div class="hero_image" aria-hidden="true"></div>
     <div class="hero_filtre" aria-hidden="true"></div>
 
-    <div class="conteneur hero_contenu">
+    <div class="hero_contenu">
       <div class="hero_centre">
 
-{# Titre principal #}
+        {# Titre principal #}
         <h1 id="titre_principal">Voyagez ensemble, agissez pour demain</h1>
 
-{# Texte court pour expliquer le service #}
+        {# Texte court pour expliquer le service #}
         <p class="hero_description">
           EcoRide vous connecte à des conducteurs partageant vos valeurs.
           Réduisez votre empreinte carbone tout en économisant sur vos trajets quotidiens.
         </p>
 
-{# Formulaire de recherche de covoiturage #}
-{# GET = pratique car les critères se retrouvent dans l’URL (partageable) #}
+        {# Formulaire de recherche de covoiturage #}
+        {# GET = pratique car les critères se retrouvent dans l’URL (partageable) #}
         <form
           class="formulaire_recherche"
           method="get"
-          action="{{ path('recherche') }}"
+          action="{{ path('resultats') }}"
           aria-label="Rechercher un covoiturage"
         >
           <div class="formulaire_grille">
 
-{# Ville de départ #}
             <div class="champ_groupe">
               <label for="depart">Ville de départ</label>
               <input
                 type="text"
                 id="depart"
-                name="depart"
+                name="ville_depart"
                 autocomplete="address-level2"
                 placeholder="Ex : Paris"
               >
             </div>
 
-{# Ville d’arrivée #}
             <div class="champ_groupe">
               <label for="arrivee">Ville d’arrivée</label>
               <input
                 type="text"
                 id="arrivee"
-                name="arrivee"
+                name="ville_arrivee"
                 autocomplete="address-level2"
                 placeholder="Ex : Lyon"
               >
             </div>
 
-{# Date de départ #}
             <div class="champ_groupe">
               <label for="date_depart">Date de départ</label>
-              <input type="date" id="date_depart" name="date_depart">
+              <input type="date" id="date_depart" name="date">
             </div>
 
-{# Heure de départ #}
             <div class="champ_groupe">
-              <label for="heure_depart">Heure de départ</label>
-              <input type="time" id="heure_depart" name="heure_depart">
+              <label for="heure_depart">Heure souhaitée</label>
+              <input type="time" id="heure_depart" name="heure_souhaitee">
             </div>
 
           </div>
 
-{# Bouton principal CTA #}
           <button type="submit" class="bouton_principal">Rechercher</button>
         </form>
 
       </div>
     </div>
+
   </section>
 
-{# ATOUTS #}
+
+  {# ATOUTS #}
   <section class="section_atouts" aria-labelledby="titre_atouts">
     <div class="conteneur">
 
@@ -137,7 +132,7 @@
 
       <div class="atouts_grille">
 
-{# Atout : crédits #}
+        {# Atout : crédits #}
         <article class="atout_bloc">
           {# Icône décorative : l’info est déjà dans le titre #}
           <div class="atout_icone" aria-hidden="true">
@@ -147,7 +142,7 @@
           <p>Un mécanisme de crédits garantissant l’équité des échanges entre utilisateurs.</p>
         </article>
 
-{# Atout : durable #}
+        {# Atout : durable #}
         <article class="atout_bloc">
           <div class="atout_icone" aria-hidden="true">
             <img class="atout_image" src="{{ asset('icones/durable.svg') }}" alt="">
@@ -156,7 +151,7 @@
           <p>Valorisation des véhicules à faible impact environnemental.</p>
         </article>
 
-{# Atout : fiabilité #}
+        {# Atout : fiabilité #}
         <article class="atout_bloc">
           <div class="atout_icone" aria-hidden="true">
             <img class="atout_image" src="{{ asset('icones/fiabilite.svg') }}" alt="">
@@ -169,7 +164,7 @@
     </div>
   </section>
 
-{# BANNIÈRE BAS IMAGE #}
+  {# BANNIÈRE BAS IMAGE #}
   <section class="banniere_pied" aria-hidden="true">
     <div class="banniere_image"></div>
     <div class="banniere_filtre"></div>
@@ -185,6 +180,5 @@
 {% block pied_de_page %}
   {% include 'fragments/pied_de_page.html.twig' %}
 {% endblock %}
-
 
 

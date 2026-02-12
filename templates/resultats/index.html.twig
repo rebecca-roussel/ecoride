@@ -52,85 +52,192 @@
       <h1 id="titre_resultats">Résultats de recherche</h1>
 
       <p class="rappel_recherche">
-        {% if criteres is defined and (criteres.depart or criteres.arrivee or criteres.date_depart or criteres.heure_depart) %}
-          Départ : {{ criteres.depart ?: '—' }} - Arrivée : {{ criteres.arrivee ?: '—' }}
-          {% if criteres.date_depart %} — Le {{ criteres.date_depart }}{% endif %}
-          {% if criteres.heure_depart %} autour de {{ criteres.heure_depart }}{% endif %}
+        {# Rappel basé sur le contrat du contrôleur ResultatsController :
+           criteres.ville_depart / criteres.ville_arrivee / criteres.date
+           + heure_souhaitee (ou heure_min/heure_max) #}
+
+        {% set ville_depart = criteres.ville_depart|default('—') %}
+        {% set ville_arrivee = criteres.ville_arrivee|default('—') %}
+        {% set date = criteres.date|default(null) %}
+        {% set heure_souhaitee = criteres.heure_souhaitee|default(null) %}
+        {% set heure_min = criteres.heure_min|default(null) %}
+        {% set heure_max = criteres.heure_max|default(null) %}
+
+        Départ : {{ ville_depart }} - Arrivée : {{ ville_arrivee }}
+
+        {% if date %}
+          — Le {{ date }}
         {% else %}
-          Départ : — - Arrivée : — — Le — autour de — 
+          — Le —
+        {% endif %}
+
+        {% if heure_souhaitee %}
+          — autour de {{ heure_souhaitee }}
+        {% elseif heure_min or heure_max %}
+          — entre {{ heure_min|default('—') }} et {{ heure_max|default('—') }}
+        {% else %}
+          — autour de —
         {% endif %}
       </p>
 
       <div class="actions_resultats">
-        <button type="button" class="bouton_principal">Filtrer les résultats</button>
+  <button
+    type="button"
+    class="bouton_principal"
+    id="bouton_filtrer"
+    aria-expanded="false"
+    aria-controls="panneau_filtres"
+  >
+    Filtrer les résultats
+  </button>
+</div>
+
+{# Panneau de filtres (caché par défaut, affiché via JS) #}
+<section id="panneau_filtres" class="panneau_filtres" hidden aria-label="Filtres de recherche">
+  <form method="get" action="{{ path('resultats') }}" class="formulaire_filtres">
+
+    {# On conserve les critères de base déjà saisis #}
+    <input type="hidden" name="ville_depart" value="{{ criteres.ville_depart|default('') }}">
+    <input type="hidden" name="ville_arrivee" value="{{ criteres.ville_arrivee|default('') }}">
+    <input type="hidden" name="date" value="{{ criteres.date|default('') }}">
+    <input type="hidden" name="heure_min" value="{{ criteres.heure_min|default('') }}">
+    <input type="hidden" name="heure_max" value="{{ criteres.heure_max|default('') }}">
+
+    <div class="grille_filtres">
+      <div class="champ_filtre">
+        <label for="prix_max">Prix max (crédits)</label>
+        <input id="prix_max" name="prix_max" type="number" min="1" value="{{ criteres.prix_max|default('') }}">
       </div>
+
+      <div class="champ_filtre">
+        <label for="energie">Énergie</label>
+        <select id="energie" name="energie">
+          <option value="">Toutes</option>
+          <option value="ELECTRIQUE" {{ criteres.energie|default('') == 'ELECTRIQUE' ? 'selected' : '' }}>Électrique</option>
+          <option value="HYBRIDE" {{ criteres.energie|default('') == 'HYBRIDE' ? 'selected' : '' }}>Hybride</option>
+          <option value="ESSENCE" {{ criteres.energie|default('') == 'ESSENCE' ? 'selected' : '' }}>Essence</option>
+          <option value="DIESEL" {{ criteres.energie|default('') == 'DIESEL' ? 'selected' : '' }}>Diesel</option>
+          <option value="ETHANOL" {{ criteres.energie|default('') == 'ETHANOL' ? 'selected' : '' }}>Éthanol</option>
+        </select>
+      </div>
+
+      <div class="champ_filtre">
+        <label for="age_max_voiture">Âge max voiture (années)</label>
+        <input id="age_max_voiture" name="age_max_voiture" type="number" min="0" value="{{ criteres.age_max_voiture|default('') }}">
+      </div>
+
+      <div class="champ_filtre">
+        <label for="note_min">Note min</label>
+        <select id="note_min" name="note_min">
+          <option value="">Toutes</option>
+          {% for n in 1..5 %}
+            <option value="{{ n }}" {{ criteres.note_min|default('') == n ? 'selected' : '' }}>{{ n }}/5</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="actions_filtres">
+      <button type="submit" class="bouton_principal">Appliquer</button>
+      <a class="lien_reinitialiser" href="{{ path('resultats', {
+        ville_depart: criteres.ville_depart|default(''),
+        ville_arrivee: criteres.ville_arrivee|default(''),
+        date: criteres.date|default(''),
+        heure_min: criteres.heure_min|default(''),
+        heure_max: criteres.heure_max|default('')
+      }) }}">Réinitialiser</a>
+    </div>
+  </form>
+</section>
+
 
       <div class="liste_covoiturages">
 
-        {% if covoiturages is defined and covoiturages|length > 0 %}
-          {% for c in covoiturages %}
-            <article class="carte_covoiturage">
-              <div class="bloc_chauffeur">
+        {# IMPORTANT : le contrôleur envoie "resultats" (pas "covoiturages") #}
+        {% if resultats is defined and resultats|length > 0 %}
+          {% for c in resultats %}
+  <article class="carte_covoiturage">
 
-{# Photo : en attendant le champ photo_path en base, on met une image de démo stable #}
-                <img
-                  class="photo_profil"
-                  src="{{ asset('images/img_muriel.jpg') }}"
-                  alt="Photo de {{ c.pseudo_chauffeur }}"
-                >
+    <div class="bloc_chauffeur">
+      {# Photo chauffeur : photo_path renvoyé par la requête.
+         Repli : avatar générique si vide. #}
+      {% set photo = c.photo_chauffeur|default('') %}
 
-                <div class="chauffeur_texte">
-                  <div class="ligne_identite">
-                    <span class="pseudo_chauffeur">{{ c.pseudo_chauffeur }}</span>
+      <img
+        class="photo_profil"
+        src="{{ photo ? asset(photo) : asset('icones/avatar.svg') }}"
+        alt="Photo de {{ c.pseudo_chauffeur|default('chauffeur') }}"
+      >
 
-{# Note : Placeholder neutre, viendra via la table avis plus tard #}
-                    <span class="note_chauffeur" aria-label="Note non disponible pour l’instant">
-                      <span class="etoile" aria-hidden="true">★</span>
-                      <span class="valeur_note">—</span>
-                    </span>
-                  </div>
-                  
-{# Préférences du chauffeur (ex : non-fumeur, sans animaux) #}
-                  <p class="preferences_chauffeur texte_secondaire">Préférences : —</p>
+      <div class="chauffeur_texte">
+        {# 1. Ligne identité : pseudo + étoile + note sur une seule ligne #}
+        <div class="ligne_identite">
+          <span class="pseudo_chauffeur">{{ c.pseudo_chauffeur|default('—') }}</span>
 
-                  <div class="contenu_carte">
-                    <p class="trajet">{{ c.ville_depart }} → {{ c.ville_arrivee }}</p>
+          {% set note_moyenne = c.note_moyenne|default(null) %}
+          {% set nb_avis = c.nb_avis_valides|default(0) %}
 
-                    <p class="date_heure">
-                      {{ c.date_heure_depart|date('d/m/Y \\à H:i') }}
-                    </p>
+          <span class="note_chauffeur" aria-label="Note du chauffeur">
+            <span class="etoile" aria-hidden="true">★</span>
 
-                    <p class="details_bas">
-                      <span class="energie">
-                        Énergie :
-                        {% set energie = c.energie ?? '' %}
-                        {% if energie %}
-                          {{ energie }}{% if energie == 'ELECTRIQUE' %} (écologique){% endif %}
-                        {% else %}
-                          — 
-                        {% endif %}
-                      </span>
+            {% if note_moyenne is not null and nb_avis > 0 %}
+              <span class="valeur_note">{{ note_moyenne }}</span>
+              <span class="texte_mini">({{ nb_avis }})</span>
+            {% else %}
+              <span class="valeur_note">Nouveau</span>
+            {% endif %}
+          </span>
+        </div>
 
-                      <span class="separateur" aria-hidden="true">•</span>
+        {# 2. Préférences (ligne dessous) #}
+        <p class="preferences_chauffeur texte_secondaire">Préférences : —</p>
 
-                      <span class="places texte_secondaire">
-                        {{ c.nb_places_dispo }} place{% if c.nb_places_dispo > 1 %}s{% endif %}
-                        restante{% if c.nb_places_dispo > 1 %}s{% endif %}
-                      </span>
+        {# 3. Contenu trajet #}
+        <div class="contenu_carte">
+          <p class="trajet">
+            {{ c.ville_depart|default('—') }} → {{ c.ville_arrivee|default('—') }}
+          </p>
 
-                      <span class="separateur" aria-hidden="true">•</span>
+          <p class="date_heure">
+            {{ c.date_heure_depart|date('d/m/Y \\à H:i') }}
+          </p>
 
-                      <span class="prix">{{ c.prix_credits }} crédits</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
+          <p class="details_bas">
+            <span class="energie">
+              Énergie :
+              {% set energie = c.energie|default('') %}
+              {% if energie %}
+                {{ energie }}{% if energie == 'ELECTRIQUE' %} (écologique){% endif %}
+              {% else %}
+                —
+              {% endif %}
+            </span>
 
-              <div class="zone_bouton_details">
-                <a class="bouton_principal bouton_details" href="{{ path('details', {'id': c.id_covoiturage}) }}">Voir détails</a>
-              </div>
-            </article>
-          {% endfor %}
+            <span class="separateur" aria-hidden="true">•</span>
+
+            <span class="places texte_secondaire">
+              {{ c.nb_places_dispo|default(0) }} place{% if (c.nb_places_dispo|default(0)) > 1 %}s{% endif %}
+              restante{% if (c.nb_places_dispo|default(0)) > 1 %}s{% endif %}
+            </span>
+
+            <span class="separateur" aria-hidden="true">•</span>
+
+            <span class="prix">{{ c.prix_credits|default('—') }} crédits</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="zone_bouton_details">
+      <a class="bouton_principal bouton_details"
+         href="{{ path('details', {'id': c.id_covoiturage}) }}">
+        Voir détails
+      </a>
+    </div>
+
+  </article>
+{% endfor %}
+
 
         {% else %}
 {# Résultats vides : aucun covoiturage trouvé #}
@@ -143,8 +250,9 @@
 
                 <div class="contenu_carte">
                   <p class="trajet">
-                    {% if criteres is defined and (criteres.depart or criteres.arrivee or criteres.date_depart) %}
-                      Essayez de modifier la date de départ ou les villes.
+                    {% set a_des_criteres = criteres.ville_depart|default('') or criteres.ville_arrivee|default('') or criteres.date|default('') %}
+                    {% if a_des_criteres %}
+                      Essayez de modifier la date ou les villes.
                     {% else %}
                       Renseignez une ville de départ, une ville d’arrivée et une date pour lancer la recherche.
                     {% endif %}
@@ -168,6 +276,6 @@
 
 {% block javascripts %}
   {{ parent() }}
-  {# Si nécessaire, un script spécifique pour les résultats #}
-  {# <script src="{{ asset('js/resultats.js') }}" defer></script> #}
+  <script src="{{ asset('js/resultats.js') }}" defer></script>
 {% endblock %}
+

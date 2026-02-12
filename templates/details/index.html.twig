@@ -29,7 +29,7 @@
 
 {% extends 'base.html.twig' %}
 
-{% block title %}Détail du covoiturage - EcoRide{% endblock %}
+{% block title %}Détails du covoiturage - EcoRide{% endblock %}
 
 {% block stylesheets %}
   {{ parent() }}
@@ -45,32 +45,77 @@
       {# En-tête du panneau : titre + chauffeur #}
       <div class="entete_details">
         <div class="entete_details_texte">
-          <h1 id="titre_details">Détail du covoiturage :</h1>
-          <p class="sous_titre texte_secondaire">Annonce publiée par Benjamin</p>
+          <h1 id="titre_details">Détails du covoiturage :</h1>
+        <p class="sous_titre texte_secondaire">
+        Annonce publiée par {{ detail.pseudo_chauffeur|default('chauffeur') }}
+        </p>
         </div>
 
         <div class="chauffeur_resume" aria-label="Chauffeur et note">
-          <img class="chauffeur_photo" src="{{ asset('images/img_benj.jpg') }}" alt="Photo de Benjamin">
-          <p class="chauffeur_note" aria-label="Note 4,6 sur 5">
-            <span class="etoile" aria-hidden="true">★</span>
-            <span class="valeur_note">4.6</span>
-          </p>
-        </div>
-      </div>
+
+  {% set photo = detail.photo_chauffeur|default('') %}
+
+  <img
+    class="chauffeur_photo"
+    src="{{ photo ? asset(photo) : asset('icones/avatar.svg') }}"
+    alt="Photo de {{ detail.pseudo_chauffeur|default('chauffeur') }}"
+  >
+
+  <p class="chauffeur_note">
+    <span class="etoile" aria-hidden="true">★</span>
+
+   {% set nb_avis = detail.nb_avis_valides|default(0) %}
+
+{% if nb_avis > 0 %}
+  <span class="valeur_note">
+    {{ detail.note_moyenne|default(0)|number_format(1, '.', '') }}
+  </span>
+  <span class="texte_mini texte_secondaire">
+    ({{ nb_avis }} avis)
+  </span>
+{% else %}
+  <span class="valeur_note">Nouveau</span>
+{% endif %}
+
+  </p>
+</div>
+</div>
 
       {# Départ / Arrivée #}
       <div class="bloc_lieux">
 
         <div class="lieu">
           <h2 class="lieu_titre">Départ</h2>
-          <p class="lieu_ville">Annemasse, 74100</p>
-          <p class="lieu_date texte_secondaire">Le 31 janvier 2026 à 09:00</p>
+
+          {# Départ #}
+
+          <p class="lieu_ville">
+          {{ detail.ville_depart|default('—') }}
+          {% if detail.adresse_depart is defined and detail.adresse_depart %}
+          <span class="texte_mini texte_secondaire">— {{ detail.adresse_depart }}</span>
+          {% endif %}
+          </p>
+          <p class="lieu_date texte_secondaire">
+          Le {{ detail.date_heure_depart ? detail.date_heure_depart|date('d/m/Y') : '—' }}
+          à {{ detail.date_heure_depart ? detail.date_heure_depart|date('H:i') : '—' }}
+          </p>
         </div>
 
         <div class="lieu">
           <h2 class="lieu_titre">Arrivée</h2>
-          <p class="lieu_ville">Genève, 1201</p>
-          <p class="lieu_date texte_secondaire">Le 31 janvier 2026 à 09:30</p>
+
+          {# Arrivée #}
+
+          <p class="lieu_ville">
+          {{ detail.ville_arrivee|default('—') }}
+          {% if detail.adresse_arrivee is defined and detail.adresse_arrivee %}
+          <span class="texte_mini texte_secondaire">— {{ detail.adresse_arrivee }}</span>
+          {% endif %}
+          </p>
+          <p class="lieu_date texte_secondaire">
+          Le {{ detail.date_heure_arrivee ? detail.date_heure_arrivee|date('d/m/Y') : '—' }}
+          à {{ detail.date_heure_arrivee ? detail.date_heure_arrivee|date('H:i') : '—' }}
+          </p>
         </div>
 
       </div>
@@ -82,17 +127,33 @@
 
         <div class="indicateur">
           <h3 class="indicateur_titre">Places disponibles</h3>
-          <p class="indicateur_valeur">4 places</p>
+          
+          <p class="indicateur_valeur">
+          {{ detail.nb_places_dispo|default('—') }} place{% if detail.nb_places_dispo|default(0) > 1 %}s{% endif %}
+          </p>
         </div>
 
         <div class="indicateur">
           <h3 class="indicateur_titre">Crédits par place</h3>
-          <p class="indicateur_valeur">12</p>
+          <p class="indicateur_valeur">
+          {{ detail.prix_credits|default('—') }}
+          </p>
         </div>
 
         <div class="indicateur">
           <h3 class="indicateur_titre">Durée</h3>
-          <p class="indicateur_valeur">00h 30min</p>
+
+
+          {% if detail.date_heure_depart and detail.date_heure_arrivee %}
+          {% set minutes = (detail.date_heure_arrivee|date('U') - detail.date_heure_depart|date('U')) // 60 %}
+          {% set heures = minutes // 60 %}
+          {% set reste = minutes % 60 %}
+          <p class="indicateur_valeur">
+          {{ '%02d'|format(heures) }}h {{ '%02d'|format(reste) }}min
+          </p>
+          {% else %}
+          <p class="indicateur_valeur">—</p>
+          {% endif %}
         </div>
 
       </div>
@@ -101,41 +162,59 @@
 
       {# Voiture du chauffeur #}
       <div class="bloc_voiture">
-        <h2 class="voiture_titre">Voiture de Benjamin</h2>
+        <h2 class="voiture_titre">
+        Voiture de {{ detail.pseudo_chauffeur|default('chauffeur') }}
+        </h2>
+      </div>
 
         <div class="voiture_grille">
           <div class="champ">
             <h3 class="champ_titre">Marque</h3>
-            <p class="champ_valeur">Ford Ranger</p>
+            <p class="champ_valeur">{{ detail.marque|default('—') }}</p>
           </div>
 
           <div class="champ">
             <h3 class="champ_titre">Couleur</h3>
-            <p class="champ_valeur">Orange</p>
+            <p class="champ_valeur">{{ detail.couleur|default('—') }}</p>
           </div>
 
           <div class="champ">
             <h3 class="champ_titre">Carburant</h3>
-            <p class="champ_valeur">Diesel</p>
+            {% set energie = detail.energie|default('') %}
+            <p class="champ_valeur">
+            {% if energie %}
+            {{ energie|lower|replace({'_': ' '})|capitalize }}
+            {% else %}
+             —
+            {% endif %}
+            </p>
           </div>
 
           <div class="champ">
             <h3 class="champ_titre">Ancienneté</h3>
-            <p class="champ_valeur">5 ans</p>
+
+          {% if detail.date_1ere_mise_en_circulation %}
+          {% set age = ('now'|date('Y')) - (detail.date_1ere_mise_en_circulation|date('Y')) %}
+          <p class="champ_valeur">{{ age }} an{% if age > 1 %}s{% endif %}</p>
+          {% else %}
+          <p class="champ_valeur">—</p>
+          {% endif %}
           </div>
-        </div>
+
       </div>
+
+    <hr class="separateur_details" aria-hidden="true">
 
       {# Préférences du chauffeur #}
       <div class="bloc_preferences">
-        <h3 class="preferences_titre">Préférences de Benjamin</h3>
+        <h3 class="preferences_titre">
+        Préférences de {{ detail.pseudo_chauffeur|default('chauffeur') }}
+        </h3>
         <ul class="preferences_liste">
           <li>Fumeurs non-acceptés</li>
           <li>Animaux acceptés</li>
         </ul>
       </div>
-
-      <hr class="separateur_details" aria-hidden="true">
 
       {# Action #}
       <div class="actions_details">
