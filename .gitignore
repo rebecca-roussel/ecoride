@@ -13,3 +13,5 @@
 
 # Sauvegardes
 *.bak
+.php-cs-fixer.cache
+.vscode/
