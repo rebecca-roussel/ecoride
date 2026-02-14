@@ -21,7 +21,7 @@ final class ConnexionController extends AbstractController
     ): Response {
         // Si déjà connecté : inutile d'afficher la page
         if ($sessionUtilisateur->estConnecte()) {
-            return $this->redirectToRoute('accueil');
+            return $this->redirectToRoute('tableau_de_bord');
         }
 
         $erreur = null;
@@ -55,7 +55,7 @@ final class ConnexionController extends AbstractController
                     } else {
                         $sessionUtilisateur->connecter((int) $utilisateur['id_utilisateur'], (string) $utilisateur['pseudo']);
 
-                        return $this->redirectToRoute('accueil');
+                        return $this->redirectToRoute('tableau_de_bord');
                     }
                 } catch (\PDOException) {
                     $erreur = 'Erreur lors de la connexion.';

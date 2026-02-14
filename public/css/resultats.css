@@ -75,6 +75,14 @@
   margin: 0 0 22px;
 }
 
+/* Message horaire élargi */
+.message_avertissement{
+  color: var(--etat_erreur);
+  font-weight: 600;
+  margin: 12px 0 18px;
+}
+
+
 /* Zone du bouton “Filtrer les résultats”. */
 .actions_resultats{
   margin: 0 0 26px;
@@ -143,13 +151,13 @@
   gap: 4px;
 }
 
-/* Ligne identité : pseudo + étoile + note sur UNE seule ligne */
+/* Ligne identité : pseudo + étoile + note */
 .ligne_identite{
   display: flex;
   align-items: center;
   gap: 10px;
 
-  /* stabilise l’alignement (évite “ça flotte”) */
+  /* stabilise l’alignement */
   line-height: 1.2;
 }
 
@@ -262,8 +270,6 @@
   }
 }
 
-/* Dans une carte gris-vert, la couleur "texte_secondaire" de la charte devient illisible.
-   Donc, à l'intérieur des cartes, je force un texte secondaire plus sombre. */
 .carte_covoiturage .texte_secondaire{
   color: rgba(15, 23, 42, 0.65);
 }

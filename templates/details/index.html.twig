@@ -29,6 +29,7 @@
 #}
 
 {% extends 'base.html.twig' %}
+
 	{% block title %}
 Détails du covoiturage - EcoRide
 {% endblock %}
@@ -38,9 +39,7 @@ Détails du covoiturage - EcoRide
 <link rel="stylesheet" href="{{ asset('css/details.css') }}"> {% endblock %}
 
 {% block body %}
-
 	<main class="page_details">
-
 		<section
 			class="panneau_details" aria-labelledby="titre_details">
 
@@ -55,9 +54,7 @@ Détails du covoiturage - EcoRide
 				</div>
 
 				<div class="chauffeur_resume" aria-label="Chauffeur et note">
-
 					{% set photo = detail.photo_chauffeur|default('') %}
-
 					<img class="chauffeur_photo" src="{{ photo ? asset(photo) : asset('icones/avatar.svg') }}" alt="Photo de {{ detail.pseudo_chauffeur|default('chauffeur') }}">
 
 					<p class="chauffeur_note">
@@ -69,10 +66,8 @@ Détails du covoiturage - EcoRide
 							<span class="valeur_note">
 								{{ detail.note_moyenne|default(0)|number_format(1, '.', '') }}
 							</span>
-							<span class="texte_mini texte_secondaire">
-								({{ nb_avis }}
-								avis)
-							</span>
+							<span class="texte_mini texte_secondaire">({{ nb_avis }}
+								avis)</span>
 						{% else %}
 							<span class="valeur_note">Nouveau</span>
 						{% endif %}
@@ -82,11 +77,8 @@ Détails du covoiturage - EcoRide
 
 			{# Départ / Arrivée #}
 			<div class="bloc_lieux">
-
 				<div class="lieu">
 					<h2 class="lieu_titre">Départ</h2>
-
-					{# Départ #}
 
 					<p class="lieu_ville">
 						{{ detail.ville_depart|default('—') }}
@@ -95,6 +87,7 @@ Détails du covoiturage - EcoRide
 								{{ detail.adresse_depart }}</span>
 						{% endif %}
 					</p>
+
 					<p class="lieu_date texte_secondaire">
 						Le
 						{{ detail.date_heure_depart ? detail.date_heure_depart|date('d/m/Y') : '—' }}
@@ -106,8 +99,6 @@ Détails du covoiturage - EcoRide
 				<div class="lieu">
 					<h2 class="lieu_titre">Arrivée</h2>
 
-					{# Arrivée #}
-
 					<p class="lieu_ville">
 						{{ detail.ville_arrivee|default('—') }}
 						{% if detail.adresse_arrivee is defined and detail.adresse_arrivee %}
@@ -115,6 +106,7 @@ Détails du covoiturage - EcoRide
 								{{ detail.adresse_arrivee }}</span>
 						{% endif %}
 					</p>
+
 					<p class="lieu_date texte_secondaire">
 						Le
 						{{ detail.date_heure_arrivee ? detail.date_heure_arrivee|date('d/m/Y') : '—' }}
@@ -122,7 +114,6 @@ Détails du covoiturage - EcoRide
 						{{ detail.date_heure_arrivee ? detail.date_heure_arrivee|date('H:i') : '—' }}
 					</p>
 				</div>
-
 			</div>
 
 			<hr
@@ -130,15 +121,14 @@ Détails du covoiturage - EcoRide
 
 			{# Indicateurs covoiturage #}
 			<div class="bloc_indicateurs">
-
 				<div class="indicateur">
 					<h3 class="indicateur_titre">Places disponibles</h3>
 
+					{# Places : j'évite les "place s" en construisant la phrase d'un coup #}
+					{% set places = detail.nb_places_dispo|default(0) %}
 					<p class="indicateur_valeur">
-						{{ detail.nb_places_dispo|default('—') }}
-						place
-						{% if detail.nb_places_dispo|default(0) > 1 %}s
-						{% endif %}
+						{{ places }}
+						place{{ places > 1 ? 's' : '' }}
 					</p>
 				</div>
 
@@ -152,7 +142,6 @@ Détails du covoiturage - EcoRide
 				<div class="indicateur">
 					<h3 class="indicateur_titre">Durée</h3>
 
-
 					{% if detail.date_heure_depart and detail.date_heure_arrivee %}
 						{% set minutes = (detail.date_heure_arrivee|date('U') - detail.date_heure_depart|date('U')) // 60 %}
 						{% set heures = minutes // 60 %}
@@ -165,7 +154,6 @@ Détails du covoiturage - EcoRide
 						<p class="indicateur_valeur">—</p>
 					{% endif %}
 				</div>
-
 			</div>
 
 			<hr
@@ -182,20 +170,54 @@ Détails du covoiturage - EcoRide
 			<div class="voiture_grille">
 				<div class="champ">
 					<h3 class="champ_titre">Marque</h3>
-					<p class="champ_valeur">{{ detail.marque|default('—') }}</p>
+
+					{# Marque : j'affiche joli (en base ça peut être en majuscules) #}
+					{% set marque = detail.marque|default('') %}
+					<p class="champ_valeur">
+						{% if marque %}
+							{{ marque|lower|capitalize }}
+						{% else %}
+							—
+						{% endif %}
+					</p>
 				</div>
 
 				<div class="champ">
 					<h3 class="champ_titre">Couleur</h3>
-					<p class="champ_valeur">{{ detail.couleur|default('—') }}</p>
+
+					{# Couleur : pareil, affichage propre pour l'utilisateur #}
+					{% set couleur = detail.couleur|default('') %}
+					<p class="champ_valeur">
+						{% if couleur %}
+							{{ couleur|lower|capitalize }}
+						{% else %}
+							—
+						{% endif %}
+					</p>
 				</div>
 
 				<div class="champ">
 					<h3 class="champ_titre">Carburant</h3>
+
 					{% set energie = detail.energie|default('') %}
+
+					{# Énergie :
+					             - value = constante (BDD / back-end)
+					             - texte affiché = libellé lisible (utilisateur) #}
+					{% set libelles_energie = {
+            'ESSENCE': 'Essence',
+            'DIESEL': 'Diesel',
+            'ETHANOL': 'Éthanol',
+            'HYBRIDE': 'Hybride',
+            'ELECTRIQUE': 'Électrique'
+          } %}
+
 					<p class="champ_valeur">
 						{% if energie %}
-							{{ energie|lower|replace({'_': ' '})|capitalize }}
+							{{ libelles_energie[energie]|default(energie) }}
+							{% if energie == 'ELECTRIQUE' %}
+								(écologique)
+							{% endif %}
 						{% else %}
 							—
 						{% endif %}
@@ -206,17 +228,16 @@ Détails du covoiturage - EcoRide
 					<h3 class="champ_titre">Ancienneté</h3>
 
 					{% if detail.date_1ere_mise_en_circulation %}
+						{# Ancienneté : je veux "1 an / 2 ans" sans espace bizarre #}
 						{% set age = ('now'|date('Y')) - (detail.date_1ere_mise_en_circulation|date('Y')) %}
-						<p class="champ_valeur">{{ age }}
-							an
-							{% if age > 1 %}s
-							{% endif %}
+						<p class="champ_valeur">
+							{{ age }}
+							{{ age > 1 ? 'ans' : 'an' }}
 						</p>
 					{% else %}
 						<p class="champ_valeur">—</p>
 					{% endif %}
 				</div>
-
 			</div>
 
 			<hr
@@ -237,10 +258,12 @@ Détails du covoiturage - EcoRide
 			<hr
 			class="separateur_details" aria-hidden="true">
 
-			{#Avis sur le chauffeur #}
+			{# Avis sur le chauffeur #}
 			<div class="bloc_avis">
-				<h3 class="avis_titre">Avis sur
-					{{ detail.pseudo_chauffeur|default('le chauffeur') }}</h3>
+				<h3 class="avis_titre">
+					Avis sur
+					{{ detail.pseudo_chauffeur|default('le chauffeur') }}
+				</h3>
 
 				{% if avis_chauffeur is defined and avis_chauffeur|length > 0 %}
 					<ul class="avis_liste">
@@ -252,7 +275,7 @@ Détails du covoiturage - EcoRide
 									<span class="texte_mini texte_secondaire">
 										—
 										{{ avis.pseudo_auteur|default('passager') }},
-																														              le
+										                    le
 										{{ avis.date_depot ? avis.date_depot|date('d/m/Y') : '—' }}
 									</span>
 								</p>
@@ -274,8 +297,6 @@ Détails du covoiturage - EcoRide
 			<div class="actions_details">
 				<button type="button" class="bouton_principal">Participer</button>
 			</div>
-
 		</section>
 	</main>
-
 {% endblock %}

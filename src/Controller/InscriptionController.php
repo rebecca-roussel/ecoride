@@ -73,10 +73,19 @@ final class InscriptionController extends AbstractController
                             $extension = $photo->guessExtension() ?: 'jpg';
                             $nomFichier = 'profil_' . bin2hex(random_bytes(8)) . '.' . $extension;
 
-                            $photo->move($dossierPhotos, $nomFichier);
+                            try {
+                                $photo->move($dossierPhotos, $nomFichier);
 
-                            /* Chemin relatif pour l’enregistrer en base */
-                            $photoPath = 'photos/' . $nomFichier;
+                                $cheminFinal = $dossierPhotos . '/' . $nomFichier;
+                                if (!is_file($cheminFinal)) {
+                                    $erreur = "La photo n'a pas été enregistrée sur le serveur.";
+                                } else {
+                                    /* Chemin relatif pour l’enregistrer en base */
+                                    $photoPath = 'photos/' . $nomFichier;
+                                }
+                            } catch (\Throwable $e) {
+                                $erreur = "La photo n'a pas pu être enregistrée.";
+                            }
                         }
                     }
                 }

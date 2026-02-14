@@ -53,9 +53,8 @@ Résultats de recherche - EcoRide
 
 			<p
 				class="rappel_recherche">
-				{# Rappel basé sur le contrat du contrôleur ResultatsController :
-																								           criteres.ville_depart / criteres.ville_arrivee / criteres.date
-																								           + heure_souhaitee (ou heure_min/heure_max) #}
+
+				{# Rappel basé sur le contrat du contrôleur ResultatsController : criteres.ville_depart / criteres.ville_arrivee / criteres.date + heure_souhaitee (ou heure_min/heure_max) #}
 
 				{% set ville_depart = criteres.ville_depart|default('—') %}
 				{% set ville_arrivee = criteres.ville_arrivee|default('—') %}
@@ -91,12 +90,13 @@ Résultats de recherche - EcoRide
 			</p>
 
 			{% if recherche_elargie %}
-				<p class="texte_secondaire">
+				<p class="message_avertissement">
 					Aucun covoiturage autour de
-					{{ criteres.heure_souhaitee }}.
-																				    voici les covoiturages du jour :
+					{{ criteres.heure_souhaitee|default('—') }},
+										    voici les covoiturages du jour :
 				</p>
 			{% endif %}
+
 
 			<div class="actions_resultats">
 				<button type="button" class="bouton_principal" id="bouton_filtrer" aria-expanded="false" aria-controls="panneau_filtres">
@@ -161,21 +161,22 @@ Résultats de recherche - EcoRide
 			<div
 				class="liste_covoiturages">
 
-				{# IMPORTANT : le contrôleur envoie "resultats" (pas "covoiturages") #}
+				{# Le contrôleur envoie "resultats" #}
 				{% if resultats is defined and resultats|length > 0 %}
 					{% for c in resultats %}
 						<article class="carte_covoiturage">
 
 							<div
 								class="bloc_chauffeur">
-								{# Photo chauffeur : photo_path renvoyé par la requête.
-																																																	         Repli : avatar générique si vide. #}
+
+								{# Photo chauffeur : photo_path renvoyé par la requête.																																																								         Repli : avatar générique si vide. #}
 								{% set photo = c.photo_chauffeur|default('') %}
 
 								<img class="photo_profil" src="{{ photo ? asset(photo) : asset('icones/avatar.svg') }}" alt="Photo de {{ c.pseudo_chauffeur|default('chauffeur') }}">
 
 								<div
 									class="chauffeur_texte">
+
 									{# 1. Ligne identité : pseudo + étoile + note sur une seule ligne #}
 									<div class="ligne_identite">
 										<span class="pseudo_chauffeur">{{ c.pseudo_chauffeur|default('—') }}</span>
@@ -214,8 +215,20 @@ Résultats de recherche - EcoRide
 											<span class="energie">
 												Énergie :
 												{% set energie = c.energie|default('') %}
+
+												{# Important :
+																																																- la VALUE envoyée doit rester exactement : ESSENCE / DIESEL / ETHANOL / HYBRIDE / ELECTRIQUE
+																																																- mais j'affiche un libellé plus propre pour l’utilisateur #}
+												{% set libelles_energie = {
+														'ESSENCE': 'Essence',
+														'DIESEL': 'Diesel',
+														'ETHANOL': 'Éthanol',
+														'HYBRIDE': 'Hybride',
+														'ELECTRIQUE': 'Électrique'
+														} %}
+
 												{% if energie %}
-													{{ energie }}
+													{{ libelles_energie[energie]|default(energie) }}
 													{% if energie == 'ELECTRIQUE' %}
 														(écologique)
 													{% endif %}
@@ -227,13 +240,10 @@ Résultats de recherche - EcoRide
 											<span class="separateur" aria-hidden="true">•</span>
 
 											<span class="places texte_secondaire">
-												{{ c.nb_places_dispo|default(0) }}
-												place
-												{% if (c.nb_places_dispo|default(0)) > 1 %}s
-												{% endif %}
-												restante
-												{% if (c.nb_places_dispo|default(0)) > 1 %}s
-												{% endif %}
+												{% set places = c.nb_places_dispo|default(0) %}
+												{{ places }}
+												place{{ places > 1 ? 's' : '' }}
+												restante{{ places > 1 ? 's' : '' }}
 											</span>
 
 											<span class="separateur" aria-hidden="true">•</span>
@@ -283,5 +293,4 @@ Résultats de recherche - EcoRide
 	</section>
 </main>{% endblock %}{% block pied_de_page %}
 {% include 'fragments/pied_de_page.html.twig' %}{% endblock %}{% block javascripts %}
-{{ parent() }}
-<script src="{{ asset('js/resultats.js') }}" defer></script>{% endblock %}
+{{ parent() }}<script src="{{ asset('js/resultats.js') }}" defer></script>{% endblock %}

@@ -17,9 +17,11 @@
 
 		<body>
 
-			{# En-tête conditionné : tant qu'on n'a pas Security, on se base sur la session "maison" #}
+			{# En-tête conditionné : on se base sur la session "maison" #}
 			{% block entete %}
-				{% if utilisateur_connecte is defined and utilisateur_connecte %}
+				{% set est_connecte = app.session is not null and app.session.get('utilisateur_id') is not null %}
+
+				{% if est_connecte %}
 					{% include 'fragments/entete_utilisateur.html.twig' %}
 				{% else %}
 					{% include 'fragments/entete_public.html.twig' %}
@@ -35,7 +37,7 @@
 			{% endblock %}
 
 			{# JS commun menu mobile #}
-			 <script src="{{ asset('js/menu_navigation.js') }}"></script>
+			<script src="{{ asset('js/menu_navigation.js') }}"></script>
 
 			{% block javascripts %}{% endblock %}
 
