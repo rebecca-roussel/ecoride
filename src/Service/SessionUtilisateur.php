@@ -21,6 +21,9 @@ final class SessionUtilisateur
          - id_utilisateur (int)
          - pseudo (string)
          - rôles fonctionnels (chauffeur / passager)
+         - rôles internes (admin / employé)
+           -> indispensables pour rediriger vers le bon espace
+           -> et sécuriser les pages /admin et /employe
 
       3) Méthodes utiles
          - estConnecte()
@@ -28,6 +31,8 @@ final class SessionUtilisateur
          - deconnecter()
          - idUtilisateur()
          - pseudo()
+         - estAdmin()
+         - estEmploye()
          - obtenirUtilisateurConnecte()
          - exigerUtilisateurConnecte()
          - mettreAJourRolesUtilisateurConnecte()
@@ -38,8 +43,13 @@ final class SessionUtilisateur
     */
     private const CLE_ID = 'utilisateur_id';
     private const CLE_PSEUDO = 'utilisateur_pseudo';
+
     private const CLE_ROLE_CHAUFFEUR = 'utilisateur_role_chauffeur';
-    private const CLE_ROLE_PASSAGER = 'utilisateur_role_passager';
+    private const CLE_ROLE_PASSAGER  = 'utilisateur_role_passager';
+
+    // Rôles internes (issus des tables employe / administrateur)
+    private const CLE_EST_ADMIN   = 'utilisateur_est_admin';
+    private const CLE_EST_EMPLOYE = 'utilisateur_est_employe';
 
     public function __construct(private RequestStack $requestStack)
     {
@@ -57,7 +67,6 @@ final class SessionUtilisateur
             return null;
         }
 
-        // Symfony : la session n’existe que si elle est démarrée/activée
         return $requete->hasSession() ? $requete->getSession() : null;
     }
 
@@ -84,16 +93,38 @@ final class SessionUtilisateur
         return $pseudoNettoye !== '' ? $pseudoNettoye : null;
     }
 
+    public function estAdmin(): bool
+    {
+        $session = $this->session();
+        if ($session === null) {
+            return false;
+        }
+
+        return (bool) $session->get(self::CLE_EST_ADMIN, false);
+    }
+
+    public function estEmploye(): bool
+    {
+        $session = $this->session();
+        if ($session === null) {
+            return false;
+        }
+
+        return (bool) $session->get(self::CLE_EST_EMPLOYE, false);
+    }
+
     /*
       Connecter
-      - rôles optionnels (valeurs par défaut) pour éviter des appels trop fragiles
-      - MAIS : idéalement, tu passes les vraies valeurs depuis la BDD / formulaire
+      - on passe les rôles tels qu'ils existent en base (source de vérité)
+      - on stocke aussi admin / employé pour choisir le bon espace après connexion
     */
     public function connecter(
         int $idUtilisateur,
         string $pseudo,
         bool $roleChauffeur = false,
-        bool $rolePassager = true
+        bool $rolePassager = false,
+        bool $estAdmin = false,
+        bool $estEmploye = false
     ): void {
         $session = $this->session();
         if ($session === null) {
@@ -107,8 +138,12 @@ final class SessionUtilisateur
 
         $session->set(self::CLE_ID, $idUtilisateur);
         $session->set(self::CLE_PSEUDO, $pseudoNettoye);
+
         $session->set(self::CLE_ROLE_CHAUFFEUR, $roleChauffeur);
         $session->set(self::CLE_ROLE_PASSAGER, $rolePassager);
+
+        $session->set(self::CLE_EST_ADMIN, $estAdmin);
+        $session->set(self::CLE_EST_EMPLOYE, $estEmploye);
     }
 
     public function deconnecter(): void
@@ -120,8 +155,12 @@ final class SessionUtilisateur
 
         $session->remove(self::CLE_ID);
         $session->remove(self::CLE_PSEUDO);
+
         $session->remove(self::CLE_ROLE_CHAUFFEUR);
         $session->remove(self::CLE_ROLE_PASSAGER);
+
+        $session->remove(self::CLE_EST_ADMIN);
+        $session->remove(self::CLE_EST_EMPLOYE);
     }
 
     public function idUtilisateur(): ?int
@@ -133,12 +172,10 @@ final class SessionUtilisateur
 
         $id = $session->get(self::CLE_ID);
 
-        // Cas 1 : int
         if (is_int($id)) {
             return $id > 0 ? $id : null;
         }
 
-        // Cas 2 : string numérique
         if (is_string($id) && ctype_digit($id)) {
             $idInt = (int) $id;
             return $idInt > 0 ? $idInt : null;
@@ -164,8 +201,12 @@ final class SessionUtilisateur
         return [
             'id_utilisateur' => $idUtilisateur,
             'pseudo' => $pseudo,
+
             'role_chauffeur' => (bool) $session->get(self::CLE_ROLE_CHAUFFEUR, false),
             'role_passager' => (bool) $session->get(self::CLE_ROLE_PASSAGER, false),
+
+            'est_admin' => (bool) $session->get(self::CLE_EST_ADMIN, false),
+            'est_employe' => (bool) $session->get(self::CLE_EST_EMPLOYE, false),
         ];
     }
 
@@ -191,4 +232,3 @@ final class SessionUtilisateur
         return $utilisateur;
     }
 }
-

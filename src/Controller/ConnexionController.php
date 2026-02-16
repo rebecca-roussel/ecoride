@@ -21,8 +21,30 @@ final class ConnexionController extends AbstractController
         ConnexionPostgresql $connexion,
         SessionUtilisateur $sessionUtilisateur,
     ): Response {
-        // Si déjà connecté : inutile d'afficher la page
+        /*
+          PLAN (ConnexionController) :
+
+          1) Si déjà connecté :
+             - redirection selon le profil (administrateur / employé / utilisateur)
+
+          2) POST :
+             - lire email + mot de passe
+             - charger l'utilisateur (BDD) + déterminer admin/employé via tables dédiées
+             - vérifier statut + mot de passe
+             - créer la session
+             - redirection selon le profil
+        */
+
+        // 1) Déjà connecté : on évite la page de connexion
         if ($sessionUtilisateur->estConnecte()) {
+            if ($sessionUtilisateur->estAdmin()) {
+                return $this->redirectToRoute('espace_administrateur');
+            }
+
+            if ($sessionUtilisateur->estEmploye()) {
+                return $this->redirectToRoute('tableau_de_bord');
+            }
+
             return $this->redirectToRoute('tableau_de_bord');
         }
 
@@ -39,16 +61,30 @@ final class ConnexionController extends AbstractController
                 try {
                     $pdo = $connexion->obtenirPdo();
 
+                    /*
+                      On récupère :
+                      - l'utilisateur (u.* utile à la connexion)
+                      - + deux drapeaux calculés :
+                        * est_admin  : existe dans table administrateur
+                        * est_employe: existe dans table employe
+
+                      ⚠️ PostgreSQL renvoie souvent 't'/'f' pour EXISTS,
+                      donc on gèrera les deux formes côté PHP.
+                    */
                     $stmt = $pdo->prepare('
                         SELECT
-                            id_utilisateur,
-                            pseudo,
-                            mot_de_passe_hash,
-                            statut,
-                            role_chauffeur,
-                            role_passager
-                        FROM utilisateur
-                        WHERE email = :email
+                            u.id_utilisateur,
+                            u.pseudo,
+                            u.email,
+                            u.mot_de_passe_hash,
+                            u.statut,
+                            u.role_chauffeur,
+                            u.role_passager,
+                            u.role_interne,
+                            EXISTS (SELECT 1 FROM administrateur a WHERE a.id_utilisateur = u.id_utilisateur) AS est_admin,
+                            EXISTS (SELECT 1 FROM employe e       WHERE e.id_utilisateur = u.id_utilisateur) AS est_employe
+                        FROM utilisateur u
+                        WHERE u.email = :email
                         LIMIT 1
                     ');
 
@@ -71,7 +107,11 @@ final class ConnexionController extends AbstractController
                             $roleChauffeur = (bool) ($utilisateur['role_chauffeur'] ?? false);
                             $rolePassager = (bool) ($utilisateur['role_passager'] ?? false);
 
-                            // Sécurité : on évite une session incohérente
+                            // EXISTS -> 't'/'f' ou bool selon driver/config
+                            $estAdmin = (($utilisateur['est_admin'] ?? false) === true) || (($utilisateur['est_admin'] ?? '') === 't');
+                            $estEmploye = (($utilisateur['est_employe'] ?? false) === true) || (($utilisateur['est_employe'] ?? '') === 't');
+
+                            // Sécurité : session cohérente
                             if ($idUtilisateur <= 0 || trim($pseudo) === '') {
                                 $erreur = 'Erreur lors de la connexion.';
                             } else {
@@ -79,8 +119,19 @@ final class ConnexionController extends AbstractController
                                     $idUtilisateur,
                                     $pseudo,
                                     $roleChauffeur,
-                                    $rolePassager
+                                    $rolePassager,
+                                    $estAdmin,
+                                    $estEmploye
                                 );
+
+                                // Redirection selon le profil
+                                if ($estAdmin) {
+                                    return $this->redirectToRoute('espace_administrateur');
+                                }
+
+                                if ($estEmploye) {
+                                    return $this->redirectToRoute('tableau_de_bord');
+                                }
 
                                 return $this->redirectToRoute('tableau_de_bord');
                             }
@@ -109,4 +160,3 @@ final class ConnexionController extends AbstractController
         return $this->redirectToRoute('accueil');
     }
 }
-
