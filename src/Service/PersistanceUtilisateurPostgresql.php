@@ -306,4 +306,51 @@ final class PersistanceUtilisateurPostgresql
             'id_utilisateur' => $idUtilisateur,
         ]);
     }
+
+    /*
+      Met à jour les rôles "chauffeur" et "passager" d’un utilisateur
+
+      Objectif :
+      - page "Gérer mes rôles" : l’utilisateur choisit ses rôles, puis on enregistre en BDD.
+
+      Sécurité métier :
+      - l’utilisateur ne doit pas pouvoir décocher les deux rôles en même temps
+      - je bloque côté PHP avec un message clair
+      - et la BDD a aussi sa contrainte (ck_utilisateur_au_moins_un_role) en filet de sécurité
+    */
+    public function mettreAJourRoles(int $idUtilisateur, bool $roleChauffeur, bool $rolePassager): void
+    {
+        if (!$roleChauffeur && !$rolePassager) {
+            throw new RuntimeException('Il faut garder au moins un rôle : chauffeur ou passager.');
+        }
+
+        $pdo = $this->connexionPostgresql->obtenirPdo();
+
+        $sql = "
+            UPDATE utilisateur
+            SET role_passager = :role_passager,
+            role_chauffeur = :role_chauffeur
+            WHERE id_utilisateur = :id_utilisateur
+            ";
+
+        try {
+            $requete = $pdo->prepare($sql);
+
+            // Important : on force le type boolean côté PDO (évite les '' / 'on' / etc.)
+            $requete->bindValue('role_passager', $rolePassager, \PDO::PARAM_BOOL);
+            $requete->bindValue('role_chauffeur', $roleChauffeur, \PDO::PARAM_BOOL);
+            $requete->bindValue('id_utilisateur', $idUtilisateur, \PDO::PARAM_INT);
+
+            $requete->execute();
+        } catch (PDOException $exception) {
+            // Si jamais la BDD refuse (contrainte métier), je renvoie un message compréhensible.
+            // Exemple : ck_utilisateur_au_moins_un_role si on essayait de mettre les 2 à false.
+            if ($exception->getCode() === '23514') {
+                throw new RuntimeException('Vous devez garder au moins un rôle : chauffeur ou passager.', 0, $exception);
+            }
+
+            throw $exception;
+        }
+    }
 }
+

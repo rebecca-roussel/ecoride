@@ -4,99 +4,91 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use DateTimeImmutable;
+use PDO;
+use RuntimeException;
+
 final class PersistanceCovoituragePostgresql
 {
+  /*
+    PLAN (PersistanceCovoituragePostgresql) :
+
+    1) Rôle de ce service
+       - pont entre Symfony et PostgreSQL pour les covoiturages
+       - le SQL reste ici (pas dans les contrôleurs)
+
+    2) Ce que je gère dans ce fichier
+       - recherche de covoiturages (avec filtres)
+       - détail d’un covoiturage (chauffeur + voiture + note moyenne)
+       - liste d’avis valides (pour afficher sur la page détail)
+       - création d’un covoiturage planifié (publication)
+
+    3) Principe important
+       - la base est la source de vérité
+       - requêtes préparées pour éviter les injections
+       - cohérence : statuts et règles TP (PLANIFIE, places > 0, etc.)
+  */
+
+  public function __construct(private ConnexionPostgresql $connexionPostgresql)
+  {
+  }
+
+  /**
+   * Recherche de covoiturages PLANIFIE avec places dispo.
+   * Les paramètres optionnels peuvent être null.
+   *
+   * @return array<int, array<string, mixed>>
+   */
+  public function rechercherCovoiturages(
+    string $villeDepart,
+    string $villeArrivee,
+    DateTimeImmutable $date,
+    ?string $heureMin,
+    ?string $heureMax,
+    ?int $prixMax,
+    ?string $energie,
+    ?int $ageMaxVoiture,
+    ?int $noteMin,
+  ): array {
     /*
-      PLAN (PersistanceCovoituragePostgresql) :
+      PLAN (rechercherCovoiturages) :
 
-      1) Rôle de ce service
-         - c’est mon “pont” entre Symfony et PostgreSQL pour tout ce qui concerne les covoiturages
-         - je garde le SQL ici, pas dans les contrôleurs
-
-      2) Ce que je gère dans ce fichier
-         - recherche de covoiturages (avec filtres)
-         - détail d’un covoiturage (chauffeur + voiture + note moyenne)
-         - liste d’avis valides (pour afficher sur la page détail)
-
-      3) Principe important
-         - la base est la source de vérité
-         - je filtre sur les statuts demandés par le TP (PLANIFIE, places disponibles, etc.)
-         - j’utilise des requêtes préparées pour éviter les injections SQL
+      1) Construire une plage de date/heure (début/fin)
+      2) Requête socle
+      3) Ajouter les filtres si demandés
+      4) Exécuter et renvoyer les résultats
     */
 
-    public function __construct(private ConnexionPostgresql $connexionPostgresql)
-    {
+    $pdo = $this->connexionPostgresql->obtenirPdo();
+
+    // 1) Plage journée complète par défaut
+    $debut = $date->setTime(0, 0);
+    $fin = $date->setTime(23, 59, 59);
+
+    if (null !== $heureMin && preg_match('/^\d{2}:\d{2}$/', $heureMin)) {
+      [$h, $m] = array_map('intval', explode(':', $heureMin));
+      $debut = $date->setTime($h, $m);
     }
 
-    /**
-     * Recherche de covoiturages PLANIFIE avec places dispo.
-     * Tous les paramètres optionnels peuvent être null.
-     */
-    public function rechercherCovoiturages(
-        string $villeDepart,
-        string $villeArrivee,
-        \DateTimeImmutable $date,
-        ?string $heureMin,
-        ?string $heureMax,
-        ?int $prixMax,
-        ?string $energie,
-        ?int $ageMaxVoiture,
-        ?int $noteMin,
-    ): array {
-        /*
-          PLAN (rechercherCovoiturages) :
+    if (null !== $heureMax && preg_match('/^\d{2}:\d{2}$/', $heureMax)) {
+      [$h, $m] = array_map('intval', explode(':', $heureMax));
+      $fin = $date->setTime($h, $m);
+    }
 
-          1) Construire une plage de date/heure
-             - base : de 00:00 à 23:59:59 (toute la journée)
-             - si heureMin est donnée : je commence à cette heure
-             - si heureMax est donnée : je termine à cette heure
-             - si l’utilisateur inverse (fin < début) : je remets dans le bon ordre
+    if ($fin < $debut) {
+      [$debut, $fin] = [$fin, $debut];
+    }
 
-          2) Construire la requête SQL
-             - on part d’une requête “socle” (statut PLANIFIE, places dispo, villes, date entre début/fin)
-             - puis on ajoute des filtres seulement si l’utilisateur en a demandé
+    /*
+      2) Requête socle
 
-          3) Exécuter et renvoyer la liste de résultats
-        */
-
-        $pdo = $this->connexionPostgresql->obtenirPdo();
-
-        // 1) Plage de la journée complète par défaut
-        $debut = $date->setTime(0, 0);
-        $fin = $date->setTime(23, 59, 59);
-
-        // Si l'utilisateur a indiqué une heure min, je la prends
-        if (null !== $heureMin && preg_match('/^\d{2}:\d{2}$/', $heureMin)) {
-            [$h, $m] = array_map('intval', explode(':', $heureMin));
-            $debut = $date->setTime($h, $m);
-        }
-
-        // Si l'utilisateur a indiqué une heure max, je la prends
-        if (null !== $heureMax && preg_match('/^\d{2}:\d{2}$/', $heureMax)) {
-            [$h, $m] = array_map('intval', explode(':', $heureMax));
-            $fin = $date->setTime($h, $m);
-        }
-
-        // Sécurité logique : si la fin est avant le début, j'échange
-        if ($fin < $debut) {
-            [$debut, $fin] = [$fin, $debut];
-        }
-
-        /*
-          2) Requête SQL socle
-
-          - covoiturage : infos du trajet
-          - utilisateur : infos chauffeur (pseudo + photo)
-          - voiture : énergie + date 1ère mise en circulation (pour l’âge)
-          - note : sous-requête qui calcule note moyenne + nombre d’avis valides par chauffeur
-
-          Important :
-          - statut PLANIFIE
-          - nb_places_dispo > 0
-          - villes départ/arrivée
-          - date_heure_depart dans la plage début/fin
-        */
-        $sql = "
+      Important :
+      - PLANIFIE
+      - places dispo > 0
+      - villes
+      - date_heure_depart dans [début, fin]
+    */
+    $sql = "
             SELECT
                 covoiturage.id_covoiturage,
                 covoiturage.date_heure_depart,
@@ -155,74 +147,62 @@ final class PersistanceCovoituragePostgresql
               AND covoiturage.date_heure_depart BETWEEN :debut AND :fin
         ";
 
-        /*
-          Paramètres de base
-          - villes : on “trim” au cas où
-          - dates : on envoie en string pour PostgreSQL (format clair)
-        */
-        $parametres = [
-            'ville_depart' => trim($villeDepart),
-            'ville_arrivee' => trim($villeArrivee),
-            'debut' => $debut->format('Y-m-d H:i:s'),
-            'fin' => $fin->format('Y-m-d H:i:s'),
-        ];
+    /*
+      Paramètres de base
 
-        // Filtres optionnels (je n’ajoute la condition que si le filtre existe)
+      Point important
+      - ILIKE avec % = recherche “contient”, insensible à la casse
+    */
+    $parametres = [
+      'ville_depart' => '%' . trim($villeDepart) . '%',
+      'ville_arrivee' => '%' . trim($villeArrivee) . '%',
+      'debut' => $debut->format('Y-m-d H:i:s'),
+      'fin' => $fin->format('Y-m-d H:i:s'),
+    ];
 
-        if (null !== $prixMax) {
-            $sql .= ' AND covoiturage.prix_credits <= :prix_max';
-            $parametres['prix_max'] = $prixMax;
-        }
-
-        if (null !== $energie && '' !== $energie) {
-            $energie = strtoupper(trim($energie));
-            $sql .= ' AND voiture.energie = :energie';
-            $parametres['energie'] = $energie;
-        }
-
-        if (null !== $ageMaxVoiture) {
-            /*
-              Age max voiture
-              - on veut des voitures “pas plus vieilles que X ans”
-              - donc : date_1ere_mise_en_circulation >= CURRENT_DATE - X années
-            */
-            $sql .= " AND voiture.date_1ere_mise_en_circulation >= (CURRENT_DATE - (:age_max * INTERVAL '1 year'))";
-            $parametres['age_max'] = $ageMaxVoiture;
-        }
-
-        if (null !== $noteMin) {
-            // COALESCE : si pas de note (null), on considère 0
-            $sql .= ' AND COALESCE(note.note_moyenne, 0) >= :note_min';
-            $parametres['note_min'] = $noteMin;
-        }
-
-        // Tri : les trajets du plus tôt au plus tard
-        $sql .= ' ORDER BY covoiturage.date_heure_depart ASC';
-
-        $requete = $pdo->prepare($sql);
-        $requete->execute($parametres);
-
-        return $requete->fetchAll(\PDO::FETCH_ASSOC);
+    if (null !== $prixMax) {
+      $sql .= ' AND covoiturage.prix_credits <= :prix_max';
+      $parametres['prix_max'] = $prixMax;
     }
 
-    /**
-     * Détail d'un covoiturage par id (chauffeur + voiture + note).
-     * Retourne null si l'id n'existe pas.
-     */
-    public function obtenirDetailCovoiturageParId(int $idCovoiturage): ?array
-    {
-        /*
-          PLAN (obtenirDetailCovoiturageParId) :
+    if (null !== $energie && '' !== $energie) {
+      $energie = strtoupper(trim($energie));
+      $sql .= ' AND voiture.energie = :energie';
+      $parametres['energie'] = $energie;
+    }
 
-          - je récupère un seul covoiturage par son id
-          - je joins le chauffeur (utilisateur) et la voiture
-          - je calcule la note moyenne + nb d’avis valides (même principe que la recherche)
-          - je retourne null si rien trouvé
-        */
+    if (null !== $ageMaxVoiture) {
+      $sql .= " AND voiture.date_1ere_mise_en_circulation >= (CURRENT_DATE - (:age_max * INTERVAL '1 year'))";
+      $parametres['age_max'] = $ageMaxVoiture;
+    }
 
-        $pdo = $this->connexionPostgresql->obtenirPdo();
+    if (null !== $noteMin) {
+      $sql .= ' AND COALESCE(note.note_moyenne, 0) >= :note_min';
+      $parametres['note_min'] = $noteMin;
+    }
 
-        $sql = "
+    $sql .= ' ORDER BY covoiturage.date_heure_depart ASC';
+
+    $requete = $pdo->prepare($sql);
+    $requete->execute($parametres);
+
+    return $requete->fetchAll(PDO::FETCH_ASSOC) ?: [];
+  }
+
+  /**
+   * Détail d'un covoiturage par id.
+   *
+   * @return array<string, mixed>|null
+   */
+  public function obtenirDetailCovoiturageParId(int $idCovoiturage): ?array
+  {
+    if ($idCovoiturage <= 0) {
+      return null;
+    }
+
+    $pdo = $this->connexionPostgresql->obtenirPdo();
+
+    $sql = "
             SELECT
                 c.id_covoiturage,
                 c.date_heure_depart,
@@ -235,6 +215,10 @@ final class PersistanceCovoituragePostgresql
                 c.longitude_depart,
                 c.latitude_arrivee,
                 c.longitude_arrivee,
+
+                c.est_non_fumeur,
+                c.accepte_animaux,
+                c.preferences_libre,
 
                 c.nb_places_dispo,
                 c.prix_credits,
@@ -280,36 +264,31 @@ final class PersistanceCovoituragePostgresql
             LIMIT 1
         ";
 
-        $requete = $pdo->prepare($sql);
-        $requete->execute(['id_covoiturage' => $idCovoiturage]);
+    $requete = $pdo->prepare($sql);
+    $requete->execute(['id_covoiturage' => $idCovoiturage]);
 
-        $ligne = $requete->fetch(\PDO::FETCH_ASSOC);
+    $ligne = $requete->fetch(PDO::FETCH_ASSOC);
 
-        return false !== $ligne ? $ligne : null;
+    return false !== $ligne ? $ligne : null;
+  }
+
+  /**
+   * Avis validés liés à un chauffeur (via ses covoiturages).
+   *
+   * @return array<int, array<string, mixed>>
+   */
+  public function obtenirAvisValidesDuChauffeur(int $idChauffeur, int $limite = 5): array
+  {
+    if ($idChauffeur <= 0) {
+      return [];
     }
 
-    /*
-      Avis valides du chauffeur
-      - utile pour afficher les derniers avis sur la page détail
-      - limite configurable (par défaut 5)
-    */
-    public function obtenirAvisValidesDuChauffeur(int $idChauffeur, int $limite = 5): array
-    {
-        $pdo = $this->connexionPostgresql->obtenirPdo();
+    // Garde-fou simple
+    $limite = max(1, min(20, (int) $limite));
 
-        // Sécurité : je borne la limite (évite les valeurs absurdes)
-        $limite = max(1, min(20, (int) $limite));
+    $pdo = $this->connexionPostgresql->obtenirPdo();
 
-        /*
-          Je récupère :
-          - note, commentaire, date
-          - pseudo de l'auteur (le passager qui a laissé l’avis)
-
-          Je ne prends que :
-          - avis validés
-          - participation non annulée (sinon ça n’aurait pas de sens)
-        */
-        $sql = "
+    $sql = "
             SELECT
                 a.note,
                 a.commentaire,
@@ -321,17 +300,137 @@ final class PersistanceCovoituragePostgresql
             JOIN utilisateur u ON u.id_utilisateur = p.id_utilisateur
             WHERE c.id_utilisateur = :id_chauffeur
               AND a.statut_moderation = 'VALIDE'
+              AND p.est_annulee = false
             ORDER BY a.date_depot DESC
-            LIMIT {$limite}
+            LIMIT :limite
         ";
 
-        $requete = $pdo->prepare($sql);
+    $requete = $pdo->prepare($sql);
+    $requete->bindValue('id_chauffeur', $idChauffeur, PDO::PARAM_INT);
+    $requete->bindValue('limite', $limite, PDO::PARAM_INT);
+    $requete->execute();
 
-        // bindValue en int pour être sûre du type
-        $requete->bindValue('id_chauffeur', $idChauffeur, \PDO::PARAM_INT);
+    return $requete->fetchAll(PDO::FETCH_ASSOC) ?: [];
+  }
+  public function creerCovoituragePlanifie(
+    int $idUtilisateur,
+    int $idVoiture,
+    DateTimeImmutable $dateHeureDepart,
+    DateTimeImmutable $dateHeureArrivee,
+    string $adresseDepart,
+    string $adresseArrivee,
+    string $villeDepart,
+    string $villeArrivee,
+    int $nbPlacesDispo,
+    int $prixCredits,
+    bool $estNonFumeur,
+    bool $accepteAnimaux,
+    ?string $preferenceLibre
+  ): int {
+    /*
+      PLAN (creerCovoituragePlanifie) :
 
-        $requete->execute();
+      1) Valider les paramètres minimaux (id, dates, texte)
+      2) Construire l’INSERT aligné avec la BDD
+      3) Exécuter et retourner l’id
+    */
 
-        return $requete->fetchAll(\PDO::FETCH_ASSOC);
+    if ($idUtilisateur <= 0 || $idVoiture <= 0) {
+      throw new RuntimeException('Création impossible : paramètres invalides.');
     }
+
+    if ($dateHeureArrivee <= $dateHeureDepart) {
+      throw new RuntimeException('Création impossible : la date d’arrivée doit être après le départ.');
+    }
+
+    $adresseDepart = trim($adresseDepart);
+    $adresseArrivee = trim($adresseArrivee);
+    $villeDepart = trim($villeDepart);
+    $villeArrivee = trim($villeArrivee);
+
+    if ($adresseDepart === '' || $adresseArrivee === '' || $villeDepart === '' || $villeArrivee === '') {
+      throw new RuntimeException('Création impossible : adresse/ville manquante.');
+    }
+
+    if ($nbPlacesDispo < 1 || $nbPlacesDispo > 4) {
+      throw new RuntimeException('Création impossible : nombre de places invalide.');
+    }
+
+    if ($prixCredits <= 0) {
+      throw new RuntimeException('Création impossible : prix invalide.');
+    }
+
+    $preferenceLibre = null !== $preferenceLibre ? trim($preferenceLibre) : null;
+    if ($preferenceLibre === '') {
+      $preferenceLibre = null;
+    }
+
+    $pdo = $this->connexionPostgresql->obtenirPdo();
+
+    $sql = "
+            INSERT INTO covoiturage (
+                date_heure_depart,
+                date_heure_arrivee,
+                adresse_depart,
+                adresse_arrivee,
+                ville_depart,
+                ville_arrivee,
+                nb_places_dispo,
+                prix_credits,
+                statut_covoiturage,
+
+                est_non_fumeur,
+                accepte_animaux,
+                preferences_libre,
+
+                id_utilisateur,
+                id_voiture
+            )
+            VALUES (
+                :date_heure_depart,
+                :date_heure_arrivee,
+                :adresse_depart,
+                :adresse_arrivee,
+                :ville_depart,
+                :ville_arrivee,
+                :nb_places_dispo,
+                :prix_credits,
+                'PLANIFIE',
+
+                :est_non_fumeur,
+                :accepte_animaux,
+                :preferences_libre,
+
+                :id_utilisateur,
+                :id_voiture
+            )
+            RETURNING id_covoiturage
+        ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+      'date_heure_depart' => $dateHeureDepart->format('Y-m-d H:i:s'),
+      'date_heure_arrivee' => $dateHeureArrivee->format('Y-m-d H:i:s'),
+      'adresse_depart' => $adresseDepart,
+      'adresse_arrivee' => $adresseArrivee,
+      'ville_depart' => $villeDepart,
+      'ville_arrivee' => $villeArrivee,
+      'nb_places_dispo' => $nbPlacesDispo,
+      'prix_credits' => $prixCredits,
+
+      'est_non_fumeur' => $estNonFumeur ? 1 : 0,
+      'accepte_animaux' => $accepteAnimaux ? 1 : 0,
+      'preferences_libre' => $preferenceLibre,
+
+      'id_utilisateur' => $idUtilisateur,
+      'id_voiture' => $idVoiture,
+    ]);
+
+    $id = $stmt->fetchColumn();
+    if ($id === false) {
+      throw new RuntimeException('Création impossible : aucun id de covoiturage retourné.');
+    }
+
+    return (int) $id;
+  }
 }

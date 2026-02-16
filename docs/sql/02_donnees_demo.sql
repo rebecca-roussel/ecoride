@@ -134,8 +134,12 @@ INSERT INTO covoiturage (
   latitude_depart, longitude_depart, latitude_arrivee, longitude_arrivee,
   nb_places_dispo, prix_credits, commission_credits,
   statut_covoiturage, incident_commentaire, incident_resolu,
+
+  est_non_fumeur, accepte_animaux, preferences_libre,
+
   id_utilisateur, id_voiture
 )
+
 VALUES
 /* A) PLANIFIE électrique (Muriel) */
 (
@@ -144,6 +148,9 @@ VALUES
   NULL, NULL, NULL, NULL,
   2, 12, 2,
   'PLANIFIE', NULL, false,
+
+  true, false, 'Bagages acceptés si raisonnables.',
+
   (SELECT id_utilisateur FROM utilisateur WHERE pseudo='muriel'),
   (SELECT id_voiture FROM voiture WHERE immatriculation='AA123BB')
 ),
@@ -155,6 +162,9 @@ VALUES
   NULL, NULL, NULL, NULL,
   1, 8, 2,
   'PLANIFIE', NULL, false,
+
+  false, true, 'Petit animal en cage accepté.',
+
   (SELECT id_utilisateur FROM utilisateur WHERE pseudo='benjamin'),
   (SELECT id_voiture FROM voiture WHERE immatriculation='CC456DD')
 ),
@@ -166,6 +176,9 @@ VALUES
   NULL, NULL, NULL, NULL,
   1, 10, 2,
   'EN_COURS', NULL, false,
+
+  true, false, NULL,
+
   (SELECT id_utilisateur FROM utilisateur WHERE pseudo='muriel'),
   (SELECT id_voiture FROM voiture WHERE immatriculation='AA123BB')
 ),
@@ -177,6 +190,9 @@ VALUES
   NULL, NULL, NULL, NULL,
   2, 9, 2,
   'ANNULE', NULL, false,
+
+  true, false, 'Annulé : imprévu de dernière minute.',
+
   (SELECT id_utilisateur FROM utilisateur WHERE pseudo='muriel'),
   (SELECT id_voiture FROM voiture WHERE immatriculation='AA123BB')
 ),
@@ -188,6 +204,9 @@ VALUES
   NULL, NULL, NULL, NULL,
   2, 10, 2,
   'INCIDENT', 'Retard important et désaccord sur le point de prise en charge.', false,
+
+  false, false, 'Communication à améliorer sur le point de rendez-vous.',
+
   (SELECT id_utilisateur FROM utilisateur WHERE pseudo='benjamin'),
   (SELECT id_voiture FROM voiture WHERE immatriculation='CC456DD')
 ),
@@ -199,6 +218,9 @@ VALUES
   NULL, NULL, NULL, NULL,
   2, 11, 2,
   'PLANIFIE', NULL, false,
+
+  true, false, 'Merci d’être à l’heure, départ pile.',
+
   (SELECT id_utilisateur FROM utilisateur WHERE pseudo='benjamin'),
   (SELECT id_voiture FROM voiture WHERE immatriculation='CC456DD')
 ),
@@ -210,6 +232,9 @@ VALUES
   NULL, NULL, NULL, NULL,
   2, 12, 2,
   'PLANIFIE', NULL, false,
+
+  true, true, 'Musique douce ok, pas de nourriture odorante.',
+
   (SELECT id_utilisateur FROM utilisateur WHERE pseudo='muriel'),
   (SELECT id_voiture FROM voiture WHERE immatriculation='AA123BB')
 );

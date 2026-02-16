@@ -15,8 +15,8 @@ Tableau de bord - EcoRide
 
 	{% block stylesheets %}
 	{{ parent() }}
-<link rel="stylesheet" href="{{ asset('css/tableau_de_bord.css') }}"> {% endblock %}
-
+<link rel="stylesheet" href="{{ asset('css/tableau_de_bord.css') }}">
+{% endblock %}
 
 {% block entete %}
 	{% include 'fragments/entete_utilisateur.html.twig' %}
@@ -37,7 +37,10 @@ Tableau de bord - EcoRide
 				</div>
 
 				<div class="tableau_avatar">
-					<img class="tableau_avatar_image" src="{{ donnees.photo is defined and donnees.photo ? donnees.photo : asset('icones/avatar.svg') }}" alt="Photo de profil de {{ donnees.pseudo ?? 'EcoRider' }}" loading="lazy">
+					<img class="tableau_avatar_image"
+					src="{{ donnees.photo }}"
+					alt="Photo de profil de {{ donnees.pseudo ?? 'EcoRider' }}"
+					loading="lazy"/>
 				</div>
 			</header>
 
@@ -48,7 +51,7 @@ Tableau de bord - EcoRide
 			<div class="grille_infos">
 				<div class="carte_info">
 					<div class="carte_icone" aria-hidden="true">
-						<img src="{{ asset('icones/credits.svg') }}" alt="">
+						<span class="icone icone_credits"></span>
 					</div>
 
 					<div class="carte_info_texte">
@@ -59,7 +62,7 @@ Tableau de bord - EcoRide
 
 				<div class="carte_info">
 					<div class="carte_icone" aria-hidden="true">
-						<img src="{{ asset('icones/avatars.svg') }}" alt="">
+						<span class="icone icone_avatars"></span>
 					</div>
 
 					<div class="carte_info_texte">
@@ -76,7 +79,7 @@ Tableau de bord - EcoRide
 			<div class="grille_actions">
 				<a class="carte_action" href="{{ path('profil') }}">
 					<div class="carte_icone" aria-hidden="true">
-						<img src="{{ asset('icones/avatar.svg') }}" alt="">
+						<span class="icone icone_avatar"></span>
 					</div>
 
 					<div class="carte_action_texte">
@@ -85,9 +88,9 @@ Tableau de bord - EcoRide
 					</div>
 				</a>
 
-				<a class="carte_action" href="#">
+				<a class="carte_action" href="{{ path('gerer_roles') }}">
 					<div class="carte_icone" aria-hidden="true">
-						<img src="{{ asset('icones/avatars.svg') }}" alt="">
+						<span class="icone icone_avatars"></span>
 					</div>
 
 					<div class="carte_action_texte">
@@ -98,7 +101,7 @@ Tableau de bord - EcoRide
 
 				<a class="carte_action" href="{{ path('gerer_vehicules') }}">
 					<div class="carte_icone" aria-hidden="true">
-						<img src="{{ asset('icones/covoit.svg') }}" alt="">
+						<span class="icone icone_covoit"></span>
 					</div>
 
 					<div class="carte_action_texte">
@@ -107,9 +110,9 @@ Tableau de bord - EcoRide
 					</div>
 				</a>
 
-				<a class="carte_action" href="#">
+				<a class="carte_action" href="{{ path('historique', { onglet: 'covoiturages' }) }}">
 					<div class="carte_icone" aria-hidden="true">
-						<img src="{{ asset('icones/cadran.svg') }}" alt="">
+						<span class="icone icone_cadran"></span>
 					</div>
 
 					<div class="carte_action_texte">
@@ -118,16 +121,28 @@ Tableau de bord - EcoRide
 					</div>
 				</a>
 
-				<a class="carte_action carte_action_large" href="#">
+				<a class="carte_action" href="{{ path('credits') }}">
 					<div class="carte_icone" aria-hidden="true">
-						<img src="{{ asset('icones/credits.svg') }}" alt="">
+						<span class="icone icone_credits"></span>
 					</div>
 
 					<div class="carte_action_texte">
 						<p class="carte_action_titre">Voir mes crédits</p>
-						<p class="carte_action_desc texte_secondaire">Gérer votre solde et vos transactions</p>
+						<p class="carte_action_desc texte_secondaire">Consulter votre solde et vos transactions</p>
 					</div>
 				</a>
+
+				<a class="carte_action" href="{{ path('publier_covoiturage') }}">
+					<div class="carte_icone" aria-hidden="true">
+						<span class="icone icone_durable"></span>
+					</div>
+
+					<div class="carte_action_texte">
+						<p class="carte_action_titre">Publier un covoiturage</p>
+						<p class="carte_action_desc texte_secondaire">Créer une annonce</p>
+					</div>
+				</a>
+
 			</div>
 
 		</section>

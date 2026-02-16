@@ -1,0 +1,271 @@
+{# templates/historique/index.html.twig #}
+{# PLAN (historique) :
+  1) Garde-fous Twig (variables toujours définies)
+  2) Onglets : covoiturages publiés / participations
+  3) Cartes : trajet + date/heure + badges + méta
+  4) Actions chauffeur :
+     - PLANIFIE : démarrer + annuler
+     - EN_COURS : arrivée à destination + déclarer incident
+     - TERMINE : déclarer incident
+     - INCIDENT / ANNULE : pas d’action (libellé)
+  5) Actions passager :
+     - TERMINE + validation EN_ATTENTE : donner mon avis
+     - Annuler participation : uniquement si PLANIFIE et non annulée
+#}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon historique{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/historique.css') }}">
+{% endblock %}
+
+{% block body %}
+  {# Garde-fous #}
+  {% set onglet = onglet|default('covoiturages') %}
+  {% set covoiturages_publies = covoiturages_publies|default([]) %}
+  {% set participations = participations|default([]) %}
+
+  {# Libellés #}
+  {% set libelles_statut = {
+    'PLANIFIE': 'Planifié',
+    'EN_COURS': 'En cours',
+    'TERMINE': 'Terminé',
+    'ANNULE': 'Annulé',
+    'INCIDENT': 'Incident'
+  } %}
+
+  {% set libelles_validation = {
+    'NON_DEMANDEE': 'Non demandée',
+    'EN_ATTENTE': 'En attente',
+    'OK': 'Validée',
+    'PROBLEME': 'Problème'
+  } %}
+
+  <main class="page_historique">
+    <section class="panneau_historique" aria-labelledby="titre_historique">
+      <header class="entete_historique">
+        <h1 id="titre_historique">Mon historique</h1>
+        <p class="texte_secondaire">Consultez vos covoiturages et vos participations</p>
+      </header>
+
+      <nav class="onglets" aria-label="Historique">
+        <a class="onglet {{ onglet == 'covoiturages' ? 'onglet_actif' : '' }}"
+           href="{{ path('historique', {onglet: 'covoiturages'}) }}"
+           {% if onglet == 'covoiturages' %}aria-current="page"{% endif %}>
+          Mes covoiturages publiés
+        </a>
+
+        <a class="onglet {{ onglet == 'participations' ? 'onglet_actif' : '' }}"
+           href="{{ path('historique', {onglet: 'participations'}) }}"
+           {% if onglet == 'participations' %}aria-current="page"{% endif %}>
+          Mes participations
+        </a>
+      </nav>
+
+      <div class="zone_listes">
+
+        {# =========================
+           ONGLET : COVOITURAGES PUBLIÉS (chauffeur)
+           ========================= #}
+        {% if onglet == 'covoiturages' %}
+          <div class="liste_cartes">
+            {% if covoiturages_publies|length == 0 %}
+              <p class="texte_secondaire">Aucun covoiturage publié pour le moment.</p>
+            {% endif %}
+
+            {% for c in covoiturages_publies %}
+              {% set statut = c.statut_covoiturage|default('PLANIFIE') %}
+              {% set id_covoiturage = c.id_covoiturage|default(0) %}
+              {% set incident_possible = (statut in ['EN_COURS','TERMINE']) %}
+
+              <article class="carte_trajet">
+                <div class="carte_principale">
+                  <p class="trajet">
+                    <strong>{{ c.ville_depart|default('Départ') }}</strong>
+                    <span class="fleche" aria-hidden="true">→</span>
+                    <strong>{{ c.ville_arrivee|default('Arrivée') }}</strong>
+                  </p>
+
+                  <p class="date_heure">
+                    {% if c.date_heure_depart is not empty %}
+                      {{ c.date_heure_depart|date('d/m/Y \\à H:i') }}
+                    {% else %}
+                      <span class="texte_secondaire">Date non renseignée</span>
+                    {% endif %}
+                  </p>
+
+                  <p class="statut">
+                    <span class="badge badge_{{ statut|lower }}">
+                      {{ libelles_statut[statut]|default('Statut inconnu') }}
+                    </span>
+                  </p>
+
+                  <p class="meta">
+                    {% set places = c.nb_places_dispo|default(null) %}
+                    {% if places is not null %}
+                      <span>{{ places }} place{{ places > 1 ? 's' : '' }}</span>
+                    {% endif %}
+
+                    {% if c.prix_credits is defined %}
+                      <span class="prix">{{ c.prix_credits }} crédits</span>
+                    {% endif %}
+                  </p>
+                </div>
+
+                <div class="carte_actions">
+                  {% if statut == 'PLANIFIE' %}
+                    <form method="post" action="{{ path('historique_demarrer_covoiturage') }}">
+                      <input type="hidden" name="_token" value="{{ csrf_token('demarrer_covoiturage') }}">
+                      <input type="hidden" name="id_covoiturage" value="{{ id_covoiturage }}">
+                      <button class="bouton_secondaire bouton_demarrer" type="submit">
+                        <span class="icone_bouton icone_direction" aria-hidden="true"></span>
+                        Démarrer
+                      </button>
+                    </form>
+
+                    <form method="post" action="{{ path('historique_annuler_covoiturage') }}">
+                      <input type="hidden" name="_token" value="{{ csrf_token('historique_annuler_covoiturage') }}">
+                      <input type="hidden" name="id_covoiturage" value="{{ id_covoiturage }}">
+                      <button class="bouton_alerte" type="submit">
+                        <span class="icone_bouton icone_x" aria-hidden="true"></span>
+                        Annuler
+                      </button>
+                    </form>
+
+                  {% elseif statut == 'EN_COURS' %}
+                    <form method="post" action="{{ path('historique_terminer_covoiturage') }}">
+                      <input type="hidden" name="_token" value="{{ csrf_token('terminer_covoiturage') }}">
+                      <input type="hidden" name="id_covoiturage" value="{{ id_covoiturage }}">
+                      <button class="bouton_valider" type="submit">
+                        <span class="icone_bouton icone_valide" aria-hidden="true"></span>
+                        Arrivée à destination
+                      </button>
+                    </form>
+
+                    {% if incident_possible and id_covoiturage > 0 %}
+                      <a class="bouton_alerte"
+                         href="{{ path('historique_incident_formulaire', { id: id_covoiturage }) }}">
+                        <span class="icone_bouton icone_alerte" aria-hidden="true"></span>
+                        Déclarer un incident
+                      </a>
+                    {% endif %}
+
+                  {% elseif statut == 'TERMINE' %}
+                    {% if incident_possible and id_covoiturage > 0 %}
+                      <a class="bouton_alerte"
+                         href="{{ path('historique_incident_formulaire', { id: id_covoiturage }) }}">
+                        <span class="icone_bouton icone_alerte" aria-hidden="true"></span>
+                        Déclarer un incident
+                      </a>
+                    {% endif %}
+
+                  {% else %}
+                    {% if statut == 'INCIDENT' %}
+                      <span class="libelle_action">Incident déclaré</span>
+                    {% else %}
+                      <span class="libelle_action">{{ libelles_statut[statut]|default('Statut') }}</span>
+                    {% endif %}
+                  {% endif %}
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+
+        {# =========================
+           ONGLET : PARTICIPATIONS (passager)
+           ========================= #}
+        {% else %}
+          <div class="liste_cartes">
+            {% if participations|length == 0 %}
+              <p class="texte_secondaire">Aucune participation pour le moment.</p>
+            {% endif %}
+
+            {% for p in participations %}
+              {% set statut = p.statut_covoiturage|default('PLANIFIE') %}
+              {% set est_annulee = p.est_annulee|default(false) %}
+              {% set validation = p.statut_validation|default('NON_DEMANDEE') %}
+
+              {% set id_participation = p.id_participation|default(0) %}
+              {% set id_covoiturage = p.id_covoiturage|default(0) %}
+
+              {# Annulation participation : uniquement si PLANIFIE et non annulée #}
+              {% set annulation_autorisee = (not est_annulee) and (statut == 'PLANIFIE') %}
+
+              {# Satisfaction : après trajet terminé, si validation demandée (EN_ATTENTE) #}
+              {% set satisfaction_possible = (not est_annulee) and (statut == 'TERMINE') and (validation == 'EN_ATTENTE') %}
+
+              <article class="carte_trajet">
+                <div class="carte_principale">
+                  <p class="trajet">
+                    <strong>{{ p.ville_depart|default('Départ') }}</strong>
+                    <span class="fleche" aria-hidden="true">→</span>
+                    <strong>{{ p.ville_arrivee|default('Arrivée') }}</strong>
+                  </p>
+
+                  <p class="date_heure">
+                    {% if p.date_heure_depart is not empty %}
+                      {{ p.date_heure_depart|date('d/m/Y \\à H:i') }}
+                    {% else %}
+                      <span class="texte_secondaire">Date non renseignée</span>
+                    {% endif %}
+                  </p>
+
+                  <p class="statut">
+                    <span class="badge badge_{{ statut|lower }}">
+                      {{ libelles_statut[statut]|default('Statut inconnu') }}
+                    </span>
+
+                    {% if validation != 'NON_DEMANDEE' %}
+                      <span class="badge badge_validation_{{ validation|lower }}">
+                        {{ libelles_validation[validation]|default('Validation') }}
+                      </span>
+                    {% endif %}
+
+                    {% if est_annulee %}
+                      <span class="badge badge_participation_annulee">Participation annulée</span>
+                    {% endif %}
+                  </p>
+
+                  <p class="meta">
+                    {% if p.credits_utilises is defined %}
+                      <span class="prix">{{ p.credits_utilises }} crédits</span>
+                    {% endif %}
+                  </p>
+                </div>
+
+                <div class="carte_actions">
+                  {% if satisfaction_possible and id_covoiturage > 0 %}
+                    <a class="bouton_valider"
+                       href="{{ path('historique_satisfaction_formulaire', { id: id_covoiturage }) }}">
+                      <span class="icone_bouton icone_valide" aria-hidden="true"></span>
+                      Donner mon avis
+                    </a>
+                  {% endif %}
+
+                  {% if annulation_autorisee %}
+                    <form method="post" action="{{ path('historique_annuler_participation') }}">
+                      <input type="hidden" name="_token" value="{{ csrf_token('annuler_participation') }}">
+                      <input type="hidden" name="id_participation" value="{{ id_participation }}">
+                      <button class="bouton_alerte" type="submit">
+                        <span class="icone_bouton icone_x" aria-hidden="true"></span>
+                        Annuler
+                      </button>
+                    </form>
+                  {% else %}
+                    <button class="bouton_alerte" type="button" disabled aria-disabled="true" title="Annulation indisponible">
+                      <span class="icone_bouton icone_x" aria-hidden="true"></span>
+                      Annuler
+                    </button>
+                  {% endif %}
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </section>
+  </main>
+{% endblock %}

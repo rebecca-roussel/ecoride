@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Service;
 
 use MongoDB\Client;
+use MongoDB\Collection;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 final class JournalEvenements
@@ -24,26 +26,30 @@ final class JournalEvenements
          - donnees : contexte utile (facultatif)
          - cree_le : date/heure de création en UTC
 
-      3) Objectif “pro” important
+      3) Règle importante
          - le journal ne doit jamais casser l’application
          - si MongoDB est indisponible, je continue quand même
-           et je renvoie une valeur neutre
 
-      4) Aide pour les erreurs
-         - je veux une méthode simple pour journaliser une erreur
-         - je stocke message, classe, code, fichier, ligne + contexte
+      4) Bonus utile
+         - si MongoDB est KO : je ne perds pas tout, je trace dans les logs Symfony
+         - garde-fous : pas d’événements “vides” (évite des documents inutiles / incohérents)
     */
 
     private Client $client;
     private string $nomBase;
 
-    public function __construct(string $mongoUri, string $nomBase)
-    {
-        /*
-          Connexion MongoDB
-          - $mongoUri vient de la config
-          - $nomBase est le nom de la base Mongo
-        */
+    /*
+      Constructeur : connexion Mongo + accès aux logs
+
+      - $mongoUri : URI MongoDB ( mongodb://mongodb:27017)
+      - $nomBase : nom de la base ( ecoride_journal)
+      - $logger : logger Symfony (fallback si MongoDB ne répond pas)
+    */
+    public function __construct(
+        string $mongoUri,
+        string $nomBase,
+        private LoggerInterface $logger,
+    ) {
         $this->client = new Client($mongoUri);
         $this->nomBase = $nomBase;
     }
@@ -51,9 +57,9 @@ final class JournalEvenements
     /*
       Enregistre un événement dans la collection "journal_evenements"
 
-      - je renvoie l'id Mongo du document inséré
-      - si MongoDB ne répond pas, je renvoie une chaîne vide
-        (but : ne pas bloquer le site)
+      Retour :
+      - id Mongo du document inséré (string)
+      - ou chaîne vide '' si on ne peut pas journaliser 
     */
     public function enregistrer(
         string $typeEvenement,
@@ -61,14 +67,34 @@ final class JournalEvenements
         int $idEntite,
         array $donnees = []
     ): string {
+        /*
+          Garde-fous simples
+          But : éviter des événements “vides” (ex : type_evenement = '')
+          => dans ce cas, je ne tente même pas MongoDB
+          => je trace juste un warning (utile pour déboguer)
+        */
+        $typeEvenement = trim($typeEvenement);
+        $entite = trim($entite);
+
+        if ($typeEvenement === '' || $entite === '' || $idEntite <= 0) {
+            $this->logger->warning('JournalEvenements : événement ignoré (données invalides).', [
+                'type_evenement' => $typeEvenement,
+                'entite' => $entite,
+                'id_entite' => $idEntite,
+            ]);
+
+            return '';
+        }
+
         try {
-            // Je cible la collection dans la base Mongo choisie
-            $collection = $this->client->selectCollection($this->nomBase, 'journal_evenements');
+            // Je récupère la collection (base choisie + collection "journal_evenements")
+            $collection = $this->obtenirCollection();
 
             /*
-              Je construis le document Mongo
-              - clefs en snake_case pour rester cohérente avec le projet
-              - cree_le en UTC pour éviter les soucis de fuseau horaire
+              Document Mongo
+              - clefs en snake_case (cohérence EcoRide)
+              - cree_le en UTC (pas de surprise de fuseau horaire)
+              - donnees : contexte libre (optionnel)
             */
             $document = [
                 'type_evenement' => $typeEvenement,
@@ -76,30 +102,54 @@ final class JournalEvenements
                 'id_entite' => $idEntite,
                 'donnees' => $donnees,
                 'cree_le' => new \MongoDB\BSON\UTCDateTime(),
-
             ];
 
-            // Insertion en base Mongo
+            // Insertion en MongoDB
             $resultat = $collection->insertOne($document);
 
             // Je renvoie l'identifiant du document créé
             return (string) $resultat->getInsertedId();
-        } catch (Throwable) {
+        } catch (Throwable $exception) {
             /*
-              Très important :
-              - si MongoDB est KO, je ne casse pas l’application
-              - je renvoie une valeur neutre
+              Fallback “pro”
+              - MongoDB est KO ? je ne casse pas l’application
+              - mais je ne veux pas être aveugle : je trace dans les logs Symfony
             */
+            $this->logger->error('JournalEvenements : insertion MongoDB impossible.', [
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+                'type_evenement' => $typeEvenement,
+                'entite' => $entite,
+                'id_entite' => $idEntite,
+            ]);
+
             return '';
         }
     }
 
     /*
-      Enregistre une erreur dans le journal.
+      Alias plus lisible pour les contrôleurs
+
+      Objectif :
+      - côté contrôleur, je veux un nom explicite
+      - je garde enregistrer() comme moteur interne
+    */
+    public function enregistrerEvenement(
+        string $typeEvenement,
+        string $entite,
+        int $idEntite,
+        array $donnees = []
+    ): string {
+        return $this->enregistrer($typeEvenement, $entite, $idEntite, $donnees);
+    }
+
+    /*
+      Enregistre une erreur dans le journal
 
       But :
-      - avoir un format identique pour toutes les erreurs
-      - garder un maximum d’informations utiles sans les afficher à l’utilisateur
+      - format homogène
+      - ne pas afficher les détails techniques à l’utilisateur
+      - mais garder de quoi diagnostiquer (message, fichier, ligne, etc.)
     */
     public function enregistrerErreur(
         string $typeEvenement,
@@ -118,6 +168,18 @@ final class JournalEvenements
         ];
 
         return $this->enregistrer($typeEvenement, $entite, $idEntite, $donnees);
+    }
+
+    /*
+      Petite méthode privée : “source unique de vérité” pour la collection
+
+      Avantages :
+      - évite de répéter selectCollection partout
+      - si demain je change le nom de collection, je change ici et c’est fini
+    */
+    private function obtenirCollection(): Collection
+    {
+        return $this->client->selectCollection($this->nomBase, 'journal_evenements');
     }
 }
 

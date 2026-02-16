@@ -12,7 +12,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class DetailsController extends AbstractController
 {
-    #[Route('/details', name: 'details')]
+    #[Route('/details', name: 'details', methods: ['GET'])]
     public function index(Request $requeteHttp, PersistanceCovoituragePostgresql $persistance): Response
     {
         $id = $requeteHttp->query->getInt('id', 0);
@@ -29,8 +29,9 @@ final class DetailsController extends AbstractController
 
         $avisChauffeur = [];
 
-        if (isset($detail['id_chauffeur'])) {
-            $avisChauffeur = $persistance->obtenirAvisValidesDuChauffeur((int) $detail['id_chauffeur'], 5);
+        $idChauffeur = (int) ($detail['id_chauffeur'] ?? 0);
+        if ($idChauffeur > 0) {
+            $avisChauffeur = $persistance->obtenirAvisValidesDuChauffeur($idChauffeur, 5);
         }
 
         return $this->render('details/index.html.twig', [
@@ -39,5 +40,3 @@ final class DetailsController extends AbstractController
         ]);
     }
 }
-
-

@@ -6,6 +6,8 @@ namespace App\Controller;
 
 use App\Service\ConnexionPostgresql;
 use App\Service\SessionUtilisateur;
+use PDO;
+use PDOException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,36 +30,63 @@ final class ConnexionController extends AbstractController
         $emailSaisi = '';
 
         if ($request->isMethod('POST')) {
-            $emailSaisi = trim((string) $request->request->get('email'));
-            $motDePasse = (string) $request->request->get('mot_de_passe');
+            $emailSaisi = trim((string) $request->request->get('email', ''));
+            $motDePasse = (string) $request->request->get('mot_de_passe', '');
 
-            if ('' === $emailSaisi || '' === $motDePasse) {
+            if ($emailSaisi === '' || $motDePasse === '') {
                 $erreur = 'Email et mot de passe sont obligatoires.';
             } else {
                 try {
                     $pdo = $connexion->obtenirPdo();
 
                     $stmt = $pdo->prepare('
-                        SELECT id_utilisateur, pseudo, mot_de_passe_hash, statut
+                        SELECT
+                            id_utilisateur,
+                            pseudo,
+                            mot_de_passe_hash,
+                            statut,
+                            role_chauffeur,
+                            role_passager
                         FROM utilisateur
                         WHERE email = :email
                         LIMIT 1
                     ');
-                    $stmt->execute(['email' => $emailSaisi]);
-                    $utilisateur = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-                    if (!$utilisateur) {
+                    $stmt->execute(['email' => $emailSaisi]);
+                    $utilisateur = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    if (!is_array($utilisateur)) {
                         $erreur = 'Identifiants invalides.';
                     } elseif (($utilisateur['statut'] ?? '') !== 'ACTIF') {
                         $erreur = 'Compte suspendu.';
-                    } elseif (!password_verify($motDePasse, (string) ($utilisateur['mot_de_passe_hash'] ?? ''))) {
-                        $erreur = 'Identifiants invalides.';
                     } else {
-                        $sessionUtilisateur->connecter((int) $utilisateur['id_utilisateur'], (string) $utilisateur['pseudo']);
+                        $hash = (string) ($utilisateur['mot_de_passe_hash'] ?? '');
 
-                        return $this->redirectToRoute('tableau_de_bord');
+                        if ($hash === '' || !password_verify($motDePasse, $hash)) {
+                            $erreur = 'Identifiants invalides.';
+                        } else {
+                            $idUtilisateur = (int) ($utilisateur['id_utilisateur'] ?? 0);
+                            $pseudo = (string) ($utilisateur['pseudo'] ?? '');
+
+                            $roleChauffeur = (bool) ($utilisateur['role_chauffeur'] ?? false);
+                            $rolePassager = (bool) ($utilisateur['role_passager'] ?? false);
+
+                            // Sécurité : on évite une session incohérente
+                            if ($idUtilisateur <= 0 || trim($pseudo) === '') {
+                                $erreur = 'Erreur lors de la connexion.';
+                            } else {
+                                $sessionUtilisateur->connecter(
+                                    $idUtilisateur,
+                                    $pseudo,
+                                    $roleChauffeur,
+                                    $rolePassager
+                                );
+
+                                return $this->redirectToRoute('tableau_de_bord');
+                            }
+                        }
                     }
-                } catch (\PDOException) {
+                } catch (PDOException) {
                     $erreur = 'Erreur lors de la connexion.';
                 }
             }
@@ -80,3 +109,4 @@ final class ConnexionController extends AbstractController
         return $this->redirectToRoute('accueil');
     }
 }
+

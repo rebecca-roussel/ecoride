@@ -1,6 +1,6 @@
 /* public/css/tableau_de_bord.css */
 /*
-  PLAN (tableau de bord) :
+  A FAIRE (tableau de bord) :
   1) zone centrale : panneau beige centré
   2) en-tête : titre + photo de profil
   3) infos rapides : 2 cartes
@@ -86,6 +86,53 @@
   width: 22px;
   height: 22px;
   display: block;
+}
+/* Pictogramme recolorable : la couleur vient de --action_principale */
+.carte_icone .icone{
+  width: 22px;
+  height: 22px;
+  display: block;
+
+  background-color: var(--action_principale);
+
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+/* Association des fichiers SVG */
+.icone_credits{
+  -webkit-mask-image: url("/icones/credits.svg");
+  mask-image: url("/icones/credits.svg");
+}
+
+.icone_avatars{
+  -webkit-mask-image: url("/icones/avatars.svg");
+  mask-image: url("/icones/avatars.svg");
+}
+
+.icone_avatar{
+  -webkit-mask-image: url("/icones/avatar.svg");
+  mask-image: url("/icones/avatar.svg");
+}
+
+.icone_covoit{
+  -webkit-mask-image: url("/icones/covoit.svg");
+  mask-image: url("/icones/covoit.svg");
+}
+
+.icone_cadran{
+  -webkit-mask-image: url("/icones/cadran.svg");
+  mask-image: url("/icones/cadran.svg");
+}
+
+.icone_durable{
+  -webkit-mask-image: url("/icones/durable.svg");
+  mask-image: url("/icones/durable.svg");
 }
 
 /* Infos rapides */

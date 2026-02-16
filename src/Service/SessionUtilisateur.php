@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use RuntimeException;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 final class SessionUtilisateur
 {
@@ -12,58 +14,66 @@ final class SessionUtilisateur
       PLAN (SessionUtilisateur) :
 
       1) Pourquoi ce service existe
-         - je centralise tout ce qui touche à la session utilisateur
-         - comme ça je ne répète pas du code dans tous les contrôleurs
+         - centraliser tout ce qui touche à la session utilisateur
+         - éviter de répéter du code dans tous les contrôleurs
 
       2) Ce que je stocke en session
-         - un identifiant utilisateur (id_utilisateur)
-         - un pseudo (pour afficher “Bienvenue …” sans requête à chaque fois)
+         - id_utilisateur (int)
+         - pseudo (string)
+         - rôles fonctionnels (chauffeur / passager)
 
-      3) Les méthodes utiles
-         - estConnecte : est-ce que j’ai un id valide dans la session
-         - connecter : je crée la session (après connexion / inscription)
-         - deconnecter : je supprime les infos de session
-         - idUtilisateur : je récupère l’id en entier (ou null si pas valable)
-         - pseudo : je récupère le pseudo (ou null si vide)
+      3) Méthodes utiles
+         - estConnecte()
+         - connecter()
+         - deconnecter()
+         - idUtilisateur()
+         - pseudo()
+         - obtenirUtilisateurConnecte()
+         - exigerUtilisateurConnecte()
+         - mettreAJourRolesUtilisateurConnecte()
     */
 
     /*
-      Clés de session
-      - ce sont les noms exacts qu’on met dans la session
-      - j’utilise des constantes pour éviter les fautes de frappe
-      - si je change un nom, je le change à un seul endroit
+      Clés de session (noms exacts)
     */
     private const CLE_ID = 'utilisateur_id';
     private const CLE_PSEUDO = 'utilisateur_pseudo';
+    private const CLE_ROLE_CHAUFFEUR = 'utilisateur_role_chauffeur';
+    private const CLE_ROLE_PASSAGER = 'utilisateur_role_passager';
 
-    /*
-      RequestStack
-      - Symfony me donne la session via le RequestStack
-      - ça marche aussi bien en GET qu’en POST
-    */
     public function __construct(private RequestStack $requestStack)
     {
     }
 
     /*
-      Est-ce que l'utilisateur est connecté
-      - je considère connecté si j’ai un idUtilisateur non null
-      - l'idUtilisateur() fait déjà les vérifications et le “nettoyage”
+      Session Symfony
+      - on passe par la requête courante
+      - si pas de requête (cas rare), pas de session
     */
+    private function session(): ?SessionInterface
+    {
+        $requete = $this->requestStack->getCurrentRequest();
+        if ($requete === null) {
+            return null;
+        }
+
+        // Symfony : la session n’existe que si elle est démarrée/activée
+        return $requete->hasSession() ? $requete->getSession() : null;
+    }
+
     public function estConnecte(): bool
     {
         return $this->idUtilisateur() !== null;
     }
 
-    /*
-      Récupère le pseudo en session
-      - retourne null si pas de session ou pseudo invalide
-      - je “trim” pour éviter un pseudo avec juste des espaces
-    */
     public function pseudo(): ?string
     {
-        $session = $this->requestStack->getSession();
-        $pseudo = $session?->get(self::CLE_PSEUDO);
+        $session = $this->session();
+        if ($session === null) {
+            return null;
+        }
+
+        $pseudo = $session->get(self::CLE_PSEUDO);
 
         if (!is_string($pseudo)) {
             return null;
@@ -75,69 +85,110 @@ final class SessionUtilisateur
     }
 
     /*
-      Connecter un utilisateur
-      - je stocke l'id et le pseudo dans la session
-      - si l’id n’est pas positif ou si le pseudo est vide, je ne stocke rien
-      - ça évite de créer une session incohérente
+      Connecter
+      - rôles optionnels (valeurs par défaut) pour éviter des appels trop fragiles
+      - MAIS : idéalement, tu passes les vraies valeurs depuis la BDD / formulaire
     */
-    public function connecter(int $idUtilisateur, string $pseudo): void
-    {
-        $session = $this->requestStack->getSession();
-        if (null === $session) {
+    public function connecter(
+        int $idUtilisateur,
+        string $pseudo,
+        bool $roleChauffeur = false,
+        bool $rolePassager = true
+    ): void {
+        $session = $this->session();
+        if ($session === null) {
             return;
         }
 
         $pseudoNettoye = trim($pseudo);
         if ($idUtilisateur <= 0 || $pseudoNettoye === '') {
-            // Sécurité : on évite de stocker une session incohérente
             return;
         }
 
         $session->set(self::CLE_ID, $idUtilisateur);
         $session->set(self::CLE_PSEUDO, $pseudoNettoye);
+        $session->set(self::CLE_ROLE_CHAUFFEUR, $roleChauffeur);
+        $session->set(self::CLE_ROLE_PASSAGER, $rolePassager);
     }
 
-    /*
-      Déconnecter
-      - je supprime les infos que j’ai mises en session
-      - je ne détruis pas toute la session globale, je retire juste mes clés
-    */
     public function deconnecter(): void
     {
-        $session = $this->requestStack->getSession();
-        if (null === $session) {
+        $session = $this->session();
+        if ($session === null) {
             return;
         }
 
         $session->remove(self::CLE_ID);
         $session->remove(self::CLE_PSEUDO);
+        $session->remove(self::CLE_ROLE_CHAUFFEUR);
+        $session->remove(self::CLE_ROLE_PASSAGER);
     }
 
-    /*
-      Récupère l'id utilisateur depuis la session
-      - je veux un entier positif
-      - selon le contexte, Symfony peut me renvoyer un int ou une string
-      - donc je gère les deux cas
-      - si ce n’est pas valide, je renvoie null
-    */
     public function idUtilisateur(): ?int
     {
-        $session = $this->requestStack->getSession();
-        $id = $session?->get(self::CLE_ID);
+        $session = $this->session();
+        if ($session === null) {
+            return null;
+        }
 
-        // Cas 1 : déjà un int
+        $id = $session->get(self::CLE_ID);
+
+        // Cas 1 : int
         if (is_int($id)) {
             return $id > 0 ? $id : null;
         }
 
-        // Cas 2 : une string numérique ("10")
+        // Cas 2 : string numérique
         if (is_string($id) && ctype_digit($id)) {
             $idInt = (int) $id;
             return $idInt > 0 ? $idInt : null;
         }
 
-        // Sinon : pas connecté / session vide / valeur bizarre
         return null;
+    }
+
+    public function obtenirUtilisateurConnecte(): ?array
+    {
+        $idUtilisateur = $this->idUtilisateur();
+        $pseudo = $this->pseudo();
+
+        if ($idUtilisateur === null || $pseudo === null) {
+            return null;
+        }
+
+        $session = $this->session();
+        if ($session === null) {
+            return null;
+        }
+
+        return [
+            'id_utilisateur' => $idUtilisateur,
+            'pseudo' => $pseudo,
+            'role_chauffeur' => (bool) $session->get(self::CLE_ROLE_CHAUFFEUR, false),
+            'role_passager' => (bool) $session->get(self::CLE_ROLE_PASSAGER, false),
+        ];
+    }
+
+    public function mettreAJourRolesUtilisateurConnecte(bool $roleChauffeur, bool $rolePassager): void
+    {
+        $session = $this->session();
+        if ($session === null) {
+            return;
+        }
+
+        $session->set(self::CLE_ROLE_CHAUFFEUR, $roleChauffeur);
+        $session->set(self::CLE_ROLE_PASSAGER, $rolePassager);
+    }
+
+    public function exigerUtilisateurConnecte(): array
+    {
+        $utilisateur = $this->obtenirUtilisateurConnecte();
+
+        if ($utilisateur === null) {
+            throw new RuntimeException('Utilisateur non connecté : accès refusé.');
+        }
+
+        return $utilisateur;
     }
 }
 

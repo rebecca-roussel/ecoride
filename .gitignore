@@ -16,3 +16,9 @@
 # Outils locaux (à ne pas versionner)
 .php-cs-fixer.cache
 .vscode/
+
+# Fichiers d'environnement (prod)
+.env.prod
+
+# Environnement production (local uniquement)
+.env.prod

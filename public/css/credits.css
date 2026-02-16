@@ -1,0 +1,183 @@
+/* public/css/credits.css */
+
+/* PAGE */
+.page_credits{
+  padding: 48px 16px;
+  box-sizing: border-box;
+}
+
+/* PANNEAU */
+.panneau_credits{
+  width: min(980px, 100%);
+  margin: 0 auto;
+
+  background: var(--surface_beige);
+  border: 1px solid rgba(199,195,184,0.65);
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.25);
+
+  padding: 28px;
+  box-sizing: border-box;
+  color: #0F172A;
+}
+
+.entete_credits p{
+  margin-top: 8px;
+}
+
+/* CARTE SOLDE */
+.carte_solde{
+  margin-top: 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  background: rgba(63,93,74,0.18);
+  border: 1px solid rgba(63,93,74,0.25);
+  border-radius: 14px;
+
+  padding: 18px;
+}
+
+.carte_solde_label{
+  margin: 0;
+  color: rgba(15,23,42,0.70);
+  font-size: 14px;
+}
+
+.carte_solde_valeur{
+  margin: 6px 0 0 0;
+  font-size: 34px;
+  font-weight: 800;
+  color: rgba(15,23,42,0.86);
+}
+
+.pastille_icone{
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(15,23,42,0.10);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* TITRE LISTE */
+.titre_operations{
+  margin-top: 22px;
+  font-size: 18px;
+}
+
+/* LISTE */
+.liste_operations{
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.operation{
+  background: #ffffff;
+  border: 1px solid rgba(15,23,42,0.10);
+  border-radius: 12px;
+
+  padding: 14px 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.operation_gauche{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.operation_texte{
+  min-width: 0;
+}
+
+.operation_libelle{
+  margin: 0;
+  font-weight: 700;
+  color: rgba(15,23,42,0.88);
+}
+
+.operation_date{
+  margin: 4px 0 0 0;
+}
+
+.operation_montant{
+  margin: 0;
+  font-weight: 800;
+  min-width: 52px;
+  text-align: right;
+}
+
+.montant_positif{
+  color: var(--etat_succes);
+}
+
+.montant_negatif{
+  color: var(--etat_erreur);
+}
+
+/* PASTILLE OPERATION */
+.pastille_operation{
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(15,23,42,0.03);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ICÔNES : masque recolorable */
+.icone_masque{
+  width: 18px;
+  height: 18px;
+  display: block;
+
+  background-color: currentColor;
+
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+.icone_credits{
+  -webkit-mask-image: url("/icones/credits.svg");
+  mask-image: url("/icones/credits.svg");
+  color: var(--action_principale);
+}
+
+.icone_hausse{
+  -webkit-mask-image: url("/icones/hausse.svg");
+  mask-image: url("/icones/hausse.svg");
+  color: var(--etat_succes);
+}
+
+.icone_baisse{
+  -webkit-mask-image: url("/icones/baisse.svg");
+  mask-image: url("/icones/baisse.svg");
+  color: var(--etat_erreur);
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px){
+  .carte_solde_valeur{ font-size: 30px; }
+  .operation{ align-items: flex-start; }
+}

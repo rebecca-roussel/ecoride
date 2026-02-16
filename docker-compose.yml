@@ -1,5 +1,7 @@
 services:
   nginx:
+    networks:
+      - ecoride_reseau
     image: nginx:1.27-alpine
     container_name: ecoride_nginx
     ports:
@@ -22,10 +24,14 @@ services:
       - .env.docker
     environment:
       COMPOSER_HOME: /tmp/composer
+      MAILER_DSN: "smtp://mailhog:1025"
     user: "${UID}:${GID}"
     depends_on:
       - postgresql
       - mongodb
+    networks:
+      - ecoride_reseau
+
 
   postgresql:
     image: postgres:16
@@ -36,6 +42,8 @@ services:
       - "5432:5432"
     volumes:
       - donnees_postgresql:/var/lib/postgresql/data
+    networks:
+      - ecoride_reseau
 
   mongodb:
     image: mongo:7
@@ -44,8 +52,22 @@ services:
       - "27017:27017"
     volumes:
       - donnees_mongodb:/data/db
+    networks:
+      - ecoride_reseau
+
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: ecoride_mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - ecoride_reseau
 
 volumes:
   donnees_postgresql:
   donnees_mongodb:
 
+networks:
+  ecoride_reseau:

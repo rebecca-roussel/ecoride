@@ -135,7 +135,7 @@ CREATE TABLE covoiturage (
   CONSTRAINT ck_covoiturage_nb_places_dispo CHECK (nb_places_dispo BETWEEN 0 AND 4),
 
   prix_credits INTEGER NOT NULL,
-  CONSTRAINT ck_covoiturage_prix_credits CHECK (prix_credits > 0),
+  CONSTRAINT ck_covoiturage_prix_credits CHECK (prix_credits > 2),
 
   commission_credits INTEGER NOT NULL DEFAULT 2,
   CONSTRAINT ck_covoiturage_commission_fixe CHECK (commission_credits = 2),
@@ -152,6 +152,13 @@ CREATE TABLE covoiturage (
     OR
     (statut_covoiturage = 'INCIDENT' AND length(trim(incident_commentaire)) > 0)
   ),
+
+  /* Préférences portées par le covoiturage (par trajet) */
+  est_non_fumeur BOOLEAN NOT NULL DEFAULT true,
+  accepte_animaux BOOLEAN NOT NULL DEFAULT false,
+  preferences_libre VARCHAR(255),
+  CONSTRAINT ck_covoiturage_preferences_libre_non_vide
+    CHECK (preferences_libre IS NULL OR length(trim(preferences_libre)) > 0),
 
   id_utilisateur INTEGER NOT NULL,
   id_voiture INTEGER NOT NULL,
@@ -575,7 +582,7 @@ BEGIN
   END IF;
 
   IF statut_actuel <> 'TERMINE' AND NEW.statut_validation IN ('OK','PROBLEME') THEN
-    RAISE EXCEPTION 'Validation impossible tant que le trajet n’est pas terminé.';
+    RAISE EXCEPTION 'Validation impossible tant que le covoiturage n’est pas terminé.';
   END IF;
 
   IF NEW.statut_validation = 'OK' THEN
