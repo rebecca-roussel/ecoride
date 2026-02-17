@@ -19,6 +19,11 @@
   <link rel="stylesheet" href="{{ asset('css/historique.css') }}">
 {% endblock %}
 
+{% block entete %}
+  {% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+
 {% block body %}
   {# Garde-fous #}
   {% set id_covoiturage = id_covoiturage|default(0) %}
@@ -32,7 +37,7 @@
         <p class="texte_secondaire">Notez le trajet et laissez un commentaire (optionnel).</p>
       </header>
 
-      <form method="post" action="{{ path('historique_enregistrer_satisfaction') }}" class="formulaire_satisfaction">
+      <form method="post" action="{{ path('enregistrer_satisfaction') }}" class="formulaire_satisfaction">
         <input type="hidden" name="_token" value="{{ csrf_token('enregistrer_satisfaction') }}">
         <input type="hidden" name="id_covoiturage" value="{{ id_covoiturage }}">
 

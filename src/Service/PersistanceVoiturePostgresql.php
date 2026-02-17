@@ -18,18 +18,18 @@ final class PersistanceVoiturePostgresql
          - une seule méthode “source de vérité”
          - sert à “Gérer mes véhicules” et à “Publier un covoiturage”
 
-      2) Trouver un véhicule (sécurité : id + utilisateur)
-         - utile pour afficher / modifier un véhicule
+      2) Trouver une voiture (sécurité : id + utilisateur)
+         - pour afficher et modifier un véhicule
 
-      3) Ajouter un véhicule
+      3) Ajouter une voiture
          - insertion + id retourné
          - erreurs BDD converties en message simple
 
-      4) Modifier un véhicule
+      4) Modifier une voiture
          - vérifier unicité immatriculation (sauf lui-même)
          - mise à jour seulement si appartient à l’utilisateur
 
-      5) Désactiver un véhicule (suppression logique)
+      5) Désactiver une voiture (suppression logique)
          - est_active passe à false + date_desactivation
          - vérifier appartenance + état actif
 
@@ -43,15 +43,7 @@ final class PersistanceVoiturePostgresql
     ) {
     }
 
-    /*
-      Normaliser une immatriculation
-
-      Objectif
-      - rester cohérente avec la contrainte BDD :
-        * upper()
-        * uniquement A-Z et 0-9
-      - éviter les erreurs “bêtes” (espaces, minuscules)
-    */
+    /* Normaliser une immatriculation */
     private function normaliserImmatriculation(string $immatriculation): string
     {
         $immatriculation = strtoupper(trim($immatriculation));
@@ -65,10 +57,8 @@ final class PersistanceVoiturePostgresql
     public function listerVoituresActives(int $idUtilisateur): array
     {
         /*
-          Objectif
           - récupérer uniquement les voitures actives de l’utilisateur
           - utile pour publier un covoiturage
-          - utile aussi pour la page “Gérer mes véhicules”
         */
 
         if ($idUtilisateur <= 0) {
@@ -105,14 +95,7 @@ final class PersistanceVoiturePostgresql
      */
     public function listerVehiculesActifsParUtilisateur(int $idUtilisateur): array
     {
-        /*
-          Compatibilité
-
-          Objectif
-          - tu as déjà des contrôleurs qui appellent cette méthode
-          - je ne casse rien
-          - la vraie méthode reste listerVoituresActives()
-        */
+        /* Compatibilité */
 
         return $this->listerVoituresActives($idUtilisateur);
     }
@@ -123,9 +106,8 @@ final class PersistanceVoiturePostgresql
     public function trouverVehiculeParIdEtUtilisateur(int $idVoiture, int $idUtilisateur): ?array
     {
         /*
-          Objectif
-          - récupérer un véhicule en étant sûre qu’il appartient à l’utilisateur
-          - éviter qu’un utilisateur accède au véhicule d’un autre
+          - récupérer une voiture en étant sûre qu’elle appartient bien à l’utilisateur
+          - éviter qu’un utilisateur accède à la voiture d’un autre
         */
 
         if ($idVoiture <= 0 || $idUtilisateur <= 0) {
@@ -170,10 +152,10 @@ final class PersistanceVoiturePostgresql
         string $energie,
         int $nbPlaces
     ): int {
+
         /*
-          Objectif
-          - créer un véhicule lié à l’utilisateur
-          - laisser la BDD valider le format (contraintes CHECK)
+          - créer un voiture lié à l’utilisateur
+          - laisser la BDD validée le format 
         */
 
         if ($idUtilisateur <= 0) {
@@ -222,7 +204,7 @@ final class PersistanceVoiturePostgresql
             return (int) $stmt->fetchColumn();
         } catch (PDOException $e) {
             /*
-              Journal utile
+              Journal evenement:
               - on garde la trace technique côté MongoDB
               - mais on renvoie un message simple à l’utilisateur
             */
@@ -251,9 +233,8 @@ final class PersistanceVoiturePostgresql
         int $nbPlaces
     ): void {
         /*
-          Objectif
-          - mise à jour d’un véhicule
-          - uniquement si le véhicule appartient à l’utilisateur
+          - mise à jour d’une voiture
+          - uniquement si la voiture appartient à l’utilisateur
         */
 
         if ($idVoiture <= 0 || $idUtilisateur <= 0) {
@@ -265,7 +246,7 @@ final class PersistanceVoiturePostgresql
         $pdo = $this->connexionPostgresql->obtenirPdo();
 
         /*
-          Sécurité
+          Sécurité !
           - l’immatriculation est unique
           - je refuse une collision (sauf le véhicule actuel)
         */
@@ -320,8 +301,7 @@ final class PersistanceVoiturePostgresql
     public function desactiverVehicule(int $idVoiture, int $idUtilisateur): void
     {
         /*
-          Objectif
-          - suppression logique
+          - suppression logique donc désactivation
           - on garde l’historique
         */
 
@@ -383,9 +363,8 @@ final class PersistanceVoiturePostgresql
     public function calculerAncienneteEnAnnees(string $dateYmd, ?int $idUtilisateur = null): int
     {
         /*
-          Objectif
           - calcul simple pour l’affichage
-          - si date invalide : on renvoie 0 et on peut tracer
+          - si date invalide on renvoie 0 et on peut tracer
         */
 
         $date = DateTimeImmutable::createFromFormat('Y-m-d', $dateYmd);

@@ -1,5 +1,5 @@
 /* public/js/tableau_de_bord.js
-   But : si je reviens sur cette page via "retour arrière",
+   Objectif : si je reviens sur cette page avec retour arrière,
    je force un rechargement pour récupérer la photo à jour.
 */
 

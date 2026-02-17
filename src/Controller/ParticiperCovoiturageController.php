@@ -127,7 +127,7 @@ final class ParticiperCovoiturageController extends AbstractController
                 return $this->redirectToRoute('details', ['id' => $id]);
             }
 
-            // F) Vérifier crédits passager (on verrouille aussi la ligne utilisateur)
+            // F) Vérifier crédits passager 
             $stmt = $pdo->prepare("
                 SELECT credits
                 FROM utilisateur
@@ -161,19 +161,6 @@ final class ParticiperCovoiturageController extends AbstractController
                 'id_covoiturage' => $id,
             ]);
 
-            /*
-              IMPORTANT (sinon on se tire une balle dans le pied) :
-
-              - Ta base a déjà un déclencheur :
-                declencheur_participation_places_debit (AFTER INSERT/DELETE/UPDATE sur participation)
-
-              - Donc la BDD s’occupe toute seule :
-                * de décrémenter / ré-incrémenter nb_places_dispo
-                * de débiter / rembourser les crédits
-
-              => Si on refait ces UPDATE ici, on aurait un double débit
-                 et des places qui diminuent 2 fois.
-            */
 
             $pdo->commit();
 
@@ -184,7 +171,7 @@ final class ParticiperCovoiturageController extends AbstractController
                 $pdo->rollBack();
             }
 
-            // Cas de doublon (unicité) : Postgres renvoie souvent SQLSTATE 23505
+
             if ($e->getCode() === '23505') {
                 $this->addFlash('erreur', 'Vous participez déjà à ce covoiturage.');
                 return $this->redirectToRoute('details', ['id' => $id]);

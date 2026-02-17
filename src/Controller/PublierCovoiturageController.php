@@ -21,7 +21,7 @@ final class PublierCovoiturageController extends AbstractController
       PLAN (PublierCovoiturageController) :
 
       1) Sécurité
-         - page réservée aux utilisateurs connectés (redirige vers connexion)
+         - page réservée aux utilisateurs connectés 
          - publication réservée aux chauffeurs
 
       2) Afficher le formulaire (GET)
@@ -47,7 +47,6 @@ final class PublierCovoiturageController extends AbstractController
         PersistanceCovoituragePostgresql $persistanceCovoiturage,
         JournalEvenements $journalEvenements
     ): Response {
-        // 1) Sécurité : utilisateur connecté obligatoire
         $utilisateur = $sessionUtilisateur->obtenirUtilisateurConnecte();
         if ($utilisateur === null) {
             $this->addFlash('erreur', 'Veuillez vous connecter pour accéder à cette page.');
@@ -56,17 +55,14 @@ final class PublierCovoiturageController extends AbstractController
 
         $idUtilisateur = (int) $utilisateur['id_utilisateur'];
 
-        // 1bis) Sécurité : publication réservée aux chauffeurs
         $estChauffeur = (bool) ($utilisateur['role_chauffeur'] ?? false);
         if (!$estChauffeur) {
             $this->addFlash('erreur', 'Vous devez activer le rôle chauffeur pour publier un covoiturage.');
             return $this->redirectToRoute('tableau_de_bord');
         }
 
-        // 2) Véhicules actifs (choix dans le formulaire)
         $voitures = $persistanceVoiture->listerVehiculesActifsParUtilisateur($idUtilisateur);
 
-        // 3) GET : affichage + journal
         if ($requete->isMethod('GET')) {
             $journalEvenements->enregistrer(
                 'page_ouverte',
@@ -82,30 +78,34 @@ final class PublierCovoiturageController extends AbstractController
             ]);
         }
 
-        // 4) POST : traitement
-
-        // 4.1) CSRF
         $jeton = (string) $requete->request->get('_token', '');
         if (!$this->isCsrfTokenValid('publier_covoiturage', $jeton)) {
             throw new RuntimeException('Jeton CSRF invalide.');
         }
 
-        // 4.2) Lecture des champs (alignés avec publier/index.html.twig)
         $villeDepart = trim((string) $requete->request->get('ville_depart', ''));
         $villeArrivee = trim((string) $requete->request->get('ville_arrivee', ''));
         $adresseDepart = trim((string) $requete->request->get('adresse_depart', ''));
         $adresseArrivee = trim((string) $requete->request->get('adresse_arrivee', ''));
 
-        $dateDepart = trim((string) $requete->request->get('date_depart', ''));     // YYYY-MM-DD
-        $heureDepart = trim((string) $requete->request->get('heure_depart', ''));   // HH:MM
+        $dateDepart = trim((string) $requete->request->get('date_depart', ''));
+        $heureDepart = trim((string) $requete->request->get('heure_depart', ''));
         $dureeMinutes = (int) $requete->request->get('duree_minutes', 0);
 
         $nbPlacesDispo = (int) $requete->request->get('nb_places_dispo', 0);
         $prixCredits = (int) $requete->request->get('prix_credits', 0);
         $idVoiture = (int) $requete->request->get('id_voiture', 0);
 
-        // 4.3) Préférences du covoiturage (option 1 : stockées sur le covoiturage)
-        // Checkbox : si la clé existe => coché
+        $latitudeDepartBrut = trim((string) $requete->request->get('latitude_depart', ''));
+        $longitudeDepartBrut = trim((string) $requete->request->get('longitude_depart', ''));
+        $latitudeArriveeBrut = trim((string) $requete->request->get('latitude_arrivee', ''));
+        $longitudeArriveeBrut = trim((string) $requete->request->get('longitude_arrivee', ''));
+
+        $latitudeDepart = ($latitudeDepartBrut === '') ? null : (float) $latitudeDepartBrut;
+        $longitudeDepart = ($longitudeDepartBrut === '') ? null : (float) $longitudeDepartBrut;
+        $latitudeArrivee = ($latitudeArriveeBrut === '') ? null : (float) $latitudeArriveeBrut;
+        $longitudeArrivee = ($longitudeArriveeBrut === '') ? null : (float) $longitudeArriveeBrut;
+
         $estNonFumeur = $requete->request->has('est_non_fumeur');
         $accepteAnimaux = $requete->request->has('accepte_animaux');
 
@@ -114,7 +114,6 @@ final class PublierCovoiturageController extends AbstractController
             $preferencesLibre = null;
         }
 
-        // 4.4) Validations (par champ, pour affichage sous chaque champ)
         $erreurs = [];
 
         if ($villeDepart === '') {
@@ -147,12 +146,10 @@ final class PublierCovoiturageController extends AbstractController
             $erreurs['id_voiture'] = 'Vous devez sélectionner une voiture.';
         }
 
-        // Règle EcoRide : minimum 2 crédits (commission plateforme incluse)
         if ($prixCredits < 2) {
             $erreurs['prix_credits'] = 'Le prix minimum est de 2 crédits (commission EcoRide incluse).';
         }
 
-        // 4.5) Cohérence : places dispo ne dépasse pas les places de la voiture choisie
         if ($idVoiture > 0 && !isset($erreurs['nb_places_dispo'])) {
             foreach ($voitures as $v) {
                 if ((int) ($v['id_voiture'] ?? 0) === $idVoiture) {
@@ -167,7 +164,29 @@ final class PublierCovoiturageController extends AbstractController
             }
         }
 
-        // 4.6) Construction des dates (si pas déjà en erreur sur date/heure/durée)
+        $departIncomplet = ($latitudeDepart === null) !== ($longitudeDepart === null);
+        if ($departIncomplet) {
+            $erreurs['adresse_depart'] = 'Coordonnées de départ incomplètes. Veuillez retaper l’adresse.';
+        }
+
+        $arriveeIncomplet = ($latitudeArrivee === null) !== ($longitudeArrivee === null);
+        if ($arriveeIncomplet) {
+            $erreurs['adresse_arrivee'] = 'Coordonnées d’arrivée incomplètes. Veuillez retaper l’adresse.';
+        }
+
+        if ($latitudeDepart !== null && ($latitudeDepart < -90 || $latitudeDepart > 90)) {
+            $erreurs['adresse_depart'] = 'Latitude de départ invalide.';
+        }
+        if ($longitudeDepart !== null && ($longitudeDepart < -180 || $longitudeDepart > 180)) {
+            $erreurs['adresse_depart'] = 'Longitude de départ invalide.';
+        }
+        if ($latitudeArrivee !== null && ($latitudeArrivee < -90 || $latitudeArrivee > 90)) {
+            $erreurs['adresse_arrivee'] = 'Latitude d’arrivée invalide.';
+        }
+        if ($longitudeArrivee !== null && ($longitudeArrivee < -180 || $longitudeArrivee > 180)) {
+            $erreurs['adresse_arrivee'] = 'Longitude d’arrivée invalide.';
+        }
+
         $dateHeureDepart = null;
         $dateHeureArrivee = null;
 
@@ -185,7 +204,6 @@ final class PublierCovoiturageController extends AbstractController
             }
         }
 
-        // 4.7) Si erreurs : ré-afficher la page avec valeurs + erreurs (une seule sortie)
         if (!empty($erreurs)) {
             $this->addFlash('erreur', 'Certains champs contiennent des erreurs. Vérifiez le formulaire.');
 
@@ -205,16 +223,18 @@ final class PublierCovoiturageController extends AbstractController
                     'est_non_fumeur' => $estNonFumeur,
                     'accepte_animaux' => $accepteAnimaux,
                     'preferences_libre' => $preferencesLibre,
+                    'latitude_depart' => $latitudeDepart,
+                    'longitude_depart' => $longitudeDepart,
+                    'latitude_arrivee' => $latitudeArrivee,
+                    'longitude_arrivee' => $longitudeArrivee,
                 ],
                 'erreurs' => $erreurs,
             ]);
         }
 
-        // À ce stade : dates valides
         \assert($dateHeureDepart instanceof DateTimeImmutable);
         \assert($dateHeureArrivee instanceof DateTimeImmutable);
 
-        // 4.8) Création en base
         $idCovoiturage = $persistanceCovoiturage->creerCovoituragePlanifie(
             $idUtilisateur,
             $idVoiture,
@@ -224,6 +244,10 @@ final class PublierCovoiturageController extends AbstractController
             $adresseArrivee,
             $villeDepart,
             $villeArrivee,
+            $latitudeDepart,
+            $longitudeDepart,
+            $latitudeArrivee,
+            $longitudeArrivee,
             $nbPlacesDispo,
             $prixCredits,
             $estNonFumeur,
@@ -231,7 +255,6 @@ final class PublierCovoiturageController extends AbstractController
             $preferencesLibre
         );
 
-        // 4.9) Journal création
         $journalEvenements->enregistrer(
             'covoiturage_publie',
             'covoiturage',
@@ -246,7 +269,6 @@ final class PublierCovoiturageController extends AbstractController
 
         $this->addFlash('succes', 'Covoiturage publié.');
 
-        // 4.10) Redirection vers détails
         return $this->redirectToRoute('details', ['id' => $idCovoiturage]);
     }
 }

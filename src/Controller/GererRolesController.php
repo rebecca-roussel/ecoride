@@ -19,16 +19,16 @@ final class GererRolesController extends AbstractController
       PLAN (GererRolesController) :
 
       1) Accès sécurisé
-         - utiliser SessionUtilisateur (source unique de vérité)
-         - si pas connecté : rediriger vers la connexion
+         - utiliser SessionUtilisateur 
+         - si pas connecté rediriger vers la connexion
 
-      2) Afficher la page "Gérer mes rôles" (GET)
+      2) Afficher la page Gérer mes rôles (GET)
          - afficher les rôles actuels
          - tracer l’ouverture de page dans MongoDB
 
       3) Enregistrer les rôles (POST)
          - protéger l’action avec un jeton CSRF
-         - interdire “0 rôle”
+         - interdire 0 rôle
          - enregistrer en BDD
          - mettre à jour la session
          - tracer l’évènement dans MongoDB
@@ -51,9 +51,9 @@ final class GererRolesController extends AbstractController
         $idUtilisateur = (int) $utilisateur['id_utilisateur'];
 
         /*
-          Valeurs d’affichage (GET) : la vérité vient de la BDD.
-          - important : après reconnexion, la session ne contient pas forcément les rôles
-          - obtenirDonneesTableauDeBord renvoie role_* en int (0/1), parfait pour Twig
+          Valeurs d’affichage (GET) 
+          - après reconnexion, la session ne contient pas forcément les rôles
+          - obtenirDonneesTableauDeBord renvoie role_* en int (0/1)
         */
         $donnees = $persistanceUtilisateur->obtenirDonneesTableauDeBord($idUtilisateur);
         if ($donnees === null) {
@@ -72,11 +72,11 @@ final class GererRolesController extends AbstractController
                 return $this->redirectToRoute('gerer_roles');
             }
 
-            // 2.b) Lecture des champs (case cochée => présente, décochée => absente)
+            // 2.b) Lecture des champs 
             $rolePassager = $requete->request->has('role_passager');
             $roleChauffeur = $requete->request->has('role_chauffeur');
 
-            // 2.c) Règle métier : pas 0 rôle
+            // 2.c) pas 0 rôle
             if (!$rolePassager && !$roleChauffeur) {
                 $this->addFlash('erreur', 'Vous devez garder au moins un rôle : chauffeur ou passager.');
 

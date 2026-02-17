@@ -29,7 +29,7 @@ final class ProfilController extends AbstractController
           2) Lecture de l’utilisateur
              - je récupère les données du profil depuis PostgreSQL
              - ça sert à afficher la page
-             - et aussi à connaître l’ancienne photo (pour la supprimer si je change)
+             - et aussi à connaître l’ancienne photo 
 
           3) Si je poste une nouvelle photo (POST + action photo)
              - je vérifie que le fichier est bien une image et pas trop lourd
@@ -38,7 +38,7 @@ final class ProfilController extends AbstractController
              - je supprime l’ancienne photo si elle était dans /photos
 
           4) Affichage
-             - je prépare les données pour Twig (statut lisible + url photo)
+             - je prépare les données pour Twig 
         */
 
         // 1) Sécurité
@@ -47,8 +47,7 @@ final class ProfilController extends AbstractController
             return $this->redirectToRoute('connexion');
         }
 
-        // 2) Je charge l'utilisateur une seule fois
-        //    Comme ça, je peux à la fois afficher la page ET récupérer l'ancienne photo avant de la remplacer.
+        // 2) Charge l'utilisateur une seule fois
         $utilisateur = $persistanceUtilisateur->obtenirDonneesProfil($idUtilisateur);
         if (null === $utilisateur) {
             // Cas rare, session incohérente (ex utilisateur supprimé)
@@ -56,7 +55,7 @@ final class ProfilController extends AbstractController
             return $this->redirectToRoute('connexion');
         }
 
-        // 3) Upload photo (si POST action photo)
+        // 3) Upload photo 
         if ($request->isMethod('POST') && $request->request->get('action') === 'photo') {
             /** @var UploadedFile|null $photo */
             $photo = $request->files->get('photo_profil');
@@ -114,10 +113,10 @@ final class ProfilController extends AbstractController
             // Mise à jour BDD
             $persistanceUtilisateur->mettreAJourPhotoProfil($idUtilisateur, $nouvellePhotoPath);
 
-            // Nettoyage : si l'ancienne photo était un vrai fichier dans photos, je la supprime
+            // Si l'ancienne photo était un vrai fichier dans photos, je la supprime
             $this->supprimerAnciennePhotoSiNecessaire($dossierPublic, $anciennePhotoPath);
 
-            // POST → Redirect → GET (évite le renvoi au refresh)
+            // POST → Redirect → GET (évite le renvoi à l'actualisation)
             return $this->redirectToRoute('profil');
         }
 

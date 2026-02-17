@@ -9,7 +9,8 @@
   3. Pied de page : géré par base.html.twig
 #}
 
-{% extends 'base.html.twig' %}{% block title %}
+{% extends 'base.html.twig' %}
+	{% block title %}
 Connexion - EcoRide
 {% endblock %}
 
@@ -54,9 +55,9 @@ Connexion - EcoRide
 
 						{# Le bouton "œil" est géré par connexion.js #}
 						<button class="bouton_oeil" type="button" id="toggle_mot_de_passe" aria-label="Afficher le mot de passe" aria-pressed="false"></button>
-					  </div>
+					</div>
 
-					{# Erreur côté serveur (PDO) : identifiants invalides / compte suspendu / etc. #}
+					{# Erreur côté serveur (PDO) : identifiants invalides / compte suspendu / etc... #}
 					{% if erreur %}
 						<p class="champ_erreur" role="alert">{{ erreur }}</p>
 					{% endif %}
@@ -82,5 +83,5 @@ Connexion - EcoRide
 
 {% block javascripts %}
 	{{ parent() }}
-	 <script src="{{ asset('js/connexion.js') }}" defer></script>
+	<script src="{{ asset('js/connexion.js') }}" defer></script>
 {% endblock %}

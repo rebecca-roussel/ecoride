@@ -14,8 +14,8 @@ final class SessionUtilisateur
       PLAN(SessionUtilisateur)
 
       OBJECTIF :
-         Centraliser toute la gestion de la session utilisateur.
-         On ne manipule jamais $_SESSION directement dans les contrôleurs.
+         - Centraliser toute la gestion de la session utilisateur.
+         - On ne manipule jamais $_SESSION directement dans les contrôleurs.
 
       RÔLE :
       - Savoir si un utilisateur est connecté
@@ -29,8 +29,8 @@ final class SessionUtilisateur
     /*
       1) CLÉS DE SESSION
 
-      On définit ici les noms EXACTS utilisés dans la session.
-      Cela évite les fautes de frappe ailleurs dans le projet.
+      On définit ici les noms EXACTS utilisés dans la session et éviter
+       les fautes de frappe ailleurs.
     */
     private const CLE_ID = 'utilisateur_id';
     private const CLE_PSEUDO = 'utilisateur_pseudo';
@@ -135,11 +135,11 @@ final class SessionUtilisateur
       7) CONNECTER UN UTILISATEUR
 
       - Cette méthode ouvre la session.
-      -  Elle enregistre toutes les informations utiles.
+      - Elle enregistre toutes les informations utiles.
 
       Important :
-      PAS de vérification de mot de passe ici,
-      car doit être fait avant dans le contrôleur.
+      PAS de vérification de mot de passe,
+      car fait avant dans le contrôleur.
     */
     public function connecter(
         int $idUtilisateur,
@@ -222,9 +222,7 @@ final class SessionUtilisateur
 
     /*
       10) OBLIGER LA CONNEXION
-
-      - Si personne n’est connecté, on bloque immédiatement.
-      - Utile pour sécuriser une page.
+        - Si personne n’est connecté, blocage immédiat.
     */
     public function exigerUtilisateurConnecte(): array
     {

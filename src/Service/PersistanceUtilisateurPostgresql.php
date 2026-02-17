@@ -15,8 +15,7 @@ final class PersistanceUtilisateurPostgresql
 
       1) Rôle de ce service
          - ce fichier est mon “pont” entre Symfony et PostgreSQL
-         - ici je mets les requêtes SQL liées aux utilisateurs
-         - comme ça, mes contrôleurs restent propres (pas de SQL dedans)
+         - requêtes SQL liées aux utilisateurs
 
       2) Principes
          - j’utilise PDO et des requêtes préparées (sécurité injection SQL)
@@ -24,9 +23,9 @@ final class PersistanceUtilisateurPostgresql
          - je m’appuie sur les contraintes de la BDD (UNIQUE, CHECK, etc.)
 
       3) Ce que je gère ici
-         - création d’un utilisateur (inscription)
+         - inscription et création d’un utilisateur 
          - vérification pseudo/email déjà utilisés
-         - récupération d’un utilisateur par email (connexion)
+         - récupération d’un utilisateur par email pour la connexion
          - conversion photo_path -> URL affichable
          - données pour tableau de bord
          - données pour la page profil
@@ -34,9 +33,9 @@ final class PersistanceUtilisateurPostgresql
     */
 
     /*
-      Valeurs “fixes” du projet
-      - crédits de départ : 20 (cohérent avec le TP)
-      - photo par défaut : avatar (dans public/icones)
+      Valeurs fixes
+      - crédits de départ : 20 (commission plateforme ecoRide)
+      - photo par défaut : avatar.svg
     */
     private const CREDITS_DEPART = 20;
     private const URL_PHOTO_DEFAUT = '/icones/avatar.svg';
@@ -47,8 +46,6 @@ final class PersistanceUtilisateurPostgresql
 
     /**
      * Crée un utilisateur et retourne son id.
-     *
-     * Idée :
      * - je valide les bases côté PHP (champ obligatoire + au moins un rôle)
      * - puis j’insère
      * - si la base refuse (UNIQUE), je transforme en message compréhensible
@@ -61,17 +58,16 @@ final class PersistanceUtilisateurPostgresql
         bool $rolePassager,
         ?string $photoPath = null,
     ): int {
-        // Nettoyage minimal : je ne veux pas enregistrer "  toto  "
+        // Nettoyage : je ne veux pas enregistrer "toto"
         $pseudoNettoye = trim($pseudo);
         $emailNettoye = trim($email);
 
-        // Sécurité simple : champs obligatoires
+        // Sécurité : champs obligatoires
         if ($pseudoNettoye === '' || $emailNettoye === '') {
             throw new RuntimeException('Pseudo et email sont obligatoires.');
         }
 
-        // Sécurité métier : un utilisateur doit avoir au moins un rôle
-        // (cohérent avec ck_utilisateur_au_moins_un_role, role_interne reste false ici)
+        // Sécurité : un utilisateur doit avoir au moins un rôle
         if (!$roleChauffeur && !$rolePassager) {
             throw new RuntimeException('Il faut choisir au moins un rôle : chauffeur ou passager.');
         }
@@ -81,7 +77,7 @@ final class PersistanceUtilisateurPostgresql
         /*
           Insertion
           - credits : on force à 20 au départ
-          - role_interne : false (un utilisateur “normal” n’est pas un employé/admin)
+          - role_interne : false (un utilisateur normal n’est pas un employé/admin)
           - statut : ACTIF au départ
           - photo_path : peut être null (photo optionnelle)
         */
@@ -204,14 +200,7 @@ final class PersistanceUtilisateurPostgresql
         return $ligne === false ? null : $ligne;
     }
 
-    /*
-      Transforme un chemin stocké en BDD en URL affichable dans le navigateur
-
-      Exemples :
-      - null -> /icones/avatar.svg (photo par défaut)
-      - "photos/profil_xxx.jpg" -> "/photos/profil_xxx.jpg"
-      - " /photos/xxx.jpg " -> "/photos/xxx.jpg" (nettoyé)
-    */
+    /* Transforme un chemin stocké en BDD en URL affichable dans le navigateur */
     public function urlPhotoProfil(?string $photoPath): string
     {
         if (null === $photoPath) {
@@ -258,8 +247,8 @@ final class PersistanceUtilisateurPostgresql
     }
 
     /*
-      Données pour la page "Gérer mon profil"
-      - on récupère l'essentiel : pseudo, email, statut, photo
+      Données pour la page Gérer mon profil
+      - on récupère : pseudo, email, statut, photo
     */
     public function obtenirDonneesProfil(int $idUtilisateur): ?array
     {
@@ -285,11 +274,7 @@ final class PersistanceUtilisateurPostgresql
         return $ligne === false ? null : $ligne;
     }
 
-    /*
-      Met à jour la photo de profil
-      - je stocke un chemin relatif du type "photos/profil_xxx.jpg"
-      - l'affichage passera par urlPhotoProfil() pour fabriquer l'URL web
-    */
+    /* Met à jour la photo de profil */
     public function mettreAJourPhotoProfil(int $idUtilisateur, string $photoPath): void
     {
         $pdo = $this->connexionPostgresql->obtenirPdo();
@@ -308,15 +293,11 @@ final class PersistanceUtilisateurPostgresql
     }
 
     /*
-      Met à jour les rôles "chauffeur" et "passager" d’un utilisateur
-
-      Objectif :
+      Met à jour les rôles chauffeur et passager d’un utilisateur
       - page "Gérer mes rôles" : l’utilisateur choisit ses rôles, puis on enregistre en BDD.
-
-      Sécurité métier :
       - l’utilisateur ne doit pas pouvoir décocher les deux rôles en même temps
       - je bloque côté PHP avec un message clair
-      - et la BDD a aussi sa contrainte (ck_utilisateur_au_moins_un_role) en filet de sécurité
+      - et la BDD a aussi sa contrainte (ck_utilisateur_au_moins_un_role) en sécurité
     */
     public function mettreAJourRoles(int $idUtilisateur, bool $roleChauffeur, bool $rolePassager): void
     {
@@ -336,15 +317,14 @@ final class PersistanceUtilisateurPostgresql
         try {
             $requete = $pdo->prepare($sql);
 
-            // Important : on force le type boolean côté PDO (évite les '' / 'on' / etc.)
+            // Important : Force le type boolean côté PDO (évite les '' / 'on' / etc.)
             $requete->bindValue('role_passager', $rolePassager, \PDO::PARAM_BOOL);
             $requete->bindValue('role_chauffeur', $roleChauffeur, \PDO::PARAM_BOOL);
             $requete->bindValue('id_utilisateur', $idUtilisateur, \PDO::PARAM_INT);
 
             $requete->execute();
         } catch (PDOException $exception) {
-            // Si jamais la BDD refuse (contrainte métier), je renvoie un message compréhensible.
-            // Exemple : ck_utilisateur_au_moins_un_role si on essayait de mettre les 2 à false.
+            // Si jamais la BDD refuse, je renvoie un message compréhensible.
             if ($exception->getCode() === '23514') {
                 throw new RuntimeException('Vous devez garder au moins un rôle : chauffeur ou passager.', 0, $exception);
             }

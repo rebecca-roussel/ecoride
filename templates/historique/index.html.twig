@@ -17,6 +17,11 @@
 
 {% block title %}Mon historique{% endblock %}
 
+{% block entete %}
+  {% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+
 {% block stylesheets %}
   {{ parent() }}
   <link rel="stylesheet" href="{{ asset('css/historique.css') }}">
@@ -67,9 +72,7 @@
 
       <div class="zone_listes">
 
-        {# =========================
-           ONGLET : COVOITURAGES PUBLIÉS (chauffeur)
-           ========================= #}
+        {# ONGLET : COVOITURAGES PUBLIÉS #}
         {% if onglet == 'covoiturages' %}
           <div class="liste_cartes">
             {% if covoiturages_publies|length == 0 %}
@@ -117,7 +120,7 @@
 
                 <div class="carte_actions">
                   {% if statut == 'PLANIFIE' %}
-                    <form method="post" action="{{ path('historique_demarrer_covoiturage') }}">
+                    <form method="post" action="{{ path('demarrer_covoiturage') }}">
                       <input type="hidden" name="_token" value="{{ csrf_token('demarrer_covoiturage') }}">
                       <input type="hidden" name="id_covoiturage" value="{{ id_covoiturage }}">
                       <button class="bouton_secondaire bouton_demarrer" type="submit">
@@ -126,8 +129,8 @@
                       </button>
                     </form>
 
-                    <form method="post" action="{{ path('historique_annuler_covoiturage') }}">
-                      <input type="hidden" name="_token" value="{{ csrf_token('historique_annuler_covoiturage') }}">
+                    <form method="post" action="{{ path('annuler_covoiturage') }}">
+                      <input type="hidden" name="_token" value="{{ csrf_token('annuler_covoiturage') }}">
                       <input type="hidden" name="id_covoiturage" value="{{ id_covoiturage }}">
                       <button class="bouton_alerte" type="submit">
                         <span class="icone_bouton icone_x" aria-hidden="true"></span>
@@ -136,7 +139,7 @@
                     </form>
 
                   {% elseif statut == 'EN_COURS' %}
-                    <form method="post" action="{{ path('historique_terminer_covoiturage') }}">
+                    <form method="post" action="{{ path('terminer_covoiturage') }}">
                       <input type="hidden" name="_token" value="{{ csrf_token('terminer_covoiturage') }}">
                       <input type="hidden" name="id_covoiturage" value="{{ id_covoiturage }}">
                       <button class="bouton_valider" type="submit">
@@ -147,7 +150,7 @@
 
                     {% if incident_possible and id_covoiturage > 0 %}
                       <a class="bouton_alerte"
-                         href="{{ path('historique_incident_formulaire', { id: id_covoiturage }) }}">
+                         href="{{ path('incident_formulaire', { id: id_covoiturage }) }}">
                         <span class="icone_bouton icone_alerte" aria-hidden="true"></span>
                         Déclarer un incident
                       </a>
@@ -156,7 +159,7 @@
                   {% elseif statut == 'TERMINE' %}
                     {% if incident_possible and id_covoiturage > 0 %}
                       <a class="bouton_alerte"
-                         href="{{ path('historique_incident_formulaire', { id: id_covoiturage }) }}">
+                         href="{{ path('incident_formulaire', { id: id_covoiturage }) }}">
                         <span class="icone_bouton icone_alerte" aria-hidden="true"></span>
                         Déclarer un incident
                       </a>
@@ -174,9 +177,7 @@
             {% endfor %}
           </div>
 
-        {# =========================
-           ONGLET : PARTICIPATIONS (passager)
-           ========================= #}
+        {# ONGLET : PARTICIPATIONS #}
         {% else %}
           <div class="liste_cartes">
             {% if participations|length == 0 %}
@@ -239,14 +240,14 @@
                 <div class="carte_actions">
                   {% if satisfaction_possible and id_covoiturage > 0 %}
                     <a class="bouton_valider"
-                       href="{{ path('historique_satisfaction_formulaire', { id: id_covoiturage }) }}">
+                       href="{{ path('satisfaction_formulaire', { id: id_covoiturage }) }}">
                       <span class="icone_bouton icone_valide" aria-hidden="true"></span>
                       Donner mon avis
                     </a>
                   {% endif %}
 
                   {% if annulation_autorisee %}
-                    <form method="post" action="{{ path('historique_annuler_participation') }}">
+                    <form method="post" action="{{ path('annuler_participation') }}">
                       <input type="hidden" name="_token" value="{{ csrf_token('annuler_participation') }}">
                       <input type="hidden" name="id_participation" value="{{ id_participation }}">
                       <button class="bouton_alerte" type="submit">

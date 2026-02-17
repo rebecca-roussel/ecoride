@@ -15,6 +15,11 @@
 Déclarer un incident
 {% endblock %}
 
+{% block entete %}
+  {% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+
 {% block stylesheets %}
 {{ parent() }}
 <link rel="stylesheet" href="{{ asset('css/historique.css') }}">
@@ -36,7 +41,7 @@ Déclarer un incident
       Le statut du trajet passera en <strong>INCIDENT</strong>.
     </p>
 
-    <form method="post" action="{{ path('historique_declarer_incident') }}">
+    <form method="post" action="{{ path('declarer_incident') }}">
 
       <input type="hidden" name="id_covoiturage" value="{{ id_covoiturage }}">
       <input type="hidden" name="_token" value="{{ csrf_token('declarer_incident') }}">

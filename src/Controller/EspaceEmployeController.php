@@ -20,7 +20,7 @@ final class EspaceEmployeController extends AbstractController
 
       1) Branchements / dépendances
          - garder le contrôleur "simple" : il orchestre, il ne porte pas la logique métier
-         - récupérer une connexion PDO via ConnexionPostgresql (pour les requêtes "spécifiques")
+         - récupérer une connexion PDO via ConnexionPostgresql (pour les requêtes spécifiques)
          - utiliser PersistanceEmployePostgresql pour les opérations métier (modération / incidents)
          - utiliser SessionUtilisateur comme source unique de vérité (connecté + rôle employé)
 
@@ -31,7 +31,7 @@ final class EspaceEmployeController extends AbstractController
          - rendre Twig avec les données
 
       3) Outils internes (lecture détaillée)
-         - trouver un avis EN_ATTENTE par id (pour afficher un détail)
+         - trouver un avis EN_ATTENTE par id pour afficher un détail
          - trouver un incident INCIDENT non résolu par covoiturage (données + liste passagers)
          - garde-fous : id > 0, sinon null
          - conversion "propre" des types pour Twig (int/string)
@@ -44,16 +44,15 @@ final class EspaceEmployeController extends AbstractController
     */
 
     /**
-     * Connexion PDO (accès bas niveau) utilisée par les méthodes "trouver..."
-     * Astuce débutante : on la prépare une fois dans le constructeur plutôt
+     * Connexion PDO (accès bas niveau) utilisée par les méthodes "trouver, etc..."
+     * Je la prépare une fois dans le constructeur plutôt
      * que de la recréer à chaque appel.
      */
     private PDO $pdo;
 
     public function __construct(ConnexionPostgresql $connexionPostgresql)
     {
-        // Ici on récupère directement l'objet PDO.
-        // IMPORTANT : on n'ajoute aucune fonctionnalité, on branche juste correctement.
+
         $this->pdo = $connexionPostgresql->obtenirPdo();
     }
 
@@ -68,15 +67,15 @@ final class EspaceEmployeController extends AbstractController
             return $this->redirectToRoute('connexion');
         }
 
-        // 2) Onglets : on ne garde que 2 valeurs possibles (évite les surprises).
+        // 2) ( Onglets ) on ne garde que 2 valeurs possibles 
         $onglet = (string) $request->query->get('onglet', 'avis');
         $onglet = $onglet === 'signalements' ? 'signalements' : 'avis';
 
-        // 3) Données d'écran : on charge les listes (limite volontaire pour garder la page rapide).
+        // 3) On charge les listes 
         $avis = $persistanceEmploye->listerAvisEnAttente(50);
         $signalements = $persistanceEmploye->listerIncidentsOuverts(50);
 
-        // 4) Affichage Twig.
+        // 4) Affichage Twig
         return $this->render('espace_employe/index.html.twig', [
             'utilisateur_pseudo' => $sessionUtilisateur->pseudo(),
             'onglet' => $onglet,
@@ -87,8 +86,8 @@ final class EspaceEmployeController extends AbstractController
 
     /**
      * Trouver 1 avis EN_ATTENTE par identifiant.
-     * Retour : tableau "prêt pour Twig" (types normalisés) ou null si introuvable.
      *
+     * 
      * @return array{
      *   id_avis:int,
      *   note:int,
@@ -107,7 +106,7 @@ final class EspaceEmployeController extends AbstractController
      */
     public function trouverAvisEnAttenteParId(int $idAvis): ?array
     {
-        // Garde-fou : pas de requête si l'id est invalide.
+        // pas de requête si l'id est invalide
         if ($idAvis <= 0) {
             return null;
         }
@@ -144,7 +143,7 @@ final class EspaceEmployeController extends AbstractController
             return null;
         }
 
-        // On renvoie un tableau propre (int/string) : Twig adore ça.
+
         return [
             'id_avis' => (int) ($ligne['id_avis'] ?? 0),
             'note' => (int) ($ligne['note'] ?? 0),
@@ -163,8 +162,8 @@ final class EspaceEmployeController extends AbstractController
     }
 
     /**
-     * Trouver 1 incident ouvert (statut INCIDENT + non résolu) pour un covoiturage.
-     * Retour : infos covoiturage + chauffeur + liste passagers non annulés, ou null.
+     * Trouver 1 incident ouvert pour un covoiturage.
+     * Retour : infos covoiturage + chauffeur + liste passagers non annulés ou null
      *
      * @return array{
      *   id_covoiturage:int,
@@ -185,7 +184,7 @@ final class EspaceEmployeController extends AbstractController
             return null;
         }
 
-        // 1) Données de base de l’incident (1 ligne max)
+        // 1) Données de base de l’incident 
         $stmt = $this->pdo->prepare("
             SELECT
               c.id_covoiturage,
@@ -212,7 +211,7 @@ final class EspaceEmployeController extends AbstractController
             return null;
         }
 
-        // 2) Passagers du covoiturage (hors annulations)
+        // 2) Passagers du covoiturage 
         $stmt2 = $this->pdo->prepare("
             SELECT
               u_pa.pseudo,
@@ -256,7 +255,7 @@ final class EspaceEmployeController extends AbstractController
         SessionUtilisateur $sessionUtilisateur,
         PersistanceEmployePostgresql $persistanceEmploye,
     ): Response {
-        // Sécurité "stricte" : une action POST employé ne doit jamais rediriger silencieusement.
+        // Sécurité stricte : une action POST employé ne doit jamais rediriger silencieusement.
         if (!$sessionUtilisateur->estConnecte() || !$sessionUtilisateur->estEmploye()) {
             throw $this->createAccessDeniedException('Accès réservé employé.');
         }
@@ -264,7 +263,7 @@ final class EspaceEmployeController extends AbstractController
         $idAvis = (int) $request->request->get('id_avis', 0);
         $token = (string) $request->request->get('_token', '');
 
-        // CSRF + id : garde-fous minimum avant de toucher à la base.
+        // CSRF + id 
         if ($idAvis <= 0 || !$this->isCsrfTokenValid('avis_valider_' . $idAvis, $token)) {
             $this->addFlash('erreur', 'Action refusée : jeton de sécurité invalide.');
             return $this->redirectToRoute('espace_employe', ['onglet' => 'avis']);
@@ -312,8 +311,7 @@ final class EspaceEmployeController extends AbstractController
 
         $ok = $persistanceEmploye->modererAvis($idAvis, 'REFUSE', $idEmploye);
 
-        // Petite incohérence d’origine : les 2 branches utilisaient 'avertissement'.
-        // Je garde la fonctionnalité, mais je mets un niveau de message plus logique.
+
         $this->addFlash(
             'avertissement',
             $ok ? 'Avis refusé (non publié).' : 'Aucun changement : avis déjà traité ou introuvable.'
@@ -359,7 +357,7 @@ final class EspaceEmployeController extends AbstractController
             return $this->redirectToRoute('connexion');
         }
 
-        // 2) Lecture des données (on réutilise ta méthode existante)
+        // 2) Lecture des données 
         $incident = $this->trouverIncidentOuvertParCovoiturage($idCovoiturage);
 
         if ($incident === null) {

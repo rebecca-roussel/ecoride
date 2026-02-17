@@ -16,19 +16,19 @@ final class ResultatsController extends AbstractController
       PLAN (ResultatsController) :
 
       1) Rôle du contrôleur
-         - je reçois les paramètres de recherche (query string ?ville_depart=... etc.)
+         - je reçois les paramètres de recherche 
          - je fais une validation minimale (formats date/heure)
          - j’appelle la BDD via PersistanceCovoituragePostgresql
          - j’envoie les résultats au Twig resultats/index.html.twig
 
-      2) Important pour moi
+      2) Important
          - les noms des paramètres doivent rester alignés avec la BDD et le formulaire
-         - la BDD est la source de vérité, le contrôleur orchestre juste la recherche
+         - la BDD est la vérité, le contrôleur orchestre juste la recherche
 
       3) Petit confort UX
-         - l’utilisateur donne une “heure souhaitée”
+         - l’utilisateur donne une heure souhaitée
          - moi je transforme ça en plage horaire (heure_min / heure_max) avec une marge
-         - si rien dans la plage, je relance une recherche sans filtre heure (repli)
+         - si rien dans la plage, je relance une recherche sans filtre heure 
     */
 
     #[Route('/resultats', name: 'resultats', methods: ['GET'])]
@@ -44,10 +44,10 @@ final class ResultatsController extends AbstractController
         $date = trim((string) $requete->query->get('date', ''));
 
         /*
-          2) Heure souhaitée (UX)
+          2) Heure souhaitée 
           - l’utilisateur renseigne une heure précise
           - mais la recherche BDD fonctionne mieux en plage horaire
-          - donc on convertit plus bas en heure_min / heure_max
+          - donc je convertit plus bas en heure_min / heure_max
         */
         $heureSouhaiteeBrut = trim((string) $requete->query->get('heure_souhaitee', ''));
         $heureSouhaitee = ('' === $heureSouhaiteeBrut) ? null : $heureSouhaiteeBrut;
@@ -55,7 +55,6 @@ final class ResultatsController extends AbstractController
         /*
           3) Filtres optionnels
           - si le champ est vide ou invalide, je mets null
-          - comme ça la persistance n’ajoute pas le filtre
         */
 
         // Energie : je mets en majuscules pour matcher les valeurs de la BDD
@@ -74,11 +73,7 @@ final class ResultatsController extends AbstractController
         $noteMinBrut = $requete->query->getInt('note_min');
         $noteMin = ($noteMinBrut >= 1 && $noteMinBrut <= 5) ? $noteMinBrut : null;
 
-        /*
-          4) Critères
-          - je renvoie ces valeurs au Twig
-          - ça me permet de re-remplir le formulaire (confort utilisateur)
-        */
+        /* 4) Critères*/
         $criteres = [
             'ville_depart' => $villeDepart,
             'ville_arrivee' => $villeArrivee,
@@ -93,7 +88,7 @@ final class ResultatsController extends AbstractController
         /*
           5) Validation minimale
           - si les champs indispensables ne sont pas là, je renvoie sur la page de recherche
-          - ici j’affiche un message, parce que c’est la page “recherche” qui gère les erreurs
+          - j’affiche un message, parce que c’est la page recherche qui gère les erreurs
         */
         if ('' === $villeDepart || '' === $villeArrivee || '' === $date) {
             return $this->render('recherche/index.html.twig', [
@@ -110,7 +105,7 @@ final class ResultatsController extends AbstractController
             ]);
         }
 
-        // Heure souhaitée attendue : HH:MM (input type="time") si renseignée
+        // Heure souhaitée attendue : HH:MM (input type="time") 
         if (null !== $heureSouhaitee && !preg_match('/^\d{2}:\d{2}$/', $heureSouhaitee)) {
             return $this->render('recherche/index.html.twig', [
                 'message_erreur' => 'Heure invalide (format attendu : HH:MM).',
@@ -130,9 +125,9 @@ final class ResultatsController extends AbstractController
 
         /*
           6) Conversion heure souhaitée -> plage [heure_min, heure_max]
-          - but : être tolérante (les gens ne tapent pas pile l’heure)
+          - le but est d'être tolérante car les gens ne tapent pas pile l’heure
           - margeMinutes réglable (ici 60 minutes)
-          - je bloque la plage dans la journée (pas veille / lendemain)
+          - je bloque la plage dans la journée (pas veille ou lendemain)
         */
         $heureMin = null;
         $heureMax = null;
@@ -149,7 +144,7 @@ final class ResultatsController extends AbstractController
             $dateHeureMin = $dateHeureCible->modify('-' . $margeMinutes . ' minutes');
             $dateHeureMax = $dateHeureCible->modify('+' . $margeMinutes . ' minutes');
 
-            // Je garde tout dans la même journée (évite les surprises)
+            // Je garde tout dans la même journée 
             $debutJournee = $dateObjet->setTime(0, 0, 0);
             $finJournee = $dateObjet->setTime(23, 59, 59);
 
@@ -164,7 +159,7 @@ final class ResultatsController extends AbstractController
             $heureMax = $dateHeureMax->format('H:i');
         }
 
-        // Je garde la plage dans criteres (utile pour afficher “entre ... et ...”)
+        // Garde la plage dans criteres 
         $criteres['heure_min'] = $heureMin;
         $criteres['heure_max'] = $heureMax;
 
@@ -211,7 +206,7 @@ final class ResultatsController extends AbstractController
         /*
           8) Affichage Twig
           - resultats : la liste des covoiturages
-          - criteres : ce que l’utilisateur a cherché (pour affichage + filtres)
+          - criteres : ce que l’utilisateur a cherché pour affichage + filtres
           - recherche_elargie : bool pour afficher un petit message si besoin
         */
         return $this->render('resultats/index.html.twig', [

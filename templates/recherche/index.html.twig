@@ -64,3 +64,9 @@ EcoRide – Rechercher
 		</main>
 	</div>
 {% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script src="{{ asset('js/suggestions_villes.js') }}" defer></script>
+{% endblock %}
+

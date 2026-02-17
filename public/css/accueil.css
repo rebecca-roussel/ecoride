@@ -475,6 +475,44 @@
     }
 }
 
+/* Suggestions géocodage*/
+.panneau_suggestions{
+  position: absolute;
+  z-index: 50;
+  width: 100%;
+  margin-top: 6px;
+  background: #FFFFFF;
+  border: 1px solid rgba(199,195,184,0.75);
+  border-radius: 12px;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.champ_groupe,
+.groupe_champ,
+.champ{
+  position: relative;
+}
+
+.suggestion_item{
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  color: #0F172A;
+  cursor: pointer;
+  display: block;
+  min-height: 44px;
+}
+
+.suggestion_item:hover,
+.suggestion_item:focus-visible{
+  background: rgba(63,93,74,0.10);
+  outline: none;
+}
+
+
 /* NAVIGATION DESKTOP et MOBILE REPLIÉ */
 
 @media (max-width: 900px) {

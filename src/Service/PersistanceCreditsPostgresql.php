@@ -27,8 +27,8 @@ final class PersistanceCreditsPostgresql
 
     /**
      * Historique des crédits :
-     * - Débit passager : réservation (participation non annulée)
-     * - Gain chauffeur : participation validée OK (commission déduite si présente)
+     * - Débit passager : réservation est donc une participation non annulée
+     * - Gain chauffeur : participation validée OK est donc une commission déduite si présente
      *
      * @return array<int, array<string, mixed>>
      */

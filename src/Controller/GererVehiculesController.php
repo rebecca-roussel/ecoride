@@ -61,13 +61,13 @@ final class GererVehiculesController extends AbstractController
         }
 
         // Je récupère l’id utilisateur depuis la session.
-        // Si jamais il est absent, je redirige aussi.
+        // Si jamais il est absent, on redirige aussi.
         $idUtilisateur = $this->sessionUtilisateur->idUtilisateur();
         if ($idUtilisateur === null) {
             return $this->redirectToRoute('connexion');
         }
 
-        // Trace l’ouverture de la page (pour audit / stats / debug) avec MongoDB.
+        // Trace l’ouverture de la page avec MongoDB.
         $this->journalEvenements->enregistrer(
             'page_ouverte',
             'utilisateur',
@@ -78,7 +78,7 @@ final class GererVehiculesController extends AbstractController
         );
 
         // Je récupère la liste des véhicules actifs de cet utilisateur.
-        // “Actif” = suppression logique : le véhicule existe encore en base mais il est désactivé.
+        // Actif = suppression : le véhicule existe encore en base mais il est désactivé.
         $vehicules = $this->persistanceVoiturePostgresql->listerVehiculesActifsParUtilisateur($idUtilisateur);
 
         // Je prépare un champ “ancienneté” pour l’affichage.
@@ -86,13 +86,13 @@ final class GererVehiculesController extends AbstractController
             // Je force en string pour éviter les surprises.
             $date = (string) ($vehicule['date_1ere_mise_en_circulation'] ?? '');
 
-            // Je délègue le calcul à un service : le contrôleur reste “chef d’orchestre”.
+            // délègue le calcul à un service 
             $vehicule['anciennete_annees'] = $this->persistanceVoiturePostgresql
                 ->calculerAncienneteEnAnnees($date, $idUtilisateur);
         }
         unset($vehicule);
 
-        // J’envoie les données à Twig.
+        // envoie les données à Twig.
         return $this->render('vehicules/index.html.twig', [
             'vehicules' => $vehicules,
         ]);
@@ -106,12 +106,12 @@ final class GererVehiculesController extends AbstractController
     )]
     public function supprimer(Request $request, int $idVoiture): RedirectResponse
     {
-        // Même règle : pas connecté = dehors.
+        // Pas connecté = dehors.
         if (!$this->sessionUtilisateur->estConnecte()) {
             return $this->redirectToRoute('connexion');
         }
 
-        // Je revalide l’id utilisateur.
+        // On revalide l’id utilisateur.
         $idUtilisateur = $this->sessionUtilisateur->idUtilisateur();
         if ($idUtilisateur === null) {
             return $this->redirectToRoute('connexion');
@@ -119,7 +119,7 @@ final class GererVehiculesController extends AbstractController
 
         // Sécurité CSRF :
         // - le formulaire POST envoie un _jeton_csrf
-        // - je vérifie que le token correspond bien à l’action + l’id voiture.
+        // - et vérifier que le token correspond bien à l’action + l’id voiture.
         $jeton = (string) $request->request->get('_jeton_csrf', '');
         if (!$this->isCsrfTokenValid('supprimer_vehicule_' . $idVoiture, $jeton)) {
             // Si CSRF invalide : je trace…
@@ -133,14 +133,14 @@ final class GererVehiculesController extends AbstractController
                 ]
             );
 
-            // …et je donne un message à l’utilisateur.
+            // Message à l’utilisateur.
             $this->addFlash('erreur', 'Action refusée : jeton invalide.');
 
-            // Puis je reviens à la page de gestion.
+            // et on reviens à la page de gestion
             return $this->redirectToRoute('gerer_vehicules');
         }
 
-        // Ici le token est OK alors je journalise la demande de suppression.
+
         $this->journalEvenements->enregistrer(
             'vehicule_suppression_demandee',
             'voiture',
@@ -151,8 +151,8 @@ final class GererVehiculesController extends AbstractController
         );
 
         try {
-            // Je ne supprime pas vraiment en base : je désactive.
-            // Et je passe aussi l’id utilisateur pour éviter qu’on supprime la voiture d’un autre.
+            // Désactivation en base et pas de réelles suppressions
+            // Et passe aussi l’id utilisateur pour éviter qu’on supprime la voiture d’un autre.
             $this->persistanceVoiturePostgresql->desactiverVehicule($idVoiture, $idUtilisateur);
 
             $this->addFlash('succes', 'Véhicule supprimé.');
@@ -177,7 +177,7 @@ final class GererVehiculesController extends AbstractController
             return $this->redirectToRoute('connexion');
         }
 
-        // Je trace l’ouverture de la page “ajouter véhicule”.
+        // Trace l’ouverture de la page “Ajouter véhicule”.
         $this->journalEvenements->enregistrer(
             'page_ouverte',
             'utilisateur',
@@ -187,7 +187,7 @@ final class GererVehiculesController extends AbstractController
             ]
         );
 
-        // J’affiche le formulaire avec des valeurs par défaut.
+        // Affiche le formulaire avec des valeurs par défaut
         return $this->render('vehicules/ajouter.html.twig', [
             'est_modification' => false,
             'id_voiture' => null,
@@ -216,7 +216,7 @@ final class GererVehiculesController extends AbstractController
             return $this->redirectToRoute('connexion');
         }
 
-        // Je vérifie le jeton CSRF de l’ajout.
+        // Vérifie le jeton CSRF de l’ajout
         $jeton = (string) $request->request->get('_jeton_csrf', '');
         if (!$this->isCsrfTokenValid('ajouter_vehicule', $jeton)) {
             $this->journalEvenements->enregistrer(
@@ -232,7 +232,7 @@ final class GererVehiculesController extends AbstractController
             return $this->redirectToRoute('vehicule_ajouter');
         }
 
-        // Je récupère les champs du formulaire.
+        // Champs du formulaire
         $immatriculation = strtoupper(trim((string) $request->request->get('immatriculation', '')));
         $date = trim((string) $request->request->get('date_1ere_mise_en_circulation', ''));
         $marque = trim((string) $request->request->get('marque', ''));
@@ -240,10 +240,10 @@ final class GererVehiculesController extends AbstractController
         $energie = trim((string) $request->request->get('energie', ''));
         $nbPlaces = (int) $request->request->get('nb_places', 0);
 
-        // Je prépare un tableau d’erreurs : clé = champ, valeur = message.
+        // Tableau d’erreurs 
         $erreurs = $this->validerFormulaireVehicule($immatriculation, $date, $marque, $couleur, $energie, $nbPlaces);
 
-        // Si j’ai des erreurs je réaffiche le formulaire.
+        // Si erreurs réaffiche le formulaire.
         if (!empty($erreurs)) {
             return $this->render('vehicules/ajouter.html.twig', [
                 'est_modification' => false,
@@ -321,14 +321,14 @@ final class GererVehiculesController extends AbstractController
             return $this->redirectToRoute('connexion');
         }
 
-        // Je charge le véhicule en m’assurant qu’il appartient à l’utilisateur.
+
         $vehicule = $this->persistanceVoiturePostgresql->trouverVehiculeParIdEtUtilisateur($idVoiture, $idUtilisateur);
         if ($vehicule === null) {
             $this->addFlash('erreur', 'Véhicule introuvable.');
             return $this->redirectToRoute('gerer_vehicules');
         }
 
-        // Je trace l’ouverture de la page “modifier véhicule”.
+
         $this->journalEvenements->enregistrer(
             'page_ouverte',
             'utilisateur',
@@ -372,14 +372,14 @@ final class GererVehiculesController extends AbstractController
             return $this->redirectToRoute('connexion');
         }
 
-        // Je vérifie le jeton CSRF de la modification.
+        // Vérifie le jeton CSRF de la modification.
         $jeton = (string) $request->request->get('_jeton_csrf', '');
         if (!$this->isCsrfTokenValid('modifier_vehicule_' . $idVoiture, $jeton)) {
             $this->addFlash('erreur', 'Action refusée : jeton invalide.');
             return $this->redirectToRoute('vehicule_modifier', ['idVoiture' => $idVoiture]);
         }
 
-        // Je récupère les champs du formulaire.
+        // Récupère les champs du formulaire.
         $immatriculation = strtoupper(trim((string) $request->request->get('immatriculation', '')));
         $date = trim((string) $request->request->get('date_1ere_mise_en_circulation', ''));
         $marque = trim((string) $request->request->get('marque', ''));

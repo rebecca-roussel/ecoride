@@ -13,13 +13,13 @@ final class PersistanceEmployePostgresql
 
       1) Rôle du service
          - regrouper toutes les requêtes SQL utiles à l’espace employé
-         - le contrôleur décide "qui a le droit", ici on fait juste la BDD
+         - le contrôleur décide qui a le droit, ici on branche la BDD
 
       2) Listes à afficher
          a) Avis en attente (modération)
          b) Incidents ouverts (signalements)
 
-      3) Actions employé (mise à jour)
+      3) Actions employé de mise à jour 
          a) Valider / refuser un avis (statut_moderation + modérateur)
          b) Marquer un incident comme traité (incident_resolu)
     */
@@ -31,7 +31,7 @@ final class PersistanceEmployePostgresql
     /**
      * Lister les avis dont la modération est EN_ATTENTE.
      * - On récupère l’avis + le passager + les villes du covoiturage
-     * - Limite paramétrable (pour éviter une liste trop longue)
+     * - Limite pour éviter une liste trop longue
      *
      * @return array<int, array{
      *   id_avis:int,
@@ -45,10 +45,10 @@ final class PersistanceEmployePostgresql
      */
     public function listerAvisEnAttente(int $limite = 50): array
     {
-        // 1) Connexion PDO (centralisée dans ConnexionPostgresql)
+        // 1) Connexion PDO 
         $pdo = $this->connexion->obtenirPdo();
 
-        // 2) Requête : avis en attente + contexte (passager + trajet)
+        // 2) Avis en attente + contexte (passager + trajet)
         $stmt = $pdo->prepare("
             SELECT
               a.id_avis,
@@ -74,7 +74,7 @@ final class PersistanceEmployePostgresql
         /** @var array<int, array<string, mixed>> $lignes */
         $lignes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // 4) Normalisation : on retourne toujours une structure stable pour Twig
+        // 4) Normalisation 
         $resultat = [];
         foreach ($lignes as $ligne) {
             $resultat[] = [
@@ -116,7 +116,7 @@ final class PersistanceEmployePostgresql
         /*
           - JOIN utilisateur u_ch : le chauffeur existe toujours (covoiturage -> id_utilisateur)
           - LEFT JOIN participation + utilisateur passager : il peut ne pas y avoir de passager
-            (ou plusieurs, mais ici on prend la jointure telle quelle pour avoir du contexte)
+            (ou plusieurs, mais ici je prend la jointure telle quelle pour avoir du contexte)
         */
         $stmt = $pdo->prepare("
             SELECT
@@ -201,7 +201,7 @@ final class PersistanceEmployePostgresql
 
     /*
       Marquer un incident comme traité :
-      - on ne change que si l’incident est encore "ouvert" (incident_resolu = false)
+      - on ne change que si l’incident est encore ouvert 
       - et si le covoiturage est bien en statut INCIDENT
     */
     public function marquerIncidentTraite(int $idCovoiturage): bool
@@ -220,5 +220,4 @@ final class PersistanceEmployePostgresql
 
         return $stmt->rowCount() > 0;
     }
-    
 }

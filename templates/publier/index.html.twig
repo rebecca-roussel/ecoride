@@ -39,7 +39,7 @@ Publier un covoiturage
 			{% if voitures|length == 0 %}
 				<p class="texte_secondaire">
 					Vous n’avez aucune voiture active.
-										          Ajoutez un véhicule (ou réactivez-en un) avant de publier un covoiturage.
+																				          Ajoutez un véhicule (ou réactivez-en un) avant de publier un covoiturage.
 				</p>
 
 				<a class="bouton_principal" href="{{ path('gerer_vehicules') }}">
@@ -87,6 +87,11 @@ Publier un covoiturage
 								<p class="champ_erreur">{{ erreurs.adresse_arrivee }}</p>
 							{% endif %}
 						</div>
+						<input type="hidden" name="latitude_depart" id="latitude_depart" value="{{ valeurs.latitude_depart|default('') }}">
+						<input type="hidden" name="longitude_depart" id="longitude_depart" value="{{ valeurs.longitude_depart|default('') }}">
+						<input type="hidden" name="latitude_arrivee" id="latitude_arrivee" value="{{ valeurs.latitude_arrivee|default('') }}">
+						<input
+						type="hidden" name="longitude_arrivee" id="longitude_arrivee" value="{{ valeurs.longitude_arrivee|default('') }}">
 
 
 						{# Date + heure #}
@@ -129,7 +134,7 @@ Publier un covoiturage
 							{% endif %}
 						</div>
 
-						{# 5) Voiture (avant le prix : on choisit le véhicule, puis on fixe le tarif) #}
+						{# 5) Voiture #}
 						<div class="champ champ_large">
 							<label for="id_voiture">Voiture</label>
 							<select id="id_voiture" name="id_voiture" required class="{{ erreurs.id_voiture is defined ? 'champ_en_erreur' : '' }}">
@@ -153,14 +158,13 @@ Publier un covoiturage
 							{% endif %}
 						</div>
 
-						{# 6) Prix (minimum 2 : commission EcoRide incluse) #}
+						{# 6) Prix #}
 						<div class="champ champ_large">
 							<label for="prix_credits">Prix (crédits)</label>
 
-							<input
-							id="prix_credits" type="number" min="2" name="prix_credits" value="{{ valeurs.prix_credits|default('') }}" required class="{{ erreurs.prix_credits is defined ? 'champ_en_erreur' : '' }}">
+							<input id="prix_credits" type="number" min="2" name="prix_credits" value="{{ valeurs.prix_credits|default('') }}" required class="{{ erreurs.prix_credits is defined ? 'champ_en_erreur' : '' }}">
 
-							{# Aide fixe, lisible même sans erreur #}
+
 							<p class="texte_mini">Minimum 2 crédits (commission EcoRide incluse).</p>
 
 							{% if erreurs.prix_credits is defined %}
@@ -208,3 +212,10 @@ Publier un covoiturage
 	</main>
 
 {% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('js/suggestions_geocodage.js') }}" defer></script>
+    <script src="{{ asset('js/geocodage_publier.js') }}" defer></script>
+{% endblock %}
+

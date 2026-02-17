@@ -69,7 +69,7 @@ final class InscriptionController extends AbstractController
                             $dossierPhotos = $dossierPublic . '/photos';
 
                             if (!is_dir($dossierPhotos)) {
-                                // On crée le dossier si absent (en ignorant l’erreur si un autre process le crée juste avant)
+                                // On crée le dossier si absent 
                                 @mkdir($dossierPhotos, 0o775, true);
                             }
 
@@ -98,7 +98,7 @@ final class InscriptionController extends AbstractController
                 }
 
                 if (null === $erreur) {
-                    /* Vérifs simples avant insertion */
+                    /* Vérifs avant insertion */
                     if ($persistanceUtilisateur->pseudoExisteDeja($pseudoSaisi)) {
                         $erreur = 'Ce pseudo est déjà utilisé.';
                     } elseif ($persistanceUtilisateur->emailExisteDeja($emailSaisi)) {
@@ -122,7 +122,7 @@ final class InscriptionController extends AbstractController
                                 $photoPath
                             );
 
-                            // ✅ IMPORTANT : connecter attend 4 paramètres maintenant
+
                             $sessionUtilisateur->connecter($idUtilisateur, $pseudoSaisi, $roleChauffeur, $rolePassager);
 
                             return $this->redirectToRoute('accueil');

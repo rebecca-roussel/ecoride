@@ -181,4 +181,9 @@
   {% include 'fragments/pied_de_page.html.twig' %}
 {% endblock %}
 
+{% block javascripts %}
+  {{ parent() }}
+  <script src="{{ asset('js/suggestions_villes.js') }}" defer></script>
+{% endblock %}
+
 

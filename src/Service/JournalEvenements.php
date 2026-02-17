@@ -15,15 +15,15 @@ final class JournalEvenements
       PLAN (JournalEvenements) :
 
       1) Pourquoi on a ce service
-         - PostgreSQL stocke les données “métier”
-         - MongoDB sert de journal d’événements (append-only)
+         - PostgreSQL stocke les données 
+         - MongoDB sert de journal d’événements 
          - on ajoute des événements, on ne réécrit pas le passé
 
       2) Ce que je stocke dans un événement
          - type_evenement : ce qui s’est passé
          - entite : sur quoi ça s’applique (utilisateur, voiture, covoiturage, etc.)
-         - id_entite : identifiant concerné (ex : id_utilisateur)
-         - donnees : contexte utile (facultatif)
+         - id_entite : identifiant concerné 
+         - donnees : contexte utile 
          - cree_le : date/heure de création en UTC
 
       3) Règle importante
@@ -32,7 +32,7 @@ final class JournalEvenements
 
       4) Bonus utile
          - si MongoDB est KO : je ne perds pas tout, je trace dans les logs Symfony
-         - garde-fous : pas d’événements “vides” (évite des documents inutiles / incohérents)
+         - garde-fous : pas d’événements vides 
     */
 
     private Client $client;
@@ -67,12 +67,7 @@ final class JournalEvenements
         int $idEntite,
         array $donnees = []
     ): string {
-        /*
-          Garde-fous simples
-          But : éviter des événements “vides” (ex : type_evenement = '')
-          => dans ce cas, je ne tente même pas MongoDB
-          => je trace juste un warning (utile pour déboguer)
-        */
+        /* Garde-fous pour éviter des événements vides */
         $typeEvenement = trim($typeEvenement);
         $entite = trim($entite);
 
@@ -87,13 +82,13 @@ final class JournalEvenements
         }
 
         try {
-            // Je récupère la collection (base choisie + collection "journal_evenements")
+            // Récupère la collection (base choisie + collection "journal_evenements")
             $collection = $this->obtenirCollection();
 
             /*
               Document Mongo
-              - clefs en snake_case (cohérence EcoRide)
-              - cree_le en UTC (pas de surprise de fuseau horaire)
+              - clefs en snake_case 
+              - cree_le en UTC 
               - donnees : contexte libre (optionnel)
             */
             $document = [
@@ -111,9 +106,9 @@ final class JournalEvenements
             return (string) $resultat->getInsertedId();
         } catch (Throwable $exception) {
             /*
-              Fallback “pro”
-              - MongoDB est KO ? je ne casse pas l’application
-              - mais je ne veux pas être aveugle : je trace dans les logs Symfony
+              Fallback
+              - si MongoDB est KO je ne casse pas l’application
+              - mais je ne veux pas être aveugle donc je trace dans les logs Symfony
             */
             $this->logger->error('JournalEvenements : insertion MongoDB impossible.', [
                 'exception' => $exception::class,
@@ -129,9 +124,7 @@ final class JournalEvenements
 
     /*
       Alias plus lisible pour les contrôleurs
-
-      Objectif :
-      - côté contrôleur, je veux un nom explicite
+      - côté contrôleur, on veux un nom explicite
       - je garde enregistrer() comme moteur interne
     */
     public function enregistrerEvenement(
@@ -145,8 +138,6 @@ final class JournalEvenements
 
     /*
       Enregistre une erreur dans le journal
-
-      But :
       - format homogène
       - ne pas afficher les détails techniques à l’utilisateur
       - mais garder de quoi diagnostiquer (message, fichier, ligne, etc.)
@@ -171,11 +162,9 @@ final class JournalEvenements
     }
 
     /*
-      Petite méthode privée : “source unique de vérité” pour la collection
-
-      Avantages :
+      Petite méthode privée source unique de vérité pour la collection
       - évite de répéter selectCollection partout
-      - si demain je change le nom de collection, je change ici et c’est fini
+      - si demain je change le nom de collection, je change ici 
     */
     private function obtenirCollection(): Collection
     {

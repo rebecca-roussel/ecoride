@@ -18,15 +18,14 @@ final class PersistanceCovoituragePostgresql
        - le SQL reste ici (pas dans les contrôleurs)
 
     2) Ce que je gère dans ce fichier
-       - recherche de covoiturages (avec filtres)
-       - détail d’un covoiturage (chauffeur + voiture + note moyenne)
-       - liste d’avis valides (pour afficher sur la page détail)
+       - recherche de covoiturages avec filtres
+       - détails et infos relatives au covoiturage 
+       - liste d’avis valides 
        - création d’un covoiturage planifié (publication)
 
     3) Principe important
        - la base est la source de vérité
        - requêtes préparées pour éviter les injections
-       - cohérence : statuts et règles TP (PLANIFIE, places > 0, etc.)
   */
 
   public function __construct(private ConnexionPostgresql $connexionPostgresql)
@@ -50,18 +49,8 @@ final class PersistanceCovoituragePostgresql
     ?int $ageMaxVoiture,
     ?int $noteMin,
   ): array {
-    /*
-      PLAN (rechercherCovoiturages) :
-
-      1) Construire une plage de date/heure (début/fin)
-      2) Requête socle
-      3) Ajouter les filtres si demandés
-      4) Exécuter et renvoyer les résultats
-    */
-
     $pdo = $this->connexionPostgresql->obtenirPdo();
 
-    // 1) Plage journée complète par défaut
     $debut = $date->setTime(0, 0);
     $fin = $date->setTime(23, 59, 59);
 
@@ -79,15 +68,6 @@ final class PersistanceCovoituragePostgresql
       [$debut, $fin] = [$fin, $debut];
     }
 
-    /*
-      2) Requête socle
-
-      Important :
-      - PLANIFIE
-      - places dispo > 0
-      - villes
-      - date_heure_depart dans [début, fin]
-    */
     $sql = "
             SELECT
                 covoiturage.id_covoiturage,
@@ -147,12 +127,6 @@ final class PersistanceCovoituragePostgresql
               AND covoiturage.date_heure_depart BETWEEN :debut AND :fin
         ";
 
-    /*
-      Paramètres de base
-
-      Point important
-      - ILIKE avec % = recherche “contient”, insensible à la casse
-    */
     $parametres = [
       'ville_depart' => '%' . trim($villeDepart) . '%',
       'ville_arrivee' => '%' . trim($villeArrivee) . '%',
@@ -273,7 +247,7 @@ final class PersistanceCovoituragePostgresql
   }
 
   /**
-   * Avis validés liés à un chauffeur (via ses covoiturages).
+   * Avis validés liés à un chauffeur via ses covoiturages
    *
    * @return array<int, array<string, mixed>>
    */
@@ -283,7 +257,6 @@ final class PersistanceCovoituragePostgresql
       return [];
     }
 
-    // Garde-fou simple
     $limite = max(1, min(20, (int) $limite));
 
     $pdo = $this->connexionPostgresql->obtenirPdo();
@@ -312,6 +285,7 @@ final class PersistanceCovoituragePostgresql
 
     return $requete->fetchAll(PDO::FETCH_ASSOC) ?: [];
   }
+
   public function creerCovoituragePlanifie(
     int $idUtilisateur,
     int $idVoiture,
@@ -321,20 +295,16 @@ final class PersistanceCovoituragePostgresql
     string $adresseArrivee,
     string $villeDepart,
     string $villeArrivee,
+    ?float $latitudeDepart,
+    ?float $longitudeDepart,
+    ?float $latitudeArrivee,
+    ?float $longitudeArrivee,
     int $nbPlacesDispo,
     int $prixCredits,
     bool $estNonFumeur,
     bool $accepteAnimaux,
     ?string $preferenceLibre
   ): int {
-    /*
-      PLAN (creerCovoituragePlanifie) :
-
-      1) Valider les paramètres minimaux (id, dates, texte)
-      2) Construire l’INSERT aligné avec la BDD
-      3) Exécuter et retourner l’id
-    */
-
     if ($idUtilisateur <= 0 || $idVoiture <= 0) {
       throw new RuntimeException('Création impossible : paramètres invalides.');
     }
@@ -360,6 +330,29 @@ final class PersistanceCovoituragePostgresql
       throw new RuntimeException('Création impossible : prix invalide.');
     }
 
+    $departIncomplet = ($latitudeDepart === null) !== ($longitudeDepart === null);
+    if ($departIncomplet) {
+      throw new RuntimeException('Création impossible : coordonnées de départ incomplètes.');
+    }
+
+    $arriveeIncomplet = ($latitudeArrivee === null) !== ($longitudeArrivee === null);
+    if ($arriveeIncomplet) {
+      throw new RuntimeException('Création impossible : coordonnées d’arrivée incomplètes.');
+    }
+
+    if ($latitudeDepart !== null && ($latitudeDepart < -90 || $latitudeDepart > 90)) {
+      throw new RuntimeException('Création impossible : latitude de départ invalide.');
+    }
+    if ($longitudeDepart !== null && ($longitudeDepart < -180 || $longitudeDepart > 180)) {
+      throw new RuntimeException('Création impossible : longitude de départ invalide.');
+    }
+    if ($latitudeArrivee !== null && ($latitudeArrivee < -90 || $latitudeArrivee > 90)) {
+      throw new RuntimeException('Création impossible : latitude d’arrivée invalide.');
+    }
+    if ($longitudeArrivee !== null && ($longitudeArrivee < -180 || $longitudeArrivee > 180)) {
+      throw new RuntimeException('Création impossible : longitude d’arrivée invalide.');
+    }
+
     $preferenceLibre = null !== $preferenceLibre ? trim($preferenceLibre) : null;
     if ($preferenceLibre === '') {
       $preferenceLibre = null;
@@ -375,6 +368,12 @@ final class PersistanceCovoituragePostgresql
                 adresse_arrivee,
                 ville_depart,
                 ville_arrivee,
+
+                latitude_depart,
+                longitude_depart,
+                latitude_arrivee,
+                longitude_arrivee,
+
                 nb_places_dispo,
                 prix_credits,
                 statut_covoiturage,
@@ -393,6 +392,12 @@ final class PersistanceCovoituragePostgresql
                 :adresse_arrivee,
                 :ville_depart,
                 :ville_arrivee,
+
+                :latitude_depart,
+                :longitude_depart,
+                :latitude_arrivee,
+                :longitude_arrivee,
+
                 :nb_places_dispo,
                 :prix_credits,
                 'PLANIFIE',
@@ -415,6 +420,12 @@ final class PersistanceCovoituragePostgresql
       'adresse_arrivee' => $adresseArrivee,
       'ville_depart' => $villeDepart,
       'ville_arrivee' => $villeArrivee,
+
+      'latitude_depart' => $latitudeDepart,
+      'longitude_depart' => $longitudeDepart,
+      'latitude_arrivee' => $latitudeArrivee,
+      'longitude_arrivee' => $longitudeArrivee,
+
       'nb_places_dispo' => $nbPlacesDispo,
       'prix_credits' => $prixCredits,
 

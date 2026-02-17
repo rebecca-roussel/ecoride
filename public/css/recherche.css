@@ -4,7 +4,7 @@
   Le header + footer doivent rester identiques à l’accueil => gérés par accueil.css.
 */
 
-/* Zone centrale : carte centrée entre header et footer */
+/* Zone centrale  */
 .zone_centrale {
     flex: 1;
     display: flex;
@@ -89,7 +89,7 @@
     padding-top: 12px;
 }
 
-/* Bouton : on garde la classe globale, mais on la rend plus grande sur cette page */
+/* Bouton  */
 .actions_recherche .bouton_principal {
     width: 320px;
     min-height: 56px;
@@ -98,6 +98,56 @@
     font-weight: 700;
     border-radius: 12px;
 }
+
+/* Suggestions géocodage */
+.champ_groupe,
+.groupe_champ,
+.champ{
+  position: relative; 
+}
+
+.panneau_suggestions{
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+
+  background: #FFFFFF;
+  border: 1px solid rgba(199,195,184,0.75);
+  border-radius: 12px;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+/* Chaque suggestion */
+.suggestion_item{
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  color: #0F172A;
+  cursor: pointer;
+  display: block;
+  min-height: 44px;
+}
+
+.suggestion_item:hover,
+.suggestion_item:focus-visible{
+  background: rgba(63,93,74,0.10);
+  outline: none;
+}
+
+.champ_groupe input,
+.groupe_champ input{
+  position: relative;
+  z-index: 1;
+  background: #FFFFFF;
+  color: #0F172A;
+}
+
+
 
 /* Responsive */
 @media (max-width: 900px) {

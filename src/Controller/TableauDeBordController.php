@@ -46,8 +46,7 @@ final class TableauDeBordController extends AbstractController
         }
 
         // 2) Je recharge les infos depuis la base
-        //    Important : la base est la source de vérité, pas la session.
-        //    Donc si la photo a été changée dans /profil, je la récupère ici.
+        //    si la photo a été changée dans /profil, je la récupère ici.
         $utilisateur = $persistanceUtilisateur->obtenirDonneesTableauDeBord($idUtilisateur);
         if (null === $utilisateur) {
             // Cas rare : session incohérente (ex : utilisateur supprimé)
@@ -77,8 +76,8 @@ final class TableauDeBordController extends AbstractController
             'pseudo' => (string) ($utilisateur['pseudo'] ?? 'EcoRider'),
 
             // Photo :
-            // - si photo_path est null / vide : on met l'avatar par défaut
-            // - sinon : on convertit "photos/xxx.jpg" en "/photos/xxx.jpg"
+            // - si photo_path est null / vide : on met un avatar par défaut
+            // - sinon on convertit "photos/xxx.jpg" en "/photos/xxx.jpg"
             'photo' => $persistanceUtilisateur->urlPhotoProfil($utilisateur['photo_path'] ?? null),
         ];
 
