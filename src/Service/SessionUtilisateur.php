@@ -11,61 +11,107 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 final class SessionUtilisateur
 {
     /*
-      PLAN (SessionUtilisateur) :
+      PLAN(SessionUtilisateur)
 
-      1) Pourquoi ce service existe
-         - centraliser tout ce qui touche à la session utilisateur
-         - éviter de répéter du code dans tous les contrôleurs
+      OBJECTIF :
+         Centraliser toute la gestion de la session utilisateur.
+         On ne manipule jamais $_SESSION directement dans les contrôleurs.
 
-      2) Ce que je stocke en session
-         - id_utilisateur (int)
-         - pseudo (string)
-         - rôles fonctionnels (chauffeur / passager)
-
-      3) Méthodes utiles
-         - estConnecte()
-         - connecter()
-         - deconnecter()
-         - idUtilisateur()
-         - pseudo()
-         - obtenirUtilisateurConnecte()
-         - exigerUtilisateurConnecte()
-         - mettreAJourRolesUtilisateurConnecte()
+      RÔLE :
+      - Savoir si un utilisateur est connecté
+      - Connaître son id et son pseudo
+      - Connaître ses rôles (chauffeur / passager)
+      - Connaître ses rôles internes (employé / administrateur)
+      - Ouvrir et fermer la session proprement
     */
 
+
     /*
-      Clés de session (noms exacts)
+      1) CLÉS DE SESSION
+
+      On définit ici les noms EXACTS utilisés dans la session.
+      Cela évite les fautes de frappe ailleurs dans le projet.
     */
     private const CLE_ID = 'utilisateur_id';
     private const CLE_PSEUDO = 'utilisateur_pseudo';
     private const CLE_ROLE_CHAUFFEUR = 'utilisateur_role_chauffeur';
     private const CLE_ROLE_PASSAGER = 'utilisateur_role_passager';
+    private const CLE_EST_EMPLOYE = 'utilisateur_est_employe';
+    private const CLE_EST_ADMINISTRATEUR = 'utilisateur_est_administrateur';
 
+
+    /* Injection de RequestStack (accès à la requête courante et à la session). */
     public function __construct(private RequestStack $requestStack)
     {
     }
 
+
     /*
-      Session Symfony
-      - on passe par la requête courante
-      - si pas de requête (cas rare), pas de session
+      3) MÉTHODE INTERNE : RÉCUPÉRER LA SESSION
+
+      - On passe par la requête courante.
+      - Si aucune requête n’existe  pas de session.
+      - Si la session n’est pas active on retourne null.
     */
     private function session(): ?SessionInterface
     {
         $requete = $this->requestStack->getCurrentRequest();
+
         if ($requete === null) {
             return null;
         }
 
-        // Symfony : la session n’existe que si elle est démarrée/activée
-        return $requete->hasSession() ? $requete->getSession() : null;
+        return $requete->hasSession()
+            ? $requete->getSession()
+            : null;
     }
 
+
+    /*
+      4) SAVOIR SI L’UTILISATEUR EST CONNECTÉ
+
+      - Il est considéré connecté si un id valide est présent.
+    */
     public function estConnecte(): bool
     {
         return $this->idUtilisateur() !== null;
     }
 
+
+    /*
+      5) RÉCUPÉRER L’ID UTILISATEUR
+
+      sécurité :
+      - Si ce n’est pas un entier valide → null
+      - Si valeur <= 0 → null
+    */
+    public function idUtilisateur(): ?int
+    {
+        $session = $this->session();
+        if ($session === null) {
+            return null;
+        }
+
+        $id = $session->get(self::CLE_ID);
+
+        if (is_int($id) && $id > 0) {
+            return $id;
+        }
+
+        if (is_string($id) && ctype_digit($id)) {
+            $idInt = (int) $id;
+            return $idInt > 0 ? $idInt : null;
+        }
+
+        return null;
+    }
+
+
+    /*
+      6) RÉCUPÉRER LE PSEUDO
+
+      On vérifie que c’est bien une chaîne non vide.
+    */
     public function pseudo(): ?string
     {
         $session = $this->session();
@@ -84,33 +130,49 @@ final class SessionUtilisateur
         return $pseudoNettoye !== '' ? $pseudoNettoye : null;
     }
 
+
     /*
-      Connecter
-      - rôles optionnels (valeurs par défaut) pour éviter des appels trop fragiles
-      - MAIS : idéalement, tu passes les vraies valeurs depuis la BDD / formulaire
+      7) CONNECTER UN UTILISATEUR
+
+      - Cette méthode ouvre la session.
+      -  Elle enregistre toutes les informations utiles.
+
+      Important :
+      PAS de vérification de mot de passe ici,
+      car doit être fait avant dans le contrôleur.
     */
     public function connecter(
         int $idUtilisateur,
         string $pseudo,
         bool $roleChauffeur = false,
-        bool $rolePassager = true
+        bool $rolePassager = true,
+        bool $estEmploye = false,
+        bool $estAdministrateur = false
     ): void {
         $session = $this->session();
         if ($session === null) {
             return;
         }
 
-        $pseudoNettoye = trim($pseudo);
-        if ($idUtilisateur <= 0 || $pseudoNettoye === '') {
+        if ($idUtilisateur <= 0 || trim($pseudo) === '') {
             return;
         }
 
         $session->set(self::CLE_ID, $idUtilisateur);
-        $session->set(self::CLE_PSEUDO, $pseudoNettoye);
+        $session->set(self::CLE_PSEUDO, trim($pseudo));
         $session->set(self::CLE_ROLE_CHAUFFEUR, $roleChauffeur);
         $session->set(self::CLE_ROLE_PASSAGER, $rolePassager);
+        $session->set(self::CLE_EST_EMPLOYE, $estEmploye);
+        $session->set(self::CLE_EST_ADMINISTRATEUR, $estAdministrateur);
     }
 
+
+    /*
+      8) DÉCONNECTER
+
+      -  On supprime toutes les clés.
+       - On ne détruit pas toute la session globale.
+    */
     public function deconnecter(): void
     {
         $session = $this->session();
@@ -122,37 +184,23 @@ final class SessionUtilisateur
         $session->remove(self::CLE_PSEUDO);
         $session->remove(self::CLE_ROLE_CHAUFFEUR);
         $session->remove(self::CLE_ROLE_PASSAGER);
+        $session->remove(self::CLE_EST_EMPLOYE);
+        $session->remove(self::CLE_EST_ADMINISTRATEUR);
     }
 
-    public function idUtilisateur(): ?int
-    {
-        $session = $this->session();
-        if ($session === null) {
-            return null;
-        }
 
-        $id = $session->get(self::CLE_ID);
+    /*
+      9) RÉCUPÉRER UN "OBJET UTILISATEUR" SIMPLE
 
-        // Cas 1 : int
-        if (is_int($id)) {
-            return $id > 0 ? $id : null;
-        }
-
-        // Cas 2 : string numérique
-        if (is_string($id) && ctype_digit($id)) {
-            $idInt = (int) $id;
-            return $idInt > 0 ? $idInt : null;
-        }
-
-        return null;
-    }
-
+      - Méthode pratique pour Twig ou contrôleurs.
+      - Retourne un tableau structuré.
+    */
     public function obtenirUtilisateurConnecte(): ?array
     {
-        $idUtilisateur = $this->idUtilisateur();
+        $id = $this->idUtilisateur();
         $pseudo = $this->pseudo();
 
-        if ($idUtilisateur === null || $pseudo === null) {
+        if ($id === null || $pseudo === null) {
             return null;
         }
 
@@ -162,24 +210,22 @@ final class SessionUtilisateur
         }
 
         return [
-            'id_utilisateur' => $idUtilisateur,
+            'id_utilisateur' => $id,
             'pseudo' => $pseudo,
             'role_chauffeur' => (bool) $session->get(self::CLE_ROLE_CHAUFFEUR, false),
             'role_passager' => (bool) $session->get(self::CLE_ROLE_PASSAGER, false),
+            'est_employe' => (bool) $session->get(self::CLE_EST_EMPLOYE, false),
+            'est_administrateur' => (bool) $session->get(self::CLE_EST_ADMINISTRATEUR, false),
         ];
     }
 
-    public function mettreAJourRolesUtilisateurConnecte(bool $roleChauffeur, bool $rolePassager): void
-    {
-        $session = $this->session();
-        if ($session === null) {
-            return;
-        }
 
-        $session->set(self::CLE_ROLE_CHAUFFEUR, $roleChauffeur);
-        $session->set(self::CLE_ROLE_PASSAGER, $rolePassager);
-    }
+    /*
+      10) OBLIGER LA CONNEXION
 
+      - Si personne n’est connecté, on bloque immédiatement.
+      - Utile pour sécuriser une page.
+    */
     public function exigerUtilisateurConnecte(): array
     {
         $utilisateur = $this->obtenirUtilisateurConnecte();
@@ -190,5 +236,50 @@ final class SessionUtilisateur
 
         return $utilisateur;
     }
-}
 
+
+    /*
+      11) METTRE À JOUR LES RÔLES FONCTIONNELS
+      (chauffeur / passager)
+    */
+    public function mettreAJourRolesUtilisateurConnecte(
+        bool $roleChauffeur,
+        bool $rolePassager
+    ): void {
+        $session = $this->session();
+        if ($session === null) {
+            return;
+        }
+
+        $session->set(self::CLE_ROLE_CHAUFFEUR, $roleChauffeur);
+        $session->set(self::CLE_ROLE_PASSAGER, $rolePassager);
+    }
+
+
+    /*
+      12) SAVOIR SI EMPLOYÉ
+    */
+    public function estEmploye(): bool
+    {
+        $session = $this->session();
+        if ($session === null) {
+            return false;
+        }
+
+        return (bool) $session->get(self::CLE_EST_EMPLOYE, false);
+    }
+
+
+    /*
+      13) SAVOIR SI ADMINISTRATEUR
+    */
+    public function estAdministrateur(): bool
+    {
+        $session = $this->session();
+        if ($session === null) {
+            return false;
+        }
+
+        return (bool) $session->get(self::CLE_EST_ADMINISTRATEUR, false);
+    }
+}

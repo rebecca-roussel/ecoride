@@ -1,0 +1,126 @@
+{# templates/espace_employe/avis_detail.html.twig #}
+{# PLAN (avis_detail) :
+  1) Héritage + css espace_employe.css
+  2) Panneau beige centré
+  3) 1 carte unique : même structure que la liste (pour réutiliser le CSS)
+  4) Commentaire affiché dans la zone gauche (sans nouvelles classes risquées)
+  5) Actions à droite : retour + valider + refuser (POST + CSRF)
+#}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Détail avis{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/espace_employe.css') }}">
+{% endblock %}
+
+{% block entete %}
+  {% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+{% block body %}
+<main class="page_espace_employe page_espace_employe_detail">
+  <section class="panneau_espace_employe">
+
+    <header class="entete_espace_employe">
+      <h1>Détail d’un avis</h1>
+      <p class="texte_secondaire">Décider de la modération</p>
+    </header>
+
+    {% if avis is not defined or avis is empty %}
+      <p class="etat_vide">Avis introuvable.</p>
+
+      <a class="bouton_action bouton_secondaire"
+         href="{{ path('espace_employe', { onglet: 'avis' }) }}">
+        Retour à la liste
+      </a>
+    {% else %}
+
+      <section class="bloc_liste" aria-label="Détail avis">
+        <article class="carte_item">
+          <div class="carte_gauche">
+
+            <div class="ligne_titre">
+              <span class="badge badge_attente">En attente</span>
+              <strong class="note">{{ avis.note|default(0) }}/5</strong>
+            </div>
+
+            <div class="meta">
+              <div class="meta_ligne">
+                <span class="icone icone_avatar" aria-hidden="true"></span>
+                <span>
+                  Passager :
+                  <strong>{{ avis.pseudo_passager|default('') }}</strong>
+                  <span class="texte_secondaire">({{ avis.email_passager|default('') }})</span>
+                </span>
+              </div>
+
+              <div class="meta_ligne">
+                <span class="icone icone_covoit" aria-hidden="true"></span>
+                <span>
+                  Chauffeur :
+                  <strong>{{ avis.pseudo_chauffeur|default('') }}</strong>
+                  <span class="texte_secondaire">({{ avis.email_chauffeur|default('') }})</span>
+                </span>
+              </div>
+
+              <div class="meta_ligne">
+                <span class="icone icone_direction" aria-hidden="true"></span>
+                <span>{{ avis.ville_depart|default('') }} → {{ avis.ville_arrivee|default('') }}</span>
+              </div>
+
+              <div class="meta_ligne">
+                <span class="icone icone_cadran" aria-hidden="true"></span>
+                <span>Départ : {{ avis.date_depart|default('') }}</span>
+              </div>
+
+              <div class="meta_ligne">
+                <span class="icone icone_cadran" aria-hidden="true"></span>
+                <span>Dépôt : {{ avis.date_depot|default('') }}</span>
+              </div>
+
+              {% set commentaire = avis.commentaire|default('')|trim %}
+              <div class="meta_ligne">
+                <span class="icone icone_oeil" aria-hidden="true"></span>
+                {% if commentaire == '' %}
+                  <span class="texte_secondaire">Aucun commentaire.</span>
+                {% else %}
+                  <span>{{ commentaire }}</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="carte_actions">
+            <a class="bouton_action bouton_secondaire"
+               href="{{ path('espace_employe', { onglet: 'avis' }) }}">
+              Retour liste
+            </a>
+
+            <form method="post" action="{{ path('espace_employe_avis_valider') }}">
+              <input type="hidden" name="id_avis" value="{{ avis.id_avis|default(0) }}">
+              <input type="hidden" name="_token" value="{{ csrf_token('avis_valider_' ~ (avis.id_avis|default(0))) }}">
+              <button class="bouton_action bouton_valider" type="submit">
+                <span class="icone icone_valide" aria-hidden="true"></span>
+                Valider
+              </button>
+            </form>
+
+            <form method="post" action="{{ path('espace_employe_avis_refuser') }}">
+              <input type="hidden" name="id_avis" value="{{ avis.id_avis|default(0) }}">
+              <input type="hidden" name="_token" value="{{ csrf_token('avis_refuser_' ~ (avis.id_avis|default(0))) }}">
+              <button class="bouton_action bouton_refuser" type="submit">
+                <span class="icone icone_x" aria-hidden="true"></span>
+                Refuser
+              </button>
+            </form>
+          </div>
+        </article>
+      </section>
+
+    {% endif %}
+  </section>
+</main>
+{% endblock %}
