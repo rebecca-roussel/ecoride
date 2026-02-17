@@ -1,0 +1,113 @@
+/* public/css/vehicules_ajouter.css */
+/*
+  A fAIRE (mise en forme de la page Ajouter un véhicule) :
+
+  1) Zone centrale
+     - garder le fond sombre (global.css)
+     - centrer le contenu + largeur max confortable
+
+  2) Panneau (bulle beige)
+     - surface beige + texte sombre
+     - bordure + arrondis + ombre douce
+
+  3) Formulaire
+     - champs empilés, espacés
+     - labels lisibles
+     - champs à 100% de la largeur du panneau
+
+  4) Actions
+     - Annuler (secondaire)
+     - Enregistrer (bouton principal déjà dans global.css)
+*/
+
+.page_vehicule_ajouter{
+  padding: 40px 16px;
+  box-sizing: border-box;
+}
+
+.panneau_vehicule_ajouter{
+  max-width: 720px;
+  margin: 0 auto;
+  background: var(--surface_beige);
+  color: var(--fond_principal);
+  border: 1px solid var(--bordure);
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.25);
+}
+
+.entete_panneau{
+  margin-bottom: 18px;
+}
+
+.entete_panneau h1{
+  margin-bottom: 6px;
+}
+
+.formulaire{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.champ{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.champ label{
+  font-weight: 600;
+}
+
+/* Champs : largeur confortable + même “look” */
+.champ input,
+.champ select{
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.25);
+  padding: 10px 12px;
+  background: #ffffff;
+  color: var(--fond_principal);
+}
+
+/* Erreurs : déjà géré par global.css (.champ_erreur) */
+
+/* Actions : aligner les boutons */
+.actions_formulaire{
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+/* Annuler : lien discret, même couleur même si déjà visité */
+.lien_annuler,
+.lien_annuler:visited{
+  color: var(--fond_principal);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+}
+
+.lien_annuler:hover{
+  opacity: 0.85;
+}
+
+.lien_annuler:focus-visible{
+  outline: 3px solid var(--anneau_focus);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Mobile */
+@media (max-width: 900px){
+  .panneau_vehicule_ajouter{
+    padding: 20px;
+    border-radius: 16px;
+  }
+}

@@ -1,0 +1,51 @@
+{# templates/fragments/entete_public.html.twig #}
+<header class="entete">
+	<div class="conteneur entete_contenu">
+
+		<p class="logo">EcoRide</p>
+
+		<button class="bouton_menu" type="button" aria-controls="navigation_principale" aria-expanded="false">
+			<span class="bouton_menu_icone" aria-hidden="true"></span>
+			<span class="bouton_menu_texte">Menu</span>
+		</button>
+
+		<nav
+			id="navigation_principale" class="navigation" aria-label="Navigation principale" data-ouvert="false">
+
+			{# ACCUEIL #}
+
+			<a class="nav_lien {% if app.request.attributes.get('_route') == 'accueil' %}actif{%endif %}" {% if app.request.attributes.get('_route') == 'accueil' %} aria-current="page" {% endif %} href="{{ path('accueil') }}">
+				Accueil
+			</a>
+
+			{# RECHERCHE #}
+
+			<a class="nav_lien {% if app.request.attributes.get('_route') in ['recherche', 'resultats', 'details'] %}actif
+				  {% endif %}" {% if app.request.attributes.get('_route') in ['recherche', 'resultats', 'details'] %} aria-current="page" {% endif %} href="{{ path('recherche') }}">
+				Accès aux covoiturages
+			</a>
+
+			{# CONTACT #}
+
+			<a class="nav_lien {% if app.request.attributes.get('_route') == 'contact' %}actif
+				  {% endif %}" {% if app.request.attributes.get('_route') == 'contact' %} aria-current="page" {% endif %} href="{{ path('contact') }}">
+				Contact
+			</a>
+
+			{# CONNEXION #}
+
+			<a class="nav_lien {% if app.request.attributes.get('_route') == 'connexion' %}actif
+				  {% endif %}" {% if app.request.attributes.get('_route') == 'connexion' %} aria-current="page" {% endif %} href="{{ path('connexion') }}">
+				Connexion
+			</a>
+
+			{# INSCRIPTION #}
+
+			<a class="nav_lien {% if app.request.attributes.get('_route') == 'inscription' %}actif{% endif %}" {% if app.request.attributes.get('_route') == 'inscription' %} aria-current="page" {% endif %} href="{{ path('inscription') }}">
+				Inscription
+			</a>
+
+
+		</nav>
+	</div>
+</header>

@@ -1,0 +1,76 @@
+{# templates/historique/incident.html.twig #}
+{# 
+  PLAN (Déclaration d'incident) :
+
+  1) Page protégée (chauffeur uniquement)
+  2) Panneau beige centré
+  3) Message explicatif
+  4) Formulaire : commentaire obligatoire
+  5) Bouton principal + bouton retour
+#}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}
+Déclarer un incident
+{% endblock %}
+
+{% block entete %}
+  {% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+
+{% block stylesheets %}
+{{ parent() }}
+<link rel="stylesheet" href="{{ asset('css/historique.css') }}">
+{% endblock %}
+
+{% block entete %}
+{% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+{% block body %}
+<main class="page_historique">
+
+  <section class="panneau_historique">
+
+    <h1>Déclarer un incident</h1>
+
+    <p class="texte_secondaire">
+      Cette action signale un problème survenu pendant le covoiturage.
+      Le statut du trajet passera en <strong>INCIDENT</strong>.
+    </p>
+
+    <form method="post" action="{{ path('declarer_incident') }}">
+
+      <input type="hidden" name="id_covoiturage" value="{{ id_covoiturage }}">
+      <input type="hidden" name="_token" value="{{ csrf_token('declarer_incident') }}">
+
+      <div class="champ_formulaire">
+        <label for="incident_commentaire">Décrivez le problème rencontré :</label>
+
+        <textarea
+          id="incident_commentaire"
+          name="incident_commentaire"
+          rows="6"
+          required
+        ></textarea>
+      </div>
+
+      <div class="actions_formulaire">
+        <button type="submit" class="bouton_principal">
+          Déclarer l'incident
+        </button>
+
+        <a href="{{ path('historique', { onglet: 'covoiturages' }) }}"
+           class="bouton_secondaire">
+          Annuler
+        </a>
+      </div>
+
+    </form>
+
+  </section>
+
+</main>
+{% endblock %}

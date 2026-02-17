@@ -1,0 +1,270 @@
+/* public/css/details.css */
+/*
+  Mise en forme de la page détails
+
+  Objectif :
+  - Carte centrée, qui respire
+  - Grilles alignées en desktop
+  - Responsive propre uniquement en mobile
+*/
+
+/* PAGE */
+.page_details {
+  padding: 72px 24px 80px;
+  box-sizing: border-box;
+}
+
+/* PANNEAU PRINCIPAL */
+.panneau_details {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 44px 44px 42px;
+
+  background: var(--surface_beige);
+  color: var(--fond_principal);
+
+  border: 1px solid var(--bordure);
+  border-radius: 12px;
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.30);
+  box-sizing: border-box;
+}
+
+/* EN-TÊTE DU PANNEAU */
+.entete_details {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.entete_details_texte {
+  min-width: 0;
+}
+
+.panneau_details h1 {
+  margin: 0 0 10px;
+  font-size: 34px;
+  line-height: 1.15;
+  letter-spacing: -0.2px;
+}
+
+.sous_titre {
+  margin: 0;
+  color: var(--action_principale);
+}
+
+/* BLOC CHAUFFEUR */
+.chauffeur_resume {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.chauffeur_photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  object-fit: cover;
+  display: block;
+}
+
+.chauffeur_note {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--action_principale);
+}
+
+.chauffeur_note .etoile {
+  color: var(--etat_avertissement);
+  font-size: 24px;
+  line-height: 1;
+}
+
+/* SÉPARATEURS ET RYTHME */
+.separateur_details {
+  border: 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.403);
+  margin: 22px 0;
+}
+
+.bloc_lieux,
+.bloc_indicateurs,
+.bloc_voiture,
+.bloc_preferences,
+.actions_details {
+  margin-top: 26px;
+}
+
+/* DÉPART / ARRIVÉE */
+.bloc_lieux {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 26px;
+}
+
+.lieu_titre {
+  margin: 0 0 4px;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.lieu_ville {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.lieu_date {
+  margin: 0;
+  color: var(--action_principale);
+}
+
+/* INDICATEURS */
+.bloc_indicateurs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.indicateur_titre {
+  margin: 0 0 6px;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.indicateur_valeur {
+  margin: 0;
+  font-weight: 600;
+  color: var(--action_principale);
+}
+
+/* VOITURE */
+.voiture_titre {
+  margin: 0 0 12px;
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.voiture_grille {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.champ_titre {
+  margin: 0 0 6px;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.champ_valeur {
+  margin: 0;
+  color: var(--action_principale);
+}
+
+/* PRÉFÉRENCES */
+.preferences_titre {
+  margin: 16px 0 10px;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.preferences_liste {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.preferences_liste li {
+  color: var(--action_principale);
+  margin: 0 0 8px;
+}
+
+/* AVIS */
+.bloc_avis{
+  margin-top: 26px;
+}
+
+.avis_entete{
+  margin: 0 0 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.avis_etoile{
+  color: var(--etat_avertissement);
+  font-size: 18px;
+  line-height: 1;
+  transform: translateY(1px);
+}
+
+.avis_item{
+  margin: 0 0 14px;
+}
+
+.avis_commentaire{
+  margin: 0;
+  color: var(--fond_principal);
+}
+
+/* ACTION */
+.actions_details {
+  margin-top: 26px;
+}
+
+.actions_details .bouton_principal {
+  width: min(360px, 100%);
+  min-height: 48px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* RESPONSIVE MOBILE */
+@media (max-width: 700px) {
+  .panneau_details {
+    padding: 30px 20px 30px;
+  }
+
+  .panneau_details h1 {
+    font-size: 32px;
+  }
+
+  .bloc_lieux {
+    grid-template-columns: 1fr;
+  }
+
+  .bloc_indicateurs {
+    grid-template-columns: 1fr;
+  }
+
+  .voiture_grille {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ÉCRAN BAS */
+@media (max-height: 720px) {
+  .page_details {
+    padding: 56px 18px 60px;
+  }
+
+  .panneau_details {
+    padding: 34px 28px 34px;
+  }
+
+  .separateur_details {
+    margin: 18px 0;
+  }
+}

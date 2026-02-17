@@ -1,15 +1,30 @@
-# see https://symfony.com/doc/current/reference/configuration/framework.html
+# config/packages/framework.yaml
 framework:
     secret: '%env(APP_SECRET)%'
 
-    # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    csrf_protection: true
 
-    #esi: true
-    #fragments: true
+    # Sessions : configuration explicite et stable
+    session:
+        enabled: true
+
+        # Stockage "natif" (PHP) : fiable, classique, pas de magie
+        storage_factory_id: session.storage.factory.native
+
+        # handler_id: null => PHP gère en fichiers serveur (par défaut), c’est robuste
+        handler_id: null
+
+        # Cookies de session : paramètres sûrs
+        cookie_secure: auto     # https => secure, http local => pas secure
+        cookie_samesite: lax    # évite la plupart des soucis tout en restant compatible
+        cookie_httponly: true   # JS ne peut pas lire le cookie
+
+        # (optionnel) évite d’avoir des cookies qui traînent trop longtemps
+        cookie_lifetime: 0      # session cookie (expire à la fermeture du navigateur)
 
 when@test:
     framework:
         test: true
         session:
             storage_factory_id: session.storage.factory.mock_file
+

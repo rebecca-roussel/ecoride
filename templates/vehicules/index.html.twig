@@ -1,0 +1,145 @@
+{# templates/vehicules/index.html.twig #}
+{# Plan (structure de la page vehicules/index.html.twig) :
+  1) En-tête : fourni par base.html.twig
+     - fragment attendu : fragments/entete_utilisateur.html.twig (menu espace)
+  2) Zone centrale : grand panneau beige centré (comme maquette)
+     - titre + sous-titre
+     - liste de cartes véhicule (colonnes)
+     - boutons actions (crayon / poubelle)
+     - bouton principal "Ajouter un véhicule"
+  3) Pied de page : fourni par base.html.twig
+#}
+
+{% extends 'base.html.twig' %}
+	{% block title %}
+Gérer mes véhicules — EcoRide
+{% endblock %}
+
+	{% block stylesheets %}
+	{{ parent() }}
+	{# accueil.css reste chargé partout (socle header/footer) #}
+<link rel="stylesheet" href="{{ asset('css/vehicules.css') }}"> {% endblock %}
+
+{# Fragments en-tête utilisateur #}
+{% block entete %}
+	{% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+
+{% block body %}
+	<main class="page_vehicules">
+
+		<section class="panneau_vehicules" aria-labelledby="titre_page">
+			<header class="entete_panneau">
+				<h1 id="titre_page">Gérer mes véhicules</h1>
+				<p class="texte_secondaire">Ajouter, modifier ou supprimer vos véhicules</p>
+			</header>
+
+			{# Messages flash : on affiche uniquement le dernier message de chaque type #}
+
+			{% set messages_succes = app.flashes('succes') %}
+			{% if messages_succes|length > 0 %}
+				<div class="message message_succes" role="status">
+					{{ messages_succes|last }}
+				</div>
+			{% endif %}
+
+			{% set messages_erreur = app.flashes('erreur') %}
+			{% if messages_erreur|length > 0 %}
+				<div class="message message_erreur" role="alert">
+					{{ messages_erreur|last }}
+				</div>
+			{% endif %}
+
+
+			<div class="liste_vehicules" role="list">
+				{% if vehicules is empty %}
+					<div class="etat_vide">
+						<p>
+							<strong>Aucun véhicule enregistré.</strong>
+						</p>
+						<p class="texte_secondaire">Ajoute ton premier véhicule pour publier des covoiturages.</p>
+					</div>
+				{% else %}
+					{% for v in vehicules %}
+						<article class="carte_vehicule" role="listitem">
+							<div class="grille_infos">
+								<div class="bloc_info">
+									<span class="libelle">Marque</span>
+									<span class="valeur">{{ v.marque }}</span>
+								</div>
+
+								<div class="bloc_info">
+									<span class="libelle">Couleur</span>
+									<span class="valeur">{{ v.couleur }}</span>
+								</div>
+
+								<div class="bloc_info">
+									<span class="libelle">Carburant</span>
+									<span class="valeur">
+										{% if v.energie == 'ELECTRIQUE' %}
+											Électrique
+										{% elseif v.energie == 'HYBRIDE' %}
+											Hybride
+										{% elseif v.energie == 'ESSENCE' %}
+											Essence
+										{% elseif v.energie == 'DIESEL' %}
+											Diesel
+										{% elseif v.energie == 'ETHANOL' %}
+											Éthanol
+										{% else %}
+											{{ v.energie }}
+										{% endif %}
+									</span>
+								</div>
+
+
+								<div class="bloc_info">
+									<span class="libelle">Places</span>
+									<span class="valeur">{{ v.nb_places }}</span>
+								</div>
+
+								<div class="bloc_info">
+									<span class="libelle">Ancienneté</span>
+									<span class="valeur">
+										{{ v.anciennete_annees }}
+										an
+										{% if v.anciennete_annees != 1 %}s
+										{% endif %}
+									</span>
+								</div>
+							</div>
+
+							<div
+								class="actions">
+								{# Route à créer ensuite (édition). Pour l’instant, bouton désactivé. #}
+<a class="bouton_icone"
+   href="{{ path('vehicule_modifier', { idVoiture: v.id_voiture }) }}"
+   aria-label="Modifier ce véhicule"
+   title="Modifier">
+  <img src="{{ asset('icones/crayon.svg') }}" alt="" aria-hidden="true">
+</a>
+
+
+								<form method="post" action="{{ path('vehicule_supprimer', { idVoiture: v.id_voiture }) }}" class="form_suppression" onsubmit="return confirm('Confirmer la suppression de ce véhicule ?');">
+									<input type="hidden" name="_jeton_csrf" value="{{ csrf_token('supprimer_vehicule_' ~ v.id_voiture) }}">
+									<button type="submit" class="bouton_icone bouton_icone_danger" aria-label="Supprimer ce véhicule" title="Supprimer">
+										<img src="{{ asset('icones/poubelle.svg') }}" alt="" aria-hidden="true">
+									</button>
+								</form>
+							</div>
+						</article>
+					{% endfor %}
+				{% endif %}
+			</div>
+
+			<div class="zone_action_principale">
+				<a class="bouton_ajouter" href="{{ path('vehicule_ajouter') }}" aria-label="Ajouter un véhicule">
+					<span class="plus" aria-hidden="true">+</span>
+					Ajouter un véhicule
+				</a>
+			</div>
+		</section>
+
+	</main>
+{% endblock %}

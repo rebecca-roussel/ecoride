@@ -1,0 +1,127 @@
+{# templates/roles/index.html.twig #}
+{#
+  PLAN (structure page Gérer mes rôles) :
+
+  1) Héritage de base.html.twig
+     - entête public ou utilisateur selon ton système
+     - global.css + accueil.css déjà chargés
+
+  2) Zone centrale
+     - panneau beige centré
+     - titre + sous-titre
+     - affichage des messages flash (succès / erreur)
+
+  3) Formulaire
+     - 2 interrupteurs (passager / chauffeur)
+     - protection CSRF
+     - bouton principal "Enregistrer mes rôles"
+
+  4) Règle importante
+     - au moins un rôle doit rester actif
+     - validation faite côté serveur (sécurité métier)
+#}
+
+{% extends 'base.html.twig' %}
+	{% block title %}
+Gérer mes rôles
+{% endblock %}
+
+	{% block stylesheets %}
+	{{ parent() }}
+<link rel="stylesheet" href="{{ asset('css/roles.css') }}"> {% endblock %}
+
+{% block body %}
+
+	<main class="page_roles">
+
+		<section class="panneau_roles">
+
+			<h1>Gérer mes rôles</h1>
+			<p class="texte_secondaire">
+				Choisissez votre rôle sur la plateforme EcoRide
+			</p>
+
+			{# FLASH MESSAGES #}
+
+			{% for message in app.flashes('succes') %}
+				<div class="message_succes">
+					{{ message }}
+				</div>
+			{% endfor %}
+
+			{% for message in app.flashes('erreur') %}
+				<div class="message_erreur">
+					{{ message }}
+				</div>
+			{% endfor %}
+
+			{# FORMULAIRE #}
+
+			<form method="post" class="formulaire_roles">
+
+				<input
+				type="hidden" name="_csrf_token" value="{{ csrf_token('gerer_roles') }}">
+
+				{# ROLE PASSAGER #}
+				<div class="carte_role">
+
+					<div class="role_infos">
+						<div class="icone_role" aria-hidden="true">
+							<span class="icone icone_avatar"></span>
+						</div>
+
+						<div>
+							<h3>Passager</h3>
+							<p class="texte_mini">
+								Rechercher et réserver des covoiturages
+							</p>
+						</div>
+					</div>
+
+					<label class="interrupteur">
+						<input type="checkbox" name="role_passager" {% if role_passager %} checked {% endif %}>
+						<span class="curseur"></span>
+					</label>
+
+				</div>
+
+				{# ROLE CHAUFFEUR #}
+				<div class="carte_role">
+
+					<div class="role_infos">
+						<div class="icone_role" aria-hidden="true">
+							<span class="icone icone_covoit"></span>
+						</div>
+
+						<div>
+							<h3>Chauffeur</h3>
+							<p class="texte_mini">
+								Publier des covoiturages et proposer des places
+							</p>
+						</div>
+					</div>
+
+					<label class="interrupteur">
+						<input type="checkbox" name="role_chauffeur" {% if role_chauffeur %} checked {% endif %}>
+						<span class="curseur"></span>
+					</label>
+
+				</div>
+
+
+				<button type="submit" class="bouton_principal bouton_roles">
+					Enregistrer
+				</button>
+
+			</form>
+
+		</section>
+
+	</main>
+
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	<script src="{{ asset('js/roles.js') }}" defer></script>
+{% endblock %}
