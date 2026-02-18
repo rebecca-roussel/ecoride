@@ -22,3 +22,8 @@
 
 # Environnement production (local uniquement)
 .env.prod
+
+# Fichiers d'environnement (local)
+.env.dev
+.env.prod
+.env.docker
