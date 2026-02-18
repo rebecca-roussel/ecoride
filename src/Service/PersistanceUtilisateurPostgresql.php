@@ -99,15 +99,23 @@ final class PersistanceUtilisateurPostgresql
 
         try {
             $requete = $pdo->prepare($sql);
-            $requete->execute([
-                'pseudo' => $pseudoNettoye,
-                'email' => $emailNettoye,
-                'mot_de_passe_hash' => $motDePasseHash,
-                'credits' => self::CREDITS_DEPART,
-                'role_chauffeur' => $roleChauffeur,
-                'role_passager' => $rolePassager,
-                'photo_path' => $photoPath,
-            ]);
+
+            // IMPORTANT : PostgreSQL n’accepte pas "" pour un booléen.
+            // On force donc le typage pour éviter que PDO envoie une chaîne vide.
+            $requete->bindValue('pseudo', $pseudoNettoye, PDO::PARAM_STR);
+            $requete->bindValue('email', $emailNettoye, PDO::PARAM_STR);
+            $requete->bindValue('mot_de_passe_hash', $motDePasseHash, PDO::PARAM_STR);
+            $requete->bindValue('credits', self::CREDITS_DEPART, PDO::PARAM_INT);
+            $requete->bindValue('role_chauffeur', (bool) $roleChauffeur, PDO::PARAM_BOOL);
+            $requete->bindValue('role_passager', (bool) $rolePassager, PDO::PARAM_BOOL);
+
+            if ($photoPath === null) {
+                $requete->bindValue('photo_path', null, PDO::PARAM_NULL);
+            } else {
+                $requete->bindValue('photo_path', $photoPath, PDO::PARAM_STR);
+            }
+
+            $requete->execute();
         } catch (PDOException $exception) {
             // PostgreSQL : violation de contrainte UNIQUE (pseudo/email) = code 23505
             if ($exception->getCode() === '23505') {
