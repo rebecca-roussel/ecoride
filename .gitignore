@@ -27,3 +27,6 @@
 .env.dev
 .env.prod
 .env.docker
+
+# Fichiers de référence générés (bruit)
+config/reference.php
