@@ -31,6 +31,7 @@
 #}
 
 {% extends 'base.html.twig' %}
+
 	{% block title %}
 Résultats de recherche - EcoRide
 {% endblock %}
@@ -54,7 +55,7 @@ Résultats de recherche - EcoRide
 			<p
 				class="rappel_recherche">
 
-				{# Rappel basé sur le contrat du contrôleur ResultatsController : criteres.ville_depart / criteres.ville_arrivee / criteres.date + heure_souhaitee (ou heure_min/heure_max) #}
+				{# Rappel basé sur le contrat du contrôleur ResultatsController #}
 
 				{% set ville_depart = criteres.ville_depart|default('—') %}
 				{% set ville_arrivee = criteres.ville_arrivee|default('—') %}
@@ -75,7 +76,6 @@ Résultats de recherche - EcoRide
 					— Le —
 				{% endif %}
 
-
 				{% if heure_souhaitee %}
 					— autour de
 					{{ heure_souhaitee }}
@@ -93,10 +93,9 @@ Résultats de recherche - EcoRide
 				<p class="message_avertissement">
 					Aucun covoiturage autour de
 					{{ criteres.heure_souhaitee|default('—') }},
-										    voici les covoiturages du jour :
+										voici les covoiturages du jour :
 				</p>
 			{% endif %}
-
 
 			<div class="actions_resultats">
 				<button type="button" class="bouton_principal" id="bouton_filtrer" aria-expanded="false" aria-controls="panneau_filtres">
@@ -104,12 +103,12 @@ Résultats de recherche - EcoRide
 				</button>
 			</div>
 
-			{# Panneau de filtres (caché par défaut, affiché via JS) #}
+			{# Panneau de filtres affiché via JS #}
 			<section id="panneau_filtres" class="panneau_filtres" hidden aria-label="Filtres de recherche">
 				<form
 					method="get" action="{{ path('resultats') }}" class="formulaire_filtres">
 
-					{# On conserve les critères de base déjà saisis #}
+					{# Conserve les critères de base déjà saisis #}
 					<input type="hidden" name="ville_depart" value="{{ criteres.ville_depart|default('') }}">
 					<input type="hidden" name="ville_arrivee" value="{{ criteres.ville_arrivee|default('') }}">
 					<input type="hidden" name="date" value="{{ criteres.date|default('') }}">
@@ -152,15 +151,15 @@ Résultats de recherche - EcoRide
 
 					<div class="actions_filtres">
 						<button type="submit" class="bouton_principal">Appliquer</button>
-						<a class="lien_reinitialiser" href="{{ path('resultats', { ville_depart: criteres.ville_depart|default(''), ville_arrivee: criteres.ville_arrivee|default(''), date: criteres.date|default(''), heure_min: criteres.heure_min|default(''), heure_max: criteres.heure_max|default('') }) }}">Réinitialiser</a>
+						<a class="lien_reinitialiser" href="{{ path('resultats', { ville_depart: criteres.ville_depart|default(''), ville_arrivee: criteres.ville_arrivee|default(''), date: criteres.date|default(''), heure_min: criteres.heure_min|default(''), heure_max: criteres.heure_max|default('') }) }}">
+							Réinitialiser
+						</a>
 					</div>
 				</form>
 			</section>
 
-
 			<div
 				class="liste_covoiturages">
-
 				{# Le contrôleur envoie "resultats" #}
 				{% if resultats is defined and resultats|length > 0 %}
 					{% for c in resultats %}
@@ -169,7 +168,7 @@ Résultats de recherche - EcoRide
 							<div
 								class="bloc_chauffeur">
 
-								{# Photo chauffeur : photo_path renvoyé par la requête.																																																								         Repli : avatar générique si vide. #}
+								{# Photo chauffeur : photo_path renvoyé par la requête Repli : avatar générique si vide. #}
 								{% set photo = c.photo_chauffeur|default('') %}
 
 								<img class="photo_profil" src="{{ photo ? asset(photo) : asset('icones/avatar.svg') }}" alt="Photo de {{ c.pseudo_chauffeur|default('chauffeur') }}">
@@ -216,16 +215,14 @@ Résultats de recherche - EcoRide
 												Énergie :
 												{% set energie = c.energie|default('') %}
 
-												{# Important :
-																																																- la VALUE envoyée doit rester exactement : ESSENCE / DIESEL / ETHANOL / HYBRIDE / ELECTRIQUE
-																																																- mais j'affiche un libellé plus propre pour l’utilisateur #}
+												{# Valeurs affichés #}
 												{% set libelles_energie = {
-														'ESSENCE': 'Essence',
-														'DIESEL': 'Diesel',
-														'ETHANOL': 'Éthanol',
-														'HYBRIDE': 'Hybride',
-														'ELECTRIQUE': 'Électrique'
-														} %}
+													'ESSENCE': 'Essence',
+													'DIESEL': 'Diesel',
+													'ETHANOL': 'Éthanol',
+													'HYBRIDE': 'Hybride',
+													'ELECTRIQUE': 'Électrique'
+												} %}
 
 												{% if energie %}
 													{{ libelles_energie[energie]|default(energie) }}
@@ -248,8 +245,10 @@ Résultats de recherche - EcoRide
 
 											<span class="separateur" aria-hidden="true">•</span>
 
-											<span class="prix">{{ c.prix_credits|default('—') }}
-												crédits</span>
+											<span class="prix">
+												{{ c.prix_credits|default('—') }}
+												crédits
+											</span>
 										</p>
 									</div>
 								</div>
@@ -260,13 +259,10 @@ Résultats de recherche - EcoRide
 									Voir détails
 								</a>
 							</div>
-
 						</article>
 					{% endfor %}
-
-
 				{% else %}
-					{# Résultats vides : aucun covoiturage trouvé #}
+					{# Résultats vides #}
 					<article class="carte_covoiturage">
 						<div class="bloc_chauffeur">
 							<div class="chauffeur_texte">
@@ -289,8 +285,16 @@ Résultats de recherche - EcoRide
 					</article>
 				{% endif %}
 			</div>
-		</p>
-	</section>
-</main>{% endblock %}{% block pied_de_page %}
-{% include 'fragments/pied_de_page.html.twig' %}{% endblock %}{% block javascripts %}
-{{ parent() }}<script src="{{ asset('js/resultats.js') }}" defer></script>{% endblock %}
+		</section>
+	</main>
+
+{% endblock %}
+
+{% block pied_de_page %}
+	{% include 'fragments/pied_de_page.html.twig' %}
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	<script src="{{ asset('js/resultats.js') }}" defer></script>
+{% endblock %}

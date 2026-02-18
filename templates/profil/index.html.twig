@@ -36,7 +36,7 @@ Gérer mon profil - EcoRide
 				<img
 				class="profil_avatar" src="{{ donnees.photo is defined and donnees.photo ? donnees.photo : asset('icones/avatar.svg') }}" alt="Photo de profil" loading="lazy">
 
-				{# Formulaire dédié à la photo : POST multipart #}
+				{# Formulaire dédié à la photo #}
 				<form class="profil_action_photo" method="post" action="{{ path('profil') }}" enctype="multipart/form-data">
 					<input type="hidden" name="action" value="photo">
 

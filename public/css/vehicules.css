@@ -182,7 +182,8 @@
   line-height: 1;
 }
 
-/* Responsive : empile un peu la grille si écran étroit */
+/* RESPONSIVE */ 
+
 @media (max-width: 900px){
   .panneau_vehicules{ padding: 20px; }
   .carte_vehicule{ align-items: flex-start; }

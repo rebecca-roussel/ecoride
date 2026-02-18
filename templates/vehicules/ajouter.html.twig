@@ -51,9 +51,9 @@ Ajouter un véhicule — EcoRide
 
 
 			{# Formulaire d’ajout
-			- method POST : on envoie les données
-			- action : route de traitement
-			- jeton CSRF : protège contre les soumissions “forcées” #}
+						- method POST : on envoie les données
+						- action : route de traitement
+						- jeton CSRF : protège contre les soumissions forcées #}
 			<form method="post" action="{{ est_modification ? path('vehicule_modifier_traitement', { idVoiture: id_voiture }) : path('vehicule_ajouter_traitement') }}" class="formulaire">
 
 				<input type="hidden" name="_jeton_csrf" value="{{ csrf_token(est_modification ? 'modifier_vehicule_' ~ id_voiture : 'ajouter_vehicule') }}">
@@ -62,7 +62,7 @@ Ajouter un véhicule — EcoRide
 				<div class="champ">
 					<label for="immatriculation">Immatriculation</label>
 
-					{# Aide utilisateur : je préviens le format attendu dès le départ. #}
+					{# Aide utilisateur : format attendu #}
 					<p class="texte_mini texte_secondaire">
 						Majuscules + chiffres uniquement (sans espaces). Exemple : AA123BB
 					</p>
@@ -87,7 +87,7 @@ Ajouter un véhicule — EcoRide
 				<div class="champ">
 					<label for="marque">Marque</label>
 
-					{# Aide utilisateur : simple exemple, sans prise de tête. #}
+					{# Aide utilisateur #}
 					<p class="texte_mini texte_secondaire">
 						Exemple : Honda, Renault, Tesla
 					</p>
@@ -102,7 +102,7 @@ Ajouter un véhicule — EcoRide
 				<div class="champ">
 					<label for="couleur">Couleur</label>
 
-					{# Aide utilisateur : simple exemple, ça guide sans imposer. #}
+					{# Aide utilisateur #}
 					<p class="texte_mini texte_secondaire">
 						Exemple : Rouge, Noir, Gris
 					</p>
@@ -117,9 +117,7 @@ Ajouter un véhicule — EcoRide
 				<div class="champ">
 					<label for="energie">Énergie</label>
 
-					{# Énergie :
-															             - value = constante (BDD / back-end)
-															             - texte affiché = libellé lisible (utilisateur) #}
+					{# Énergie #}
 					{% set libelles_energie = {
             'ESSENCE': 'Essence',
             'DIESEL': 'Diesel',
@@ -160,10 +158,10 @@ Ajouter un véhicule — EcoRide
 
 				<div
 					class="actions_formulaire">
-					{# Annuler : retour sans rien enregistrer #}
+					{# Annuler #}
 					<a class="lien_annuler" href="{{ path('gerer_vehicules') }}">Annuler</a>
 
-					{# Enregistrer : envoi du formulaire #}
+					{# Enregistrer #}
 					<button class="bouton_principal" type="submit">Enregistrer</button>
 				</div>
 			</form>

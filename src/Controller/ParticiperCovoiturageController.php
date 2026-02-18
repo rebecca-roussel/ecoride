@@ -26,10 +26,10 @@ final class ParticiperCovoiturageController extends AbstractController
          - covoiturage PLANIFIE
          - nb_places_dispo > 0
          - le chauffeur ne peut pas participer à son propre trajet
-         - pas de double participation (unicité utilisateur+covoiturage)
+         - pas de double participation 
          - crédits passager suffisants
 
-      3) Transaction SQL (tout ou rien)
+      3) Transaction SQL 
          - verrouiller la ligne covoiturage (FOR UPDATE)
          - verrouiller la ligne utilisateur (FOR UPDATE)
          - insérer participation
@@ -43,7 +43,7 @@ final class ParticiperCovoiturageController extends AbstractController
         SessionUtilisateur $sessionUtilisateur,
         ConnexionPostgresql $connexion,
     ): Response {
-        // 0) Garde-fou simple : id cohérent (évite les routes bidons)
+        // 0) Garde-fou simple : id cohérent 
         if ($id <= 0) {
             $this->addFlash('erreur', 'Covoiturage invalide.');
             return $this->redirectToRoute('resultats');
@@ -74,7 +74,7 @@ final class ParticiperCovoiturageController extends AbstractController
         try {
             $pdo->beginTransaction();
 
-            // A) Verrouiller le covoiturage (évite les doubles participations simultanées)
+            // Verrouille le covoiturage : évite les doubles participations simultanées
             $stmt = $pdo->prepare("
                 SELECT
                     id_covoiturage,
@@ -95,14 +95,14 @@ final class ParticiperCovoiturageController extends AbstractController
                 return $this->redirectToRoute('resultats');
             }
 
-            // B) Covoiturage réservable : uniquement PLANIFIE
+            // Covoiturage réservable : uniquement PLANIFIE
             if (($covoit['statut_covoiturage'] ?? '') !== 'PLANIFIE') {
                 $pdo->rollBack();
                 $this->addFlash('erreur', 'Ce covoiturage n’est pas réservable.');
                 return $this->redirectToRoute('details', ['id' => $id]);
             }
 
-            // C) Chauffeur ≠ passager
+            // Chauffeur ≠ passager
             $idChauffeur = (int) ($covoit['id_chauffeur'] ?? 0);
             if ($idChauffeur === $idPassager) {
                 $pdo->rollBack();
@@ -110,7 +110,7 @@ final class ParticiperCovoiturageController extends AbstractController
                 return $this->redirectToRoute('details', ['id' => $id]);
             }
 
-            // D) Places disponibles (vérif “humainement logique” avant d’insérer)
+            // Places disponibles 
             $places = (int) ($covoit['nb_places_dispo'] ?? 0);
             if ($places <= 0) {
                 $pdo->rollBack();
@@ -118,7 +118,7 @@ final class ParticiperCovoiturageController extends AbstractController
                 return $this->redirectToRoute('details', ['id' => $id]);
             }
 
-            // E) Prix cohérent
+            // Prix cohérent
             $prix = (int) ($covoit['prix_credits'] ?? 0);
             if ($prix <= 0) {
                 // Normalement impossible grâce à la contrainte BDD, mais garde-fou
@@ -127,7 +127,7 @@ final class ParticiperCovoiturageController extends AbstractController
                 return $this->redirectToRoute('details', ['id' => $id]);
             }
 
-            // F) Vérifier crédits passager 
+            // Vérifier crédits passager 
             $stmt = $pdo->prepare("
                 SELECT credits
                 FROM utilisateur
@@ -143,8 +143,7 @@ final class ParticiperCovoiturageController extends AbstractController
                 return $this->redirectToRoute('details', ['id' => $id]);
             }
 
-            // G) Insérer la participation
-            //    - l’unicité (id_utilisateur, id_covoiturage) protège aussi contre les doublons
+            // Insére la participation
             $stmt = $pdo->prepare("
                 INSERT INTO participation (
                     date_heure_confirmation,

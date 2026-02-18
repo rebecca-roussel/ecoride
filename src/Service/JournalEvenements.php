@@ -58,7 +58,7 @@ final class JournalEvenements
       Enregistre un événement dans la collection "journal_evenements"
 
       Retour :
-      - id Mongo du document inséré (string)
+      - id Mongo du document inséré 
       - ou chaîne vide '' si on ne peut pas journaliser 
     */
     public function enregistrer(
@@ -164,7 +164,6 @@ final class JournalEvenements
     /*
       Petite méthode privée source unique de vérité pour la collection
       - évite de répéter selectCollection partout
-      - si demain je change le nom de collection, je change ici 
     */
     private function obtenirCollection(): Collection
     {

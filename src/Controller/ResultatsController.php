@@ -124,10 +124,10 @@ final class ResultatsController extends AbstractController
         }
 
         /*
-          6) Conversion heure souhaitée -> plage [heure_min, heure_max]
+          6) Conversion de l'heure souhaitée en plage [heure_min, heure_max]
           - le but est d'être tolérante car les gens ne tapent pas pile l’heure
-          - margeMinutes réglable (ici 60 minutes)
-          - je bloque la plage dans la journée (pas veille ou lendemain)
+          - margeMinutes réglable, ici 60 minutes
+          - je bloque la plage dans la journée 
         */
         $heureMin = null;
         $heureMax = null;
@@ -182,8 +182,8 @@ final class ResultatsController extends AbstractController
         /*
           Repli automatique si aucun résultat dans la plage horaire
           - si l’utilisateur a donné une heure, mais qu’il n’y a rien autour
-          - je relance une recherche sur la journée (sans filtre heure)
-          - et j’affiche un indicateur “recherche élargie” côté Twig
+          - je relance une recherche sur la journée 
+          - et j’affiche un indicateur pour une recherche élargie côté Twig
         */
         $recherche_elargie = false;
 

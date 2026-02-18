@@ -68,7 +68,7 @@
   margin-bottom: 12px;
 }
 
-/* Icônes (rond + pictogramme) */
+/* Icônes */
 .carte_icone{
   width: 44px;
   height: 44px;
@@ -87,7 +87,7 @@
   height: 22px;
   display: block;
 }
-/* Pictogramme recolorable : la couleur vient de --action_principale */
+/* Pictogramme recolorable */
 .carte_icone .icone{
   width: 22px;
   height: 22px;
@@ -212,6 +212,8 @@
 .carte_action_large{
   grid-column: 1 / -1;
 }
+
+/* RESPONSIVE*/
 
 @media (max-width: 820px){
   .panneau_tableau_de_bord{

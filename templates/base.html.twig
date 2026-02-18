@@ -17,7 +17,7 @@
 
 		<body>
 
-			{# En-tête conditionné : on se base sur la session "maison" #}
+			{# En-tête conditionné #}
 			{% block entete %}
 				{% set est_connecte = app.session is not null and app.session.get('utilisateur_id') is not null %}
 
@@ -31,7 +31,7 @@
 
 			{% block body %}{% endblock %}
 
-			{# Par défaut : pied de page commun #}
+			{# Pied de page commun #}
 			{% block pied_de_page %}
 				{% include 'fragments/pied_de_page.html.twig' %}
 			{% endblock %}

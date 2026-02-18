@@ -41,20 +41,17 @@ final class ConnexionController extends AbstractController
         ConnexionPostgresql $connexion,
         SessionUtilisateur $sessionUtilisateur,
     ): Response {
-        /*
-          1) Garde-fou : si déjà connecté, on ne montre pas la page de connexion
-             (ça évite de "reconnecter" quelqu’un qui a déjà une session)
-        */
+        /* Si déjà connecté, pas de page connexion*/
         if ($sessionUtilisateur->estConnecte()) {
             return $this->redirectToRoute('tableau_de_bord');
         }
 
-        // Variables d'affichage (réutilisées dans Twig)
+        // Variables d'affichage 
         $erreur = null;
         $emailSaisi = '';
 
         /*
-          2) Si on reçoit le formulaire (POST), on essaie de connecter l’utilisateur
+          Si on reçoit le formulaire (POST), on essaie de connecter l’utilisateur
              Sinon (GET) : on affiche juste la page.
         */
         if ($request->isMethod('POST')) {
@@ -68,13 +65,13 @@ final class ConnexionController extends AbstractController
             } else {
                 try {
                     /*
-                      2.b) Connexion à la base via notre service (PDO)
+                      Connexion à la base via notre service (PDO)
                       - ici on fait une requête préparée pour éviter les injections SQL
                     */
                     $pdo = $connexion->obtenirPdo();
 
                     /*
-                      2.c) On récupère l’utilisateur par email + ses infos utiles
+                      On récupère l’utilisateur par email + ses infos utiles
                       - + 2 colonnes booléennes pour savoir s'il est employé / admin
                         (via EXISTS sur les tables employe / administrateur)
                     */
@@ -105,7 +102,7 @@ final class ConnexionController extends AbstractController
                     $utilisateur = $stmt->fetch(PDO::FETCH_ASSOC);
 
                     /*
-                      2.d) Contrôles "métier" :
+                      Contrôles :
                       - utilisateur trouvé ?
                       - compte actif ?
                       - mot de passe valide ?
@@ -121,8 +118,8 @@ final class ConnexionController extends AbstractController
                             $erreur = 'Identifiants invalides.';
                         } else {
                             /*
-                              2.e) Extraction + conversion des champs
-                              - on force les types pour éviter les surprises
+                              Extraction et conversion des champs
+                              - on force les types
                             */
                             $idUtilisateur = (int) ($utilisateur['id_utilisateur'] ?? 0);
                             $pseudo = (string) ($utilisateur['pseudo'] ?? '');
@@ -135,7 +132,7 @@ final class ConnexionController extends AbstractController
                               - true/false
                               - 1/0
                               - 't'/'f'
-                              Donc on "normalise" en bool propre.
+                              Donc normalisation en bool propre.
                             */
                             $estEmployeBrut = $utilisateur['est_employe'] ?? false;
                             $estAdministrateurBrut = $utilisateur['est_administrateur'] ?? false;
@@ -153,15 +150,14 @@ final class ConnexionController extends AbstractController
                                 || $estAdministrateurBrut === 't';
 
                             /*
-                              2.f) Sécurité : on évite une session incohérente
-                              (si l’id ou le pseudo sont invalides, on refuse la connexion)
+                            Sécurité : on évite une session incohérente
                             */
                             if ($idUtilisateur <= 0 || trim($pseudo) === '') {
                                 $erreur = 'Erreur lors de la connexion.';
                             } else {
                                 /*
-                                  2.g) Création de la session utilisateur
-                                  -> notre service SessionUtilisateur devient la "source de vérité"
+                            Création de la session utilisateur
+                                  donc service SessionUtilisateur devient la source de vérité
                                 */
                                 $sessionUtilisateur->connecter(
                                     $idUtilisateur,
@@ -173,12 +169,11 @@ final class ConnexionController extends AbstractController
                                 );
 
                                 /*
-                                2.h) Connexion OK -> redirection selon le type de compte
-
+                                Connexion OK - redirection selon le type de compte
                                 Règle EcoRide :
                                 - administrateur : va directement dans son espace
                                 - employé : va directement dans son espace
-                                - sinon : tableau de bord (chauffeur / passager)
+                                - sinon : tableau de bord (chauffeur/passager)
                                 */
                                 if ($estAdministrateur) {
                                     return $this->redirectToRoute('espace_administrateur');
@@ -201,7 +196,7 @@ final class ConnexionController extends AbstractController
         }
 
         /*
-          3) Affichage final (GET, ou POST avec erreur)
+        Affichage final
           - on renvoie l’erreur + l’email saisi pour éviter de le retaper
         */
         return $this->render('connexion/index.html.twig', [

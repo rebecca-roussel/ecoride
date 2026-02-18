@@ -12,12 +12,14 @@
 */
 
 /* PAGE */
+
 .page_espace_employe{
   padding: 48px 16px;
   box-sizing: border-box;
 }
 
 /* PANNEAU */
+
 .panneau_espace_employe{
   width: min(1100px, 100%);
   margin: 0 auto;
@@ -43,6 +45,7 @@
 }
 
 /* FLASH */
+
 .zone_flash{
   margin: 16px 0 6px;
   display: grid;
@@ -61,6 +64,7 @@
 .flash_erreur{ background: rgba(155,79,79,0.18); }
 
 /* ONGLET */
+
 .onglets_employe{
   display: flex;
   gap: 22px;
@@ -86,6 +90,7 @@
 }
 
 /* LISTE */
+
 .bloc_liste{
   display: grid;
   gap: 16px;
@@ -100,6 +105,7 @@
 }
 
 /* CARTE */
+
 .carte_item{
   display: grid;
   grid-template-columns: 1fr auto;
@@ -112,12 +118,10 @@
   box-sizing: border-box;
 }
 
-/* Zone gauche */
 .carte_gauche{
-  min-width: 0; /* évite le débordement (long texte) */
+  min-width: 0;
 }
 
-/* Zone droite */
 .carte_actions{
   display: flex;
   flex-direction: column;    
@@ -132,7 +136,6 @@
   margin: 0;
 }
 
-/* Lignes d’en-tête de carte */
 .ligne_titre{
   display: flex;
   align-items: center;
@@ -147,6 +150,7 @@
 }
 
 /* BADGES */
+
 .badge{
   font-size: 12px;
   padding: 6px 10px;
@@ -160,6 +164,7 @@
 }
 
 /* META */
+
 .meta{
   display: grid;
   gap: 8px;
@@ -178,9 +183,7 @@
   min-width: 0;
 }
 
-/* ICÔNES (mask)
-   - SVG dans /public/icones/
-   - Couleur via background-color + mask-image */
+/* ICÔNES (mask) */
 .icone{
   width: 18px;
   height: 18px;
@@ -239,6 +242,7 @@
 }
 
 /* BOUTONS*/
+
 .bouton_action{
   min-height: 44px;
   padding: 10px 14px;
@@ -266,12 +270,10 @@
   cursor: not-allowed;
 }
 
-/* Les icônes dans les boutons suivent la couleur du texte */
 .bouton_action .icone{
   background-color: currentColor;
 }
 
-/* Variantes */
 .bouton_secondaire{
   background: rgba(15,23,42,0.07);
 }
@@ -298,12 +300,14 @@
 }
 
 /* Mini texte utilitaire  */
+
 .texte_mini{
   font-size: 12px;
   color: rgba(15,23,42,0.60);
 }
 
-/* BLOCS "DÉTAIL" */
+/* BLOCS DÉTAIL */
+
 .bloc_texte{
   margin-top: 16px;
   padding-top: 12px;
@@ -326,6 +330,7 @@
 }
 
 /* RESPONSIVE */
+
 @media (max-width: 900px){
   .carte_item{
     grid-template-columns: 1fr;

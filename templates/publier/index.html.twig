@@ -39,7 +39,7 @@ Publier un covoiturage
 			{% if voitures|length == 0 %}
 				<p class="texte_secondaire">
 					Vous n’avez aucune voiture active.
-																				          Ajoutez un véhicule (ou réactivez-en un) avant de publier un covoiturage.
+										Ajoutez un véhicule (ou réactivez-en un) avant de publier un covoiturage.
 				</p>
 
 				<a class="bouton_principal" href="{{ path('gerer_vehicules') }}">
@@ -54,7 +54,7 @@ Publier un covoiturage
 					<div
 						class="grille">
 
-						{# Villes : départ / arrivée #}
+						{# Villes : départ/arrivée #}
 						<div class="champ">
 							<label for="ville_depart">Ville de départ</label>
 							<input id="ville_depart" type="text" name="ville_depart" value="{{ valeurs.ville_depart|default('') }}" autocomplete="address-level2" required class="{{ erreurs.ville_depart is defined ? 'champ_en_erreur' : '' }}">
@@ -71,7 +71,7 @@ Publier un covoiturage
 							{% endif %}
 						</div>
 
-						{# Adresses : départ / arrivée #}
+						{# Adresses : départ/arrivée #}
 						<div class="champ">
 							<label for="adresse_depart">Adresse de départ</label>
 							<input id="adresse_depart" type="text" name="adresse_depart" value="{{ valeurs.adresse_depart|default('') }}" autocomplete="street-address" required class="{{ erreurs.adresse_depart is defined ? 'champ_en_erreur' : '' }}">
@@ -94,7 +94,7 @@ Publier un covoiturage
 						type="hidden" name="longitude_arrivee" id="longitude_arrivee" value="{{ valeurs.longitude_arrivee|default('') }}">
 
 
-						{# Date + heure #}
+						{# Date/heure #}
 						<div class="champ">
 							<label for="date_depart">Date</label>
 							<input id="date_depart" type="date" name="date_depart" value="{{ valeurs.date_depart|default('') }}" required class="{{ erreurs.date_depart is defined ? 'champ_en_erreur' : '' }}">
@@ -111,7 +111,7 @@ Publier un covoiturage
 							{% endif %}
 						</div>
 
-						{# 4) Durée + places #}
+						{# Durée et places #}
 						<div class="champ">
 							<label for="duree_minutes">Durée (minutes)</label>
 							<input id="duree_minutes" type="number" min="10" max="1440" name="duree_minutes" value="{{ valeurs.duree_minutes|default('') }}" required class="{{ erreurs.duree_minutes is defined ? 'champ_en_erreur' : '' }}">
@@ -134,7 +134,7 @@ Publier un covoiturage
 							{% endif %}
 						</div>
 
-						{# 5) Voiture #}
+						{# Voiture #}
 						<div class="champ champ_large">
 							<label for="id_voiture">Voiture</label>
 							<select id="id_voiture" name="id_voiture" required class="{{ erreurs.id_voiture is defined ? 'champ_en_erreur' : '' }}">
@@ -158,7 +158,7 @@ Publier un covoiturage
 							{% endif %}
 						</div>
 
-						{# 6) Prix #}
+						{# Prix #}
 						<div class="champ champ_large">
 							<label for="prix_credits">Prix (crédits)</label>
 
@@ -214,8 +214,7 @@ Publier un covoiturage
 {% endblock %}
 
 {% block javascripts %}
-    {{ parent() }}
-    <script src="{{ asset('js/suggestions_geocodage.js') }}" defer></script>
-    <script src="{{ asset('js/geocodage_publier.js') }}" defer></script>
+	{{ parent() }}
+	<script src="{{ asset('js/suggestions_geocodage.js') }}" defer></script>
+	<script src="{{ asset('js/geocodage_publier.js') }}" defer></script>
 {% endblock %}
-

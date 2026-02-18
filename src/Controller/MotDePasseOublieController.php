@@ -49,7 +49,6 @@ final class MotDePasseOublieController extends AbstractController
 
         $jeton = $persistance->creerJetonPourEmail($email);
 
-        // Message neutre 
         $messageNeutre = 'Si un compte existe avec cet e-mail, un message a été envoyé.';
 
         if ($jeton !== null) {
@@ -64,9 +63,9 @@ final class MotDePasseOublieController extends AbstractController
                 ->to($email)
                 ->subject('EcoRide – Réinitialisation du mot de passe')
                 ->text(
-                    "Bonjour,\n\n".
-                    "Ouvrez ce lien pour réinitialiser votre mot de passe :\n".
-                    $lien."\n\n".
+                    "Bonjour,\n\n" .
+                    "Ouvrez ce lien pour réinitialiser votre mot de passe :\n" .
+                    $lien . "\n\n" .
                     "Ce lien expire dans 30 minutes.\n"
                 );
 

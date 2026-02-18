@@ -62,20 +62,20 @@ final class EspaceEmployeController extends AbstractController
         SessionUtilisateur $sessionUtilisateur,
         PersistanceEmployePostgresql $persistanceEmploye,
     ): Response {
-        // 1) Sécurité : l’espace employé doit être inaccessible hors employé connecté.
+        // Sécurité : l’espace employé doit être inaccessible hors employé connecté.
         if (!$sessionUtilisateur->estConnecte() || !$sessionUtilisateur->estEmploye()) {
             return $this->redirectToRoute('connexion');
         }
 
-        // 2) ( Onglets ) on ne garde que 2 valeurs possibles 
+        // Onglets : on ne garde que 2 valeurs possibles 
         $onglet = (string) $request->query->get('onglet', 'avis');
         $onglet = $onglet === 'signalements' ? 'signalements' : 'avis';
 
-        // 3) On charge les listes 
+        // On charge les listes 
         $avis = $persistanceEmploye->listerAvisEnAttente(50);
         $signalements = $persistanceEmploye->listerIncidentsOuverts(50);
 
-        // 4) Affichage Twig
+        // Affichage Twig
         return $this->render('espace_employe/index.html.twig', [
             'utilisateur_pseudo' => $sessionUtilisateur->pseudo(),
             'onglet' => $onglet,
@@ -184,7 +184,7 @@ final class EspaceEmployeController extends AbstractController
             return null;
         }
 
-        // 1) Données de base de l’incident 
+        // Données de base de l’incident 
         $stmt = $this->pdo->prepare("
             SELECT
               c.id_covoiturage,
@@ -211,7 +211,7 @@ final class EspaceEmployeController extends AbstractController
             return null;
         }
 
-        // 2) Passagers du covoiturage 
+        // Passagers du covoiturage 
         $stmt2 = $this->pdo->prepare("
             SELECT
               u_pa.pseudo,
@@ -352,12 +352,12 @@ final class EspaceEmployeController extends AbstractController
         int $idCovoiturage,
         SessionUtilisateur $sessionUtilisateur,
     ): Response {
-        // 1) Sécurité : employé uniquement
+        // Sécurité : employé uniquement
         if (!$sessionUtilisateur->estConnecte() || !$sessionUtilisateur->estEmploye()) {
             return $this->redirectToRoute('connexion');
         }
 
-        // 2) Lecture des données 
+        // Lecture des données 
         $incident = $this->trouverIncidentOuvertParCovoiturage($idCovoiturage);
 
         if ($incident === null) {
@@ -365,7 +365,7 @@ final class EspaceEmployeController extends AbstractController
             return $this->redirectToRoute('espace_employe', ['onglet' => 'signalements']);
         }
 
-        // 3) Affichage
+        // Affichage
         return $this->render('espace_employe/incident_detail.html.twig', [
             'utilisateur_pseudo' => $sessionUtilisateur->pseudo(),
             'incident' => $incident,
@@ -376,14 +376,6 @@ final class EspaceEmployeController extends AbstractController
         int $idAvis,
         SessionUtilisateur $sessionUtilisateur,
     ): Response {
-        /*
-          PLAN (avisDetail) :
-
-          1) Sécurité : employé connecté obligatoire
-          2) Charger l’avis EN_ATTENTE via trouverAvisEnAttenteParId()
-          3) Si introuvable : message + retour liste
-          4) Sinon : afficher la page avis_detail.html.twig
-        */
 
         if (!$sessionUtilisateur->estConnecte() || !$sessionUtilisateur->estEmploye()) {
             return $this->redirectToRoute('connexion');

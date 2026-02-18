@@ -1,20 +1,20 @@
 /* public/css/details.css */
 /*
-  Mise en forme de la page détails
-
-  Objectif :
-  - Carte centrée, qui respire
+  Plan de mise en forme de la page détails :
+  - Carte centrée et aérée
   - Grilles alignées en desktop
-  - Responsive propre uniquement en mobile
+  - Responsive 
 */
 
 /* PAGE */
+
 .page_details {
   padding: 72px 24px 80px;
   box-sizing: border-box;
 }
 
 /* PANNEAU PRINCIPAL */
+
 .panneau_details {
   max-width: 1060px;
   margin: 0 auto;
@@ -29,7 +29,8 @@
   box-sizing: border-box;
 }
 
-/* EN-TÊTE DU PANNEAU */
+/* EN-TÊTE PANNEAU */
+
 .entete_details {
   display: flex;
   align-items: flex-start;
@@ -86,7 +87,7 @@
   line-height: 1;
 }
 
-/* SÉPARATEURS ET RYTHME */
+/* SÉPARATEURS */
 .separateur_details {
   border: 0;
   border-top: 1px solid rgba(15, 23, 42, 0.403);
@@ -101,7 +102,7 @@
   margin-top: 26px;
 }
 
-/* DÉPART / ARRIVÉE */
+/* DÉPART/ARRIVÉE */
 .bloc_lieux {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -125,6 +126,7 @@
 }
 
 /* INDICATEURS */
+
 .bloc_indicateurs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -144,6 +146,7 @@
 }
 
 /* VOITURE */
+
 .voiture_titre {
   margin: 0 0 12px;
   font-size: 28px;
@@ -168,6 +171,7 @@
 }
 
 /* PRÉFÉRENCES */
+
 .preferences_titre {
   margin: 16px 0 10px;
   font-size: 20px;
@@ -185,6 +189,7 @@
 }
 
 /* AVIS */
+
 .bloc_avis{
   margin-top: 26px;
 }
@@ -213,6 +218,7 @@
 }
 
 /* ACTION */
+
 .actions_details {
   margin-top: 26px;
 }
@@ -231,7 +237,8 @@
   line-height: 1;
 }
 
-/* RESPONSIVE MOBILE */
+/* RESPONSIVE */
+
 @media (max-width: 700px) {
   .panneau_details {
     padding: 30px 20px 30px;
@@ -255,6 +262,7 @@
 }
 
 /* ÉCRAN BAS */
+
 @media (max-height: 720px) {
   .page_details {
     padding: 56px 18px 60px;

@@ -99,15 +99,15 @@ final class ProfilController extends AbstractController
             $extension = $photo->guessExtension() ?: 'jpg';
             $nomFichier = 'profil_' . bin2hex(random_bytes(8)) . '.' . $extension;
 
-            // Je déplace le fichier uploadé dans /public/photos
+            // Déplace le fichier uploadé dans ****/public/photos**** (pas dans /public/images)
             try {
                 $photo->move($dossierPhotos, $nomFichier);
             } catch (\Throwable) {
-                // Si ça plante, je reste simple : je reviens sur la page
+                // Retour sur la page en cas d'erreur
                 return $this->redirectToRoute('profil');
             }
 
-            // Je stocke en base un chemin relatif 
+            // Stockage en base du chemin relatif 
             $nouvellePhotoPath = 'photos/' . $nomFichier;
 
             // Mise à jour BDD
@@ -136,10 +136,6 @@ final class ProfilController extends AbstractController
         ]);
     }
 
-    /*
-      Supprime l'ancienne photo si elle correspond à un fichier dans public/photos.
-      Je fais exprès de limiter à "photos/..." pour ne pas supprimer une icône ou autre ressource.
-    */
     private function supprimerAnciennePhotoSiNecessaire(string $dossierPublic, ?string $anciennePhotoPath): void
     {
         if (null === $anciennePhotoPath) {
@@ -151,14 +147,14 @@ final class ProfilController extends AbstractController
             return;
         }
 
-        // Je ne supprime que les photos qui sont réellement dans le dossier photos
+        // Supprime que les photos qui sont réellement dans le dossier photos
         if (!str_starts_with($anciennePhotoPathNettoyee, 'photos/')) {
             return;
         }
 
         $cheminFichier = $dossierPublic . '/' . $anciennePhotoPathNettoyee;
 
-        // Pour la sécurité je supprime uniquement si c'est bien un fichier
+        // Pour la sécurité, supprime uniquement si c'est bien un fichier
         if (is_file($cheminFichier)) {
             @unlink($cheminFichier);
         }

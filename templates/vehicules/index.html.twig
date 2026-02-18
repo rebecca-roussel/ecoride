@@ -35,7 +35,7 @@ Gérer mes véhicules — EcoRide
 				<p class="texte_secondaire">Ajouter, modifier ou supprimer vos véhicules</p>
 			</header>
 
-			{# Messages flash : on affiche uniquement le dernier message de chaque type #}
+			{# Messages flash : affiche uniquement le dernier message de chaque type #}
 
 			{% set messages_succes = app.flashes('succes') %}
 			{% if messages_succes|length > 0 %}
@@ -66,12 +66,12 @@ Gérer mes véhicules — EcoRide
 							<div class="grille_infos">
 								<div class="bloc_info">
 									<span class="libelle">Marque</span>
-									<span class="valeur">{{ v.marque }}</span>
+									<span class="valeur">{{ v.marque|lower|capitalize }}</span>
 								</div>
 
 								<div class="bloc_info">
 									<span class="libelle">Couleur</span>
-									<span class="valeur">{{ v.couleur }}</span>
+									<span class="valeur">{{ v.couleur|lower|capitalize }}</span>
 								</div>
 
 								<div class="bloc_info">
@@ -101,24 +101,15 @@ Gérer mes véhicules — EcoRide
 
 								<div class="bloc_info">
 									<span class="libelle">Ancienneté</span>
-									<span class="valeur">
-										{{ v.anciennete_annees }}
-										an
-										{% if v.anciennete_annees != 1 %}s
-										{% endif %}
-									</span>
+									<span class="valeur">{{ v.anciennete_annees }}
+										an{{ v.anciennete_annees != 1 ? 's' : '' }}</span>
 								</div>
 							</div>
 
-							<div
-								class="actions">
-								{# Route à créer ensuite (édition). Pour l’instant, bouton désactivé. #}
-<a class="bouton_icone"
-   href="{{ path('vehicule_modifier', { idVoiture: v.id_voiture }) }}"
-   aria-label="Modifier ce véhicule"
-   title="Modifier">
-  <img src="{{ asset('icones/crayon.svg') }}" alt="" aria-hidden="true">
-</a>
+							<div class="actions">
+								<a class="bouton_icone" href="{{ path('vehicule_modifier', { idVoiture: v.id_voiture }) }}" aria-label="Modifier ce véhicule" title="Modifier">
+									<img src="{{ asset('icones/crayon.svg') }}" alt="" aria-hidden="true">
+								</a>
 
 
 								<form method="post" action="{{ path('vehicule_supprimer', { idVoiture: v.id_voiture }) }}" class="form_suppression" onsubmit="return confirm('Confirmer la suppression de ce véhicule ?');">

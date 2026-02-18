@@ -14,13 +14,13 @@ final class PersistanceUtilisateurPostgresql
       PLAN (PersistanceUtilisateurPostgresql) :
 
       1) Rôle de ce service
-         - ce fichier est mon “pont” entre Symfony et PostgreSQL
+         - pont entre Symfony et PostgreSQL
          - requêtes SQL liées aux utilisateurs
 
       2) Principes
          - j’utilise PDO et des requêtes préparées (sécurité injection SQL)
          - je nettoie les entrées (trim) pour éviter les surprises
-         - je m’appuie sur les contraintes de la BDD (UNIQUE, CHECK, etc.)
+         - je m’appuie sur les contraintes de la BDD 
 
       3) Ce que je gère ici
          - inscription et création d’un utilisateur 
@@ -317,14 +317,14 @@ final class PersistanceUtilisateurPostgresql
         try {
             $requete = $pdo->prepare($sql);
 
-            // Important : Force le type boolean côté PDO (évite les '' / 'on' / etc.)
+            // Important : Force le type boolean côté PDO 
             $requete->bindValue('role_passager', $rolePassager, \PDO::PARAM_BOOL);
             $requete->bindValue('role_chauffeur', $roleChauffeur, \PDO::PARAM_BOOL);
             $requete->bindValue('id_utilisateur', $idUtilisateur, \PDO::PARAM_INT);
 
             $requete->execute();
         } catch (PDOException $exception) {
-            // Si jamais la BDD refuse, je renvoie un message compréhensible.
+            // Si jamais la BDD refuse, on renvoie un message compréhensible.
             if ($exception->getCode() === '23514') {
                 throw new RuntimeException('Vous devez garder au moins un rôle : chauffeur ou passager.', 0, $exception);
             }

@@ -7,14 +7,14 @@
   - typographies plus discrètes
 */
 
-/* Page : centrer sans créer un énorme vide */
+/* Page */
 .page_inscription {
   padding: 40px 24px;
   display: flex;
   justify-content: center;
 }
 
-/* Panneau : plus étroit + padding réduit */
+/* Panneau */
 .panneau_inscription {
   width: 100%;
   max-width: 420px;
@@ -26,7 +26,6 @@
   padding: 20px 20px 14px;
 }
 
-/* Titre + texte : plus petits */
 .inscription_entete {
   text-align: center;
   margin-bottom: 14px;
@@ -93,7 +92,6 @@
   color: rgba(15, 23, 42, 0.72);
 }
 
-/* Inputs  */
 .champ_texte {
   width: 100%;
   box-sizing: border-box;
@@ -225,7 +223,7 @@
   font-size: 15px;
 }
 
-/* Texte bas  */
+/* Texte bas */
 .inscription_mentions {
   margin: 12px 0 0;
   text-align: center;
@@ -245,7 +243,8 @@
   text-underline-offset: 3px;
 }
 
-/* Mobile */
+/* Responsive */
+
 @media (max-width: 520px) {
   .page_inscription {
     padding: 28px 16px;

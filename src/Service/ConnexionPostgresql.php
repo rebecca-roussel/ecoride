@@ -35,7 +35,7 @@ final class ConnexionPostgresql
   */
   public function obtenirPdo(): \PDO
   {
-    // 1) Si on a déjà un PDO, on le réutilise
+    // 1) On a déjà un PDO, on le réutilise
     if ($this->pdo instanceof \PDO) {
       return $this->pdo;
     }

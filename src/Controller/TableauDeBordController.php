@@ -49,7 +49,7 @@ final class TableauDeBordController extends AbstractController
         //    si la photo a été changée dans /profil, je la récupère ici.
         $utilisateur = $persistanceUtilisateur->obtenirDonneesTableauDeBord($idUtilisateur);
         if (null === $utilisateur) {
-            // Cas rare : session incohérente (ex : utilisateur supprimé)
+            // Session incohérente (ex : utilisateur supprimé)
             $sessionUtilisateur->deconnecter();
             return $this->redirectToRoute('connexion');
         }
@@ -58,7 +58,7 @@ final class TableauDeBordController extends AbstractController
         //    Un utilisateur peut avoir :
         //    - chauffeur
         //    - passager
-        //    - ou les deux (donc on affiche les deux)
+        //    - ou les deux 
         $rolesActifs = [];
 
         if ((int) ($utilisateur['role_chauffeur'] ?? 0) === 1) {
@@ -75,9 +75,7 @@ final class TableauDeBordController extends AbstractController
             'roles_actifs' => $rolesActifs !== [] ? implode(' · ', $rolesActifs) : '—',
             'pseudo' => (string) ($utilisateur['pseudo'] ?? 'EcoRider'),
 
-            // Photo :
-            // - si photo_path est null / vide : on met un avatar par défaut
-            // - sinon on convertit "photos/xxx.jpg" en "/photos/xxx.jpg"
+            // Photo 
             'photo' => $persistanceUtilisateur->urlPhotoProfil($utilisateur['photo_path'] ?? null),
         ];
 
