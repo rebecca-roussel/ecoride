@@ -1,60 +1,58 @@
-# Modélisation des données — EcoRide
+# Modélisation des données — Projet EcoRide
 
-Ce dossier regroupe l’ensemble des travaux de modélisation des données du projet EcoRide.
-Il constitue la base conceptuelle et logique ayant servi à la création de la base de données.
+Ce dossier regroupe les éléments liés à la conception et à la structure de la base de données relationnelle de l’application EcoRide.
 
-La modélisation a été réalisée de manière progressive, en respectant les étapes classiques
-de conception des bases de données relationnelles.
+---
+
+## Modèle conceptuel livré
+
+### Diagramme entité-relation (ER)
+
+*`diagramme_er_dbeaver.pdf`
+*`diagramme_er_dbeaver.png`
+
+Ce diagramme représente la structure réelle de la base PostgreSQL utilisée dans le projet :
+
+*Entités principales : utilisateur, voiture, covoiturage, participation, avis, commission_plateforme
+*Clés primaires et étrangères
+*Relations et cardinalités
+*Contraintes structurelles cohérentes avec le schéma SQL fourni
+
+Il correspond exactement au schéma implémenté dans :
+
+*docs/sql/01_schema.sql
+
+---
+
+## Implémentation SQL
+
+Les scripts officiels fournis pour le jury sont :
+
+*`docs/sql/01_schema.sql` → création de la base
+*`docs/sql/02_donnees_demo.sql` → insertion de données
+*`docs/sql/03_requetes_verification.sql` → requêtes de test
+
+Ces fichiers démontrent la maîtrise du SQL sans utilisation exclusive de migrations ou fixtures.
+
+---
+
+## Archives
+
+Le dossier `archives_brouillons/` contient :
+
+*Anciennes versions de diagrammes
+*Tentatives intermédiaires (MCD Merise, MLD standard, etc.)
+*Fichiers de travail non retenus
+
+Ils ne font pas partie des livrables officiels.
+
+---
 
 ## Objectif de la modélisation
 
-L’objectif est de définir une structure de données :
+La modélisation vise à :
 
-- cohérente avec les besoins fonctionnels de l’application,
-- indépendante de toute implémentation technique,
-- suffisamment précise pour permettre une traduction fidèle en SQL.
-
-Les scripts SQL correspondants sont disponibles séparément dans le dossier `docs/creation_bdd/`.
-
-## Contenu du dossier
-
-### Diagramme Entité-Relation (notation Chen)
-
-- Fichiers : `.drawio`, `.pdf`, `.png`
-- Rôle : identifier les entités métier, leurs attributs et leurs relations.
-- Ce diagramme met en évidence les dépendances fondamentales du domaine (utilisateurs, covoiturages, participations, avis, etc.).
-
-### Modèle Conceptuel de Données (MCD — méthode Merise)
-
-- Fichiers : `.pdf`, `.jpg`
-- Rôle : formaliser les entités et associations avec leurs cardinalités.
-- Le MCD est indépendant de tout SGBD et constitue une étape de validation conceptuelle.
-
-### Modèle Logique de Données (MLD)
-
-- Fichiers : `.pdf`, `.jpg`
-- Rôle : traduire le MCD en structure relationnelle (tables, clés primaires, clés étrangères).
-- Ce modèle est directement exploitable pour la génération du schéma SQL.
-
-### Source de modélisation
-
-- Fichier : `modele_relationnel_looping.loo`
-- Rôle : fichier source de travail utilisé avec le logiciel Looping.
-- Il permet de modifier ou faire évoluer l’ensemble des modèles sans perte d’information.
-
-## Méthodologie suivie
-
-1. Analyse des besoins fonctionnels (cas d’usage, règles métier).
-2. Élaboration du diagramme Entité-Relation (Chen).
-3. Construction du Modèle Conceptuel de Données (Merise).
-4. Passage au Modèle Logique de Données.
-5. Vérification de la cohérence avant implémentation SQL.
-
-## Portée
-
-Ce dossier décrit **la structure des données**, mais ne contient aucun script d’exécution.
-Il sert de référence de conception pour :
-
-- la création de la base de données,
-- la maintenance,
-- l’évolution future du modèle.
+*Garantir l’intégrité des données
+*Formaliser les règles métier (contraintes, statuts, validation)
+*Assurer la cohérence entre base de données et logique applicative Symfony
+*Séparer les données métier (PostgreSQL) de la journalisation technique (MongoDB)

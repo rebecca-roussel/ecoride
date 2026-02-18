@@ -291,4 +291,10 @@ depuis cet espace.
 
 L’espace administrateur est exclusivement dédié à des actions de gestion
 et de consultation. Il n’intervient pas dans la modération des avis ou
-le traitement des signalements, ces actions relevant du rôle employé
+le traitement des signalements, ces actions relevant du rôle employé.
+
+## Définitions
+
+- Visiteur : utilisateur non connecté.
+- Utilisateur : utilisateur authentifié (compte standard).
+- Employé / Administrateur : utilisateur authentifié disposant d’un rôle interne.
