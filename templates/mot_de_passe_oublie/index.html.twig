@@ -16,21 +16,47 @@
         <p class="mot_de_passe_oublie_sous_titre">Saisissez votre email pour recevoir un lien de réinitialisation.</p>
       </header>
 
-      <form class="mot_de_passe_oublie_formulaire" action="#" method="post" novalidate>
+<form class="mot_de_passe_oublie_formulaire"
+      action="{{ path('mot_de_passe_oublie') }}"
+      method="post"
+      novalidate>
 
-        <div class="bloc_champ">
-          <label class="champ_libelle" for="email">Email</label>
-          <input class="champ_texte" id="email" name="email" type="email" autocomplete="email" placeholder="exemple@invalide">
-          <p class="champ_erreur" id="erreur_email" aria-live="polite" hidden>Adresse email invalide.</p>
-        </div>
+  <input type="hidden" name="_csrf_token" value="{{ csrf_token('mot_de_passe_oublie') }}">
 
-        <button class="bouton_principal" type="submit">Envoyer le lien</button>
+  <div class="bloc_champ">
+    <label class="champ_libelle" for="email">Email</label>
 
-        <div class="mot_de_passe_oublie_pied">
-          <a class="lien_secondaire" href="{{ path('connexion') }}">Retour à la connexion</a>
-        </div>
+    <input
+      class="champ_texte {{ erreur ? 'champ_en_erreur' : '' }}"
+      id="email"
+      name="email"
+      type="email"
+      autocomplete="email"
+      placeholder="exemple@invalide"
+      value="{{ email_saisi|default('') }}"
+      required
+    >
 
-      </form>
+    {% if erreur %}
+      <p class="champ_erreur" id="erreur_email" aria-live="polite">{{ erreur }}</p>
+    {% else %}
+      <p class="champ_erreur" id="erreur_email" aria-live="polite" hidden>Adresse email invalide.</p>
+    {% endif %}
+  </div>
+
+  <button class="bouton_principal" type="submit">Envoyer le lien</button>
+
+  {% if message %}
+    <p class="texte_mini" aria-live="polite" style="margin-top: 12px; text-align:center; color: rgba(15,23,42,0.65);">
+      {{ message }}
+    </p>
+  {% endif %}
+
+  <div class="mot_de_passe_oublie_pied">
+    <a class="lien_secondaire" href="{{ path('connexion') }}">Retour à la connexion</a>
+  </div>
+
+</form>
     </section>
   </main>
 {% endblock %}
