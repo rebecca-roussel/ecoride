@@ -26,6 +26,9 @@ Ce dossier regroupe la documentation et les livrables du projet EcoRide.
 - `uml/`  
   Diagrammes UML et explications associées.
 
+- `deploiement/`
+  Documentation et justification du déploiement de l'application
+
 ## Points d’entrée conseillés
 
 1. **Manuel d’utilisation** : `manuel_utilisation/`
@@ -33,6 +36,7 @@ Ce dossier regroupe la documentation et les livrables du projet EcoRide.
 3. **Interface** : `interface/`
 4. **Gestion de projet** : `gestion_projet/` (liens dans `gestion_projet/liens_gestion_projet/`)
 5. **UML** : `uml/`
+6. **Deploiement** : `deploiement_ecoride_sur_vps/
 
 ## Notes
 

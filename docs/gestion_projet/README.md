@@ -28,6 +28,7 @@ Si un lien doit être ajouté ou modifié, le faire dans `liens_gestion_projet/`
 - `justification_gestion_projet.pdf`  
   Synthèse de gestion de projet : organisation, planning, choix de méthode et kanban.
 
+
 ## Point d’entrée conseillé
 
 1. `justification_gestion_projet.pdf`
