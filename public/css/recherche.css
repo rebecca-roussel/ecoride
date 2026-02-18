@@ -1,0 +1,168 @@
+/*
+  recherche.css
+  Objectif : styliser uniquement la zone centrale (carte + formulaire).
+  Le header + footer doivent rester identiques à l’accueil => gérés par accueil.css.
+*/
+
+/* Zone centrale  */
+
+.zone_centrale {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    box-sizing: border-box;
+}
+
+/* Carte formulaire */
+
+.carte_recherche {
+    width: 100%;
+    max-width: 768px;
+    background: var(--surface_beige);
+    border-radius: 24px;
+    padding: 48px;
+    box-sizing: border-box;
+}
+
+/* Titre dans la carte */
+
+.titre_carte {
+    margin: 0 0 32px 0;
+    text-align: center;
+    font-family: "Montserrat", "Inter", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    color: #0f172a;
+}
+
+/* Formulaire */
+
+.formulaire_recherche_maquette {
+    display: grid;
+    gap: 20px;
+}
+
+.groupe_champ {
+    display: grid;
+    gap: 8px;
+}
+
+.groupe_champ label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.groupe_champ input {
+    width: 100%;
+    height: 48px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    background: #ffffff;
+    color: #0f172a;
+    font-family:
+        "Inter",
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.groupe_champ input:focus-visible {
+    outline: 3px solid var(--anneau_focus);
+    outline-offset: 3px;
+}
+
+.ligne_deux_champs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.actions_recherche {
+    display: flex;
+    justify-content: center;
+    padding-top: 12px;
+}
+
+/* Bouton  */
+.actions_recherche .bouton_principal {
+    width: 320px;
+    min-height: 56px;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    border-radius: 12px;
+}
+
+/* Suggestions géocodage */
+
+.champ_groupe,
+.groupe_champ,
+.champ{
+  position: relative; 
+}
+
+.panneau_suggestions{
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+
+  background: #FFFFFF;
+  border: 1px solid rgba(199,195,184,0.75);
+  border-radius: 12px;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+/* Chaque suggestion */
+
+.suggestion_item{
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  color: #0F172A;
+  cursor: pointer;
+  display: block;
+  min-height: 44px;
+}
+
+.suggestion_item:hover,
+.suggestion_item:focus-visible{
+  background: rgba(63,93,74,0.10);
+  outline: none;
+}
+
+.champ_groupe input,
+.groupe_champ input{
+  position: relative;
+  z-index: 1;
+  background: #FFFFFF;
+  color: #0F172A;
+}
+
+
+
+/* Responsive */
+
+@media (max-width: 900px) {
+    .carte_recherche {
+        padding: 28px 18px;
+    }
+
+    .ligne_deux_champs {
+        grid-template-columns: 1fr;
+    }
+}

@@ -9,19 +9,10 @@ externes lorsqu’ils sont nécessaires.
 
 ## Contenu
 
-Chaque ressource est documentée dans un fichier Markdown dédié (ex. `miro.md`).
+Chaque ressource est documentée dans un fichier Markdown dédié (ex. `miro.md`, `kanban_notion.md`).
 Chaque fichier précise :
 
 - l’usage de l’outil dans le projet,
 - le lien d’accès,
 - la date de dernière mise à jour,
-- le niveau de visibilité (public/privé) si pertinent.
-
-## Évolutivité
-
-Ce dossier pourra référencer à terme, selon l’avancement du projet :
-
-- espace de travail Notion (organisation, journal de bord, notes),
-- board de suivi (kanban, planning),
-- espace de partage (documents, exports),
-- autres ressources de pilotage nécessaires à la compréhension du projet.
+- le niveau de visibilité pertinent.

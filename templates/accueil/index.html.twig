@@ -1,0 +1,189 @@
+
+{# templates/accueil/index.html.twig #}
+{# Page d’accueil 
+  Plan (structure de la page html) :
+
+  1. En-tête :
+     - logo EcoRide
+     - navigation (Accueil / Accès aux covoiturages / Connexion / Contact)
+     - bouton "Menu" pour mobile ou rétrécissemnt de page
+     - lien "Accès aux covoiturages" vers page Recherche (formulaire seul)
+     - lien "Connexion" vers page de connexion
+
+  2. Hero :
+     - accroche et description avec image de fond
+     - petit formulaire de recherche rapide (départ, arrivée, date, heure)
+     - bouton rechercher CTA lien vers page de résultats
+     - envoyer en GET vers la recherche :
+       si critères remplis → afficher les résultats
+       sinon → afficher la page Recherche (formulaire seul)
+
+  3. Atouts :
+     - 3 points forts (crédits / durable / fiabilité)
+     - icônes + titres + texte
+
+  4. Bannière bas :
+     - image décorative de transition
+
+  5. Pied de page :
+     - contact mail
+     - année + EcoRide
+     - lien mentions légales
+#}
+
+{% extends 'base.html.twig' %}
+
+{# Titre de l’onglet du navigateur #}
+{% block title %}EcoRide – Accueil{% endblock %}
+
+{# Feuille de style spécifique à la page d’accueil #}
+{% block stylesheets %}
+  <link rel="stylesheet" href="{{ asset('css/accueil.css') }}">
+{% endblock %}
+
+{# EN-TÊTE / NAVIGATION #}
+{# IMPORTANT : l’en-tête est géré par base.html.twig #}
+{# Ici on garde un header identique à la recherche en incluant le fragment public #}
+{% block entete %}
+  {% include 'fragments/entete_public.html.twig' %}
+{% endblock %}
+
+{% block body %}
+
+<main>
+
+  {# HERO (ACCROCHE + RECHERCHE) #}
+  <section class="section_hero" aria-labelledby="titre_principal">
+
+    {# Décors visuels #}
+    <div class="hero_image" aria-hidden="true"></div>
+    <div class="hero_filtre" aria-hidden="true"></div>
+
+    <div class="hero_contenu">
+      <div class="hero_centre">
+
+        {# Titre principal #}
+        <h1 id="titre_principal">Voyagez ensemble, agissez pour demain</h1>
+
+        {# Texte court pour expliquer le service #}
+        <p class="hero_description">
+          EcoRide vous connecte à des conducteurs partageant vos valeurs.
+          Réduisez votre empreinte carbone tout en économisant sur vos trajets quotidiens.
+        </p>
+
+        {# Formulaire de recherche de covoiturage #}
+        {# GET = pratique car les critères se retrouvent dans l’URL (partageable) #}
+        <form
+          class="formulaire_recherche"
+          method="get"
+          action="{{ path('resultats') }}"
+          aria-label="Rechercher un covoiturage"
+        >
+          <div class="formulaire_grille">
+
+            <div class="champ_groupe">
+              <label for="depart">Ville de départ</label>
+              <input
+                type="text"
+                id="depart"
+                name="ville_depart"
+                autocomplete="address-level2"
+                placeholder="Ex : Paris"
+              >
+            </div>
+
+            <div class="champ_groupe">
+              <label for="arrivee">Ville d’arrivée</label>
+              <input
+                type="text"
+                id="arrivee"
+                name="ville_arrivee"
+                autocomplete="address-level2"
+                placeholder="Ex : Lyon"
+              >
+            </div>
+
+            <div class="champ_groupe">
+              <label for="date_depart">Date de départ</label>
+              <input type="date" id="date_depart" name="date">
+            </div>
+
+            <div class="champ_groupe">
+              <label for="heure_depart">Heure souhaitée</label>
+              <input type="time" id="heure_depart" name="heure_souhaitee">
+            </div>
+
+          </div>
+
+          <button type="submit" class="bouton_principal">Rechercher</button>
+        </form>
+
+      </div>
+    </div>
+
+  </section>
+
+
+  {# ATOUTS #}
+  <section class="section_atouts" aria-labelledby="titre_atouts">
+    <div class="conteneur">
+
+      <h2 id="titre_atouts">Atouts EcoRide</h2>
+
+      <div class="atouts_grille">
+
+        {# Atout : crédits #}
+        <article class="atout_bloc">
+          {# Icône décorative : l’info est déjà dans le titre #}
+          <div class="atout_icone" aria-hidden="true">
+            <img class="atout_image" src="{{ asset('icones/credits.svg') }}" alt="">
+          </div>
+          <h3>Système de crédits</h3>
+          <p>Un mécanisme de crédits garantissant l’équité des échanges entre utilisateurs.</p>
+        </article>
+
+        {# Atout : durable #}
+        <article class="atout_bloc">
+          <div class="atout_icone" aria-hidden="true">
+            <img class="atout_image" src="{{ asset('icones/durable.svg') }}" alt="">
+          </div>
+          <h3>Mobilité durable</h3>
+          <p>Valorisation des véhicules à faible impact environnemental.</p>
+        </article>
+
+        {# Atout : fiabilité #}
+        <article class="atout_bloc">
+          <div class="atout_icone" aria-hidden="true">
+            <img class="atout_image" src="{{ asset('icones/fiabilite.svg') }}" alt="">
+          </div>
+          <h3>Fiabilité</h3>
+          <p>Avis et modération assurent des trajets sûrs et de confiance.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  {# BANNIÈRE BAS IMAGE #}
+  <section class="banniere_pied" aria-hidden="true">
+    <div class="banniere_image"></div>
+    <div class="banniere_filtre"></div>
+  </section>
+
+</main>
+
+{% endblock %}
+
+{# PIED DE PAGE #}
+{# IMPORTANT : le footer est géré par base.html.twig #}
+{# Ici on garde explicitement le footer commun via le fragment #}
+{% block pied_de_page %}
+  {% include 'fragments/pied_de_page.html.twig' %}
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script src="{{ asset('js/suggestions_villes.js') }}" defer></script>
+{% endblock %}
+
+

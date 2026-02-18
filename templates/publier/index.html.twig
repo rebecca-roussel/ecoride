@@ -1,0 +1,220 @@
+{# templates/publier/index.html.twig #}
+{# PLAN (Publier un covoiturage) :
+  1) Page protégée : affichage dans l’espace utilisateur (en-tête utilisateur)
+  2) Panneau beige centré
+  3) Formulaire : départ / arrivée / date / heure / durée / places / prix / voiture
+  4) Préférences du chauffeur (option 1 : stockées sur le covoiturage)
+  5) Gestion des erreurs : affichage sous chaque champ + classes champ_en_erreur
+  6) Garde-fous Twig : valeurs/erreurs/voitures toujours définis
+#}
+
+{% extends 'base.html.twig' %}
+	{% block title %}
+Publier un covoiturage
+{% endblock %}
+
+	{% block stylesheets %}
+	{{ parent() }}
+<link rel="stylesheet" href="{{ asset('css/publier.css') }}"> {% endblock %}
+
+{% block entete %}
+	{% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+{% block body %}
+
+	{# Garde-fous #}
+	{% set valeurs = valeurs|default({}) %}
+	{% set erreurs = erreurs|default({}) %}
+	{% set voitures = voitures|default([]) %}
+
+	<main class="page_publier">
+		<section class="panneau_publier" aria-labelledby="titre_publier">
+
+			<header class="entete_publier">
+				<h1 id="titre_publier">Publier un covoiturage</h1>
+				<p class="texte_secondaire">Créez un covoiturage planifié qui apparaîtra dans les résultats de recherche.</p>
+			</header>
+
+			{% if voitures|length == 0 %}
+				<p class="texte_secondaire">
+					Vous n’avez aucune voiture active.
+										Ajoutez un véhicule (ou réactivez-en un) avant de publier un covoiturage.
+				</p>
+
+				<a class="bouton_principal" href="{{ path('gerer_vehicules') }}">
+					Gérer mes véhicules
+				</a>
+
+			{% else %}
+
+				<form class="formulaire_publier" method="post" action="{{ path('publier_covoiturage') }}" novalidate>
+					<input type="hidden" name="_token" value="{{ csrf_token('publier_covoiturage') }}">
+
+					<div
+						class="grille">
+
+						{# Villes : départ/arrivée #}
+						<div class="champ">
+							<label for="ville_depart">Ville de départ</label>
+							<input id="ville_depart" type="text" name="ville_depart" value="{{ valeurs.ville_depart|default('') }}" autocomplete="address-level2" required class="{{ erreurs.ville_depart is defined ? 'champ_en_erreur' : '' }}">
+							{% if erreurs.ville_depart is defined %}
+								<p class="champ_erreur">{{ erreurs.ville_depart }}</p>
+							{% endif %}
+						</div>
+
+						<div class="champ">
+							<label for="ville_arrivee">Ville d’arrivée</label>
+							<input id="ville_arrivee" type="text" name="ville_arrivee" value="{{ valeurs.ville_arrivee|default('') }}" autocomplete="address-level2" required class="{{ erreurs.ville_arrivee is defined ? 'champ_en_erreur' : '' }}">
+							{% if erreurs.ville_arrivee is defined %}
+								<p class="champ_erreur">{{ erreurs.ville_arrivee }}</p>
+							{% endif %}
+						</div>
+
+						{# Adresses : départ/arrivée #}
+						<div class="champ">
+							<label for="adresse_depart">Adresse de départ</label>
+							<input id="adresse_depart" type="text" name="adresse_depart" value="{{ valeurs.adresse_depart|default('') }}" autocomplete="street-address" required class="{{ erreurs.adresse_depart is defined ? 'champ_en_erreur' : '' }}">
+							{% if erreurs.adresse_depart is defined %}
+								<p class="champ_erreur">{{ erreurs.adresse_depart }}</p>
+							{% endif %}
+						</div>
+
+						<div class="champ">
+							<label for="adresse_arrivee">Adresse d’arrivée</label>
+							<input id="adresse_arrivee" type="text" name="adresse_arrivee" value="{{ valeurs.adresse_arrivee|default('') }}" autocomplete="street-address" required class="{{ erreurs.adresse_arrivee is defined ? 'champ_en_erreur' : '' }}">
+							{% if erreurs.adresse_arrivee is defined %}
+								<p class="champ_erreur">{{ erreurs.adresse_arrivee }}</p>
+							{% endif %}
+						</div>
+						<input type="hidden" name="latitude_depart" id="latitude_depart" value="{{ valeurs.latitude_depart|default('') }}">
+						<input type="hidden" name="longitude_depart" id="longitude_depart" value="{{ valeurs.longitude_depart|default('') }}">
+						<input type="hidden" name="latitude_arrivee" id="latitude_arrivee" value="{{ valeurs.latitude_arrivee|default('') }}">
+						<input
+						type="hidden" name="longitude_arrivee" id="longitude_arrivee" value="{{ valeurs.longitude_arrivee|default('') }}">
+
+
+						{# Date/heure #}
+						<div class="champ">
+							<label for="date_depart">Date</label>
+							<input id="date_depart" type="date" name="date_depart" value="{{ valeurs.date_depart|default('') }}" required class="{{ erreurs.date_depart is defined ? 'champ_en_erreur' : '' }}">
+							{% if erreurs.date_depart is defined %}
+								<p class="champ_erreur">{{ erreurs.date_depart }}</p>
+							{% endif %}
+						</div>
+
+						<div class="champ">
+							<label for="heure_depart">Heure</label>
+							<input id="heure_depart" type="time" name="heure_depart" value="{{ valeurs.heure_depart|default('') }}" required class="{{ erreurs.heure_depart is defined ? 'champ_en_erreur' : '' }}">
+							{% if erreurs.heure_depart is defined %}
+								<p class="champ_erreur">{{ erreurs.heure_depart }}</p>
+							{% endif %}
+						</div>
+
+						{# Durée et places #}
+						<div class="champ">
+							<label for="duree_minutes">Durée (minutes)</label>
+							<input id="duree_minutes" type="number" min="10" max="1440" name="duree_minutes" value="{{ valeurs.duree_minutes|default('') }}" required class="{{ erreurs.duree_minutes is defined ? 'champ_en_erreur' : '' }}">
+							{% if erreurs.duree_minutes is defined %}
+								<p class="champ_erreur">{{ erreurs.duree_minutes }}</p>
+							{% endif %}
+						</div>
+
+						<div class="champ">
+							<label for="nb_places_dispo">Places disponibles</label>
+							<select id="nb_places_dispo" name="nb_places_dispo" required class="{{ erreurs.nb_places_dispo is defined ? 'champ_en_erreur' : '' }}">
+								{% for n in 1..4 %}
+									<option value="{{ n }}" {% if (valeurs.nb_places_dispo|default(0)) == n %} selected {% endif %}>
+										{{ n }}
+									</option>
+								{% endfor %}
+							</select>
+							{% if erreurs.nb_places_dispo is defined %}
+								<p class="champ_erreur">{{ erreurs.nb_places_dispo }}</p>
+							{% endif %}
+						</div>
+
+						{# Voiture #}
+						<div class="champ champ_large">
+							<label for="id_voiture">Voiture</label>
+							<select id="id_voiture" name="id_voiture" required class="{{ erreurs.id_voiture is defined ? 'champ_en_erreur' : '' }}">
+								<option value="">Choisir une voiture</option>
+
+								{% for v in voitures %}
+									<option value="{{ v.id_voiture }}" {% if (valeurs.id_voiture|default(0)) == (v.id_voiture|default(0)) %} selected {% endif %}>
+										{{ v.marque|default('') }}
+										·
+										{{ v.energie|default('')|lower }}
+										·
+										{{ v.nb_places|default('?') }}
+										place{{ (v.nb_places|default(1)) > 1 ? 's' : '' }}
+									</option>
+								{% endfor %}
+
+							</select>
+
+							{% if erreurs.id_voiture is defined %}
+								<p class="champ_erreur">{{ erreurs.id_voiture }}</p>
+							{% endif %}
+						</div>
+
+						{# Prix #}
+						<div class="champ champ_large">
+							<label for="prix_credits">Prix (crédits)</label>
+
+							<input id="prix_credits" type="number" min="2" name="prix_credits" value="{{ valeurs.prix_credits|default('') }}" required class="{{ erreurs.prix_credits is defined ? 'champ_en_erreur' : '' }}">
+
+
+							<p class="texte_mini">Minimum 2 crédits (commission EcoRide incluse).</p>
+
+							{% if erreurs.prix_credits is defined %}
+								<p class="champ_erreur">{{ erreurs.prix_credits }}</p>
+							{% endif %}
+						</div>
+
+
+						{# Préférences du chauffeur #}
+						<fieldset class="bloc_preferences champ_large">
+							<legend>Préférences du chauffeur</legend>
+
+							<div class="ligne_cases">
+								<label class="case">
+									<input type="checkbox" name="est_non_fumeur" value="1" {% if valeurs.est_non_fumeur|default(false) %} checked {% endif %}>
+									Non-fumeur
+								</label>
+
+								<label class="case">
+									<input type="checkbox" name="accepte_animaux" value="1" {% if valeurs.accepte_animaux|default(false) %} checked {% endif %}>
+									Animaux acceptés
+								</label>
+							</div>
+
+							<div class="champ champ_large">
+								<label for="preferences_libre">Préférences libre</label>
+								<textarea id="preferences_libre" name="preferences_libre" rows="3" placeholder="Ex : musique ok, bagages légers, ponctualité importante…" class="{{ erreurs.preferences_libre is defined ? 'champ_en_erreur' : '' }}">{{ valeurs.preferences_libre|default('') }}</textarea>
+
+								{% if erreurs.preferences_libre is defined %}
+									<p class="champ_erreur">{{ erreurs.preferences_libre }}</p>
+								{% endif %}
+							</div>
+						</fieldset>
+
+					</div>
+
+					<div class="actions">
+						<button class="bouton_principal" type="submit">Publier</button>
+					</div>
+
+				</form>
+
+			{% endif %}
+		</section>
+	</main>
+
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	<script src="{{ asset('js/suggestions_geocodage.js') }}" defer></script>
+	<script src="{{ asset('js/geocodage_publier.js') }}" defer></script>
+{% endblock %}

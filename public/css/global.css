@@ -1,0 +1,179 @@
+/* Charte graphique EcoRide
+   Ce fichier s’applique à tout le site.
+   Règle : Inter pour le texte, Montserrat pour les titres, couleurs et états selon la charte. */
+
+:root{
+  /* Couleurs de base */
+  --fond_principal: #0F172A;
+  --texte_principal: #E5E7EB;
+  --texte_secondaire: #A8B0A5;
+
+  /* Couleurs d’action (boutons) */
+  --action_principale: #3F5D4A;
+  --action_survol: #2F4A3B;
+
+  /* Surfaces et bordures */
+  --surface_beige: #F5F1E8;
+  --surface_gris: #C7C3B8;
+  --bordure: #C7C3B8;
+
+  /* Couleurs d’état */
+  --etat_succes: #6B8E7A;
+  --etat_avertissement: #BFA97A;
+  --etat_erreur: #9B4F4F;
+
+  /* Focus visible (navigation clavier) */
+  --anneau_focus: rgba(199,195,184,0.45);
+}
+
+/* Polices auto-hébergées : fichiers dans /public/polices */
+@font-face{
+  font-family: "Inter";
+  src: url("/polices/inter-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face{
+  font-family: "Inter";
+  src: url("/polices/inter-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Montserrat";
+  src: url("/polices/montserrat-600.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Montserrat";
+  src: url("/polices/montserrat-700.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+/* Base du site : fond sombre, texte clair, Inter en 16px minimum */
+html, body{
+  margin: 0;
+  background: var(--fond_principal);
+  color: var(--texte_principal);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  height: 100%;
+}
+
+body{
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main{
+  flex: 1;
+}
+
+.pied_de_page{
+  margin-top: auto;
+}
+
+/* Titres : Montserrat + tailles charte */
+h1, h2, h3{
+  margin: 0;
+  font-family: "Montserrat", "Inter", system-ui, sans-serif;
+  font-weight: 700;
+}
+
+h1{ font-size: 32px; }
+h2{ font-size: 24px; }
+h3{ font-size: 20px; }
+
+/* Labels et micro-texte : tailles charte */
+label{
+  font-size: 14px;
+}
+
+.texte_mini{
+  font-size: 12px;
+  color: var(--texte_secondaire);
+}
+
+.texte_secondaire{
+  color: var(--texte_secondaire);
+}
+
+/* Zone cliquable confortable sur navigation et boutons */
+.navigation a,
+.bouton_principal,
+button{
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.navigation a{
+  padding: 6px 10px;
+  border-radius: 10px;
+}
+
+/* Focus visible sur les éléments interactifs */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible{
+  outline: 3px solid var(--anneau_focus);
+  outline-offset: 3px;
+}
+
+
+/* Bouton principal : charte graphique */
+.bouton_principal{
+  padding: 12px 18px;
+  background: var(--action_principale);
+  border: 1px solid rgba(199,195,184,0.35);
+  border-radius: 10px;
+  color: var(--texte_principal);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bouton_principal:hover{
+  background: var(--action_survol);
+}
+
+.bouton_principal:disabled{
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Formulaires : texte lisible et erreurs explicites */
+input, select, textarea{
+  font-size: 16px;
+}
+
+.champ_erreur{
+  color: var(--etat_erreur);
+  font-size: 14px;
+}
+
+.champ_en_erreur{
+  border-color: var(--etat_erreur) !important;
+}
+
+/* Responsive : réduction des titres sans casser la hiérarchie */
+@media (max-width: 900px){
+  h1{ font-size: 28px; }
+  h2{ font-size: 22px; }
+  h3{ font-size: 18px; }
+}
+
+

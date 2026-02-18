@@ -1,4 +1,3 @@
-
 ###> symfony/framework-bundle ###
 .env
 .env .dev
@@ -10,3 +9,24 @@
 /var/
 /vendor/
 ###< symfony/framework-bundle ###
+
+# Sauvegardes
+*.bak
+
+# Outils locaux (à ne pas versionner)
+.php-cs-fixer.cache
+.vscode/
+
+# Fichiers d'environnement (prod)
+.env.prod
+
+# Environnement production (local uniquement)
+.env.prod
+
+# Fichiers d'environnement (local)
+.env.dev
+.env.prod
+.env.docker
+
+# Fichiers de référence générés (bruit)
+config/reference.php

@@ -1,0 +1,155 @@
+{# templates/tableau_de_bord/index.html.twig #}
+{# Plan :
+  1) En-tête : base.html.twig 
+  2) Panneau central (surface beige)
+  3) Infos rapides (2 cartes)
+  4) Actions principales (cartes)
+  5) Pied de page : base.html.twig
+#}
+
+{% extends 'base.html.twig' %}
+
+	{% block title %}
+Tableau de bord - EcoRide
+{% endblock %}
+
+	{% block stylesheets %}
+	{{ parent() }}
+<link rel="stylesheet" href="{{ asset('css/tableau_de_bord.css') }}">
+{% endblock %}
+
+{% block entete %}
+	{% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+{% block body %}
+	<main class="page_tableau_de_bord">
+		<section class="panneau_tableau_de_bord" aria-labelledby="titre_tableau_de_bord">
+
+			<header class="tableau_entete">
+				<div class="tableau_entete_texte">
+					<h1 id="titre_tableau_de_bord" class="tableau_titre">Tableau de bord</h1>
+					<p class="tableau_sous_titre texte_secondaire">
+						Bienvenue,
+						{{ donnees.pseudo ?? 'EcoRider' }}
+						!
+					</p>
+				</div>
+
+				<div class="tableau_avatar">
+					<img class="tableau_avatar_image"
+					src="{{ donnees.photo }}"
+					alt="Photo de profil de {{ donnees.pseudo ?? 'EcoRider' }}"
+					loading="lazy"/>
+				</div>
+			</header>
+
+			<hr class="separateur">
+
+			<h2 class="bloc_titre">Informations rapides</h2>
+
+			<div class="grille_infos">
+				<div class="carte_info">
+					<div class="carte_icone" aria-hidden="true">
+						<span class="icone icone_credits"></span>
+					</div>
+
+					<div class="carte_info_texte">
+						<p class="carte_info_libelle texte_secondaire">Crédits disponibles</p>
+						<p class="carte_info_valeur">{{ donnees.credits }}</p>
+					</div>
+				</div>
+
+				<div class="carte_info">
+					<div class="carte_icone" aria-hidden="true">
+						<span class="icone icone_avatars"></span>
+					</div>
+
+					<div class="carte_info_texte">
+						<p class="carte_info_libelle texte_secondaire">Rôles actifs</p>
+						<p class="carte_info_valeur">{{ donnees.roles_actifs }}</p>
+					</div>
+				</div>
+			</div>
+
+			<hr class="separateur">
+
+			<h2 class="bloc_titre">Actions principales</h2>
+
+			<div class="grille_actions">
+				<a class="carte_action" href="{{ path('profil') }}">
+					<div class="carte_icone" aria-hidden="true">
+						<span class="icone icone_avatar"></span>
+					</div>
+
+					<div class="carte_action_texte">
+						<p class="carte_action_titre">Gérer mon profil</p>
+						<p class="carte_action_desc texte_secondaire">Modifier vos informations personnelles</p>
+					</div>
+				</a>
+
+				<a class="carte_action" href="{{ path('gerer_roles') }}">
+					<div class="carte_icone" aria-hidden="true">
+						<span class="icone icone_avatars"></span>
+					</div>
+
+					<div class="carte_action_texte">
+						<p class="carte_action_titre">Activer / désactiver mes rôles</p>
+						<p class="carte_action_desc texte_secondaire">Passer en mode chauffeur ou passager</p>
+					</div>
+				</a>
+
+				<a class="carte_action" href="{{ path('gerer_vehicules') }}">
+					<div class="carte_icone" aria-hidden="true">
+						<span class="icone icone_covoit"></span>
+					</div>
+
+					<div class="carte_action_texte">
+						<p class="carte_action_titre">Gérer mes véhicules</p>
+						<p class="carte_action_desc texte_secondaire">Ajouter ou modifier vos véhicules</p>
+					</div>
+				</a>
+
+				<a class="carte_action" href="{{ path('historique', { onglet: 'covoiturages' }) }}">
+					<div class="carte_icone" aria-hidden="true">
+						<span class="icone icone_cadran"></span>
+					</div>
+
+					<div class="carte_action_texte">
+						<p class="carte_action_titre">Consulter mon historique</p>
+						<p class="carte_action_desc texte_secondaire">Voir vos trajets passés</p>
+					</div>
+				</a>
+
+				<a class="carte_action" href="{{ path('credits') }}">
+					<div class="carte_icone" aria-hidden="true">
+						<span class="icone icone_credits"></span>
+					</div>
+
+					<div class="carte_action_texte">
+						<p class="carte_action_titre">Voir mes crédits</p>
+						<p class="carte_action_desc texte_secondaire">Consulter votre solde et vos transactions</p>
+					</div>
+				</a>
+
+				<a class="carte_action" href="{{ path('publier_covoiturage') }}">
+					<div class="carte_icone" aria-hidden="true">
+						<span class="icone icone_durable"></span>
+					</div>
+
+					<div class="carte_action_texte">
+						<p class="carte_action_titre">Publier un covoiturage</p>
+						<p class="carte_action_desc texte_secondaire">Créer une annonce</p>
+					</div>
+				</a>
+
+			</div>
+
+		</section>
+	</main>
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	<script src="{{ asset('js/tableau_de_bord.js') }}"></script>
+{% endblock %}

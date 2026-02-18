@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mot de passe oublié - EcoRide{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/mot_de_passe_oublie.css') }}">
+{% endblock %}
+
+{% block body %}
+  <main class="page_mot_de_passe_oublie">
+    <section class="panneau_mot_de_passe_oublie" aria-labelledby="titre_mot_de_passe_oublie">
+
+      <header class="mot_de_passe_oublie_entete">
+        <h1 id="titre_mot_de_passe_oublie" class="mot_de_passe_oublie_titre">Mot de passe oublié</h1>
+        <p class="mot_de_passe_oublie_sous_titre">Saisissez votre email pour recevoir un lien de réinitialisation.</p>
+      </header>
+
+<form class="mot_de_passe_oublie_formulaire"
+      action="{{ path('mot_de_passe_oublie') }}"
+      method="post"
+      novalidate>
+
+  <input type="hidden" name="_csrf_token" value="{{ csrf_token('mot_de_passe_oublie') }}">
+
+  <div class="bloc_champ">
+    <label class="champ_libelle" for="email">Email</label>
+
+    <input
+      class="champ_texte {{ erreur ? 'champ_en_erreur' : '' }}"
+      id="email"
+      name="email"
+      type="email"
+      autocomplete="email"
+      placeholder="exemple@invalide"
+      value="{{ email_saisi|default('') }}"
+      required
+    >
+
+    {% if erreur %}
+      <p class="champ_erreur" id="erreur_email" aria-live="polite">{{ erreur }}</p>
+    {% else %}
+      <p class="champ_erreur" id="erreur_email" aria-live="polite" hidden>Adresse email invalide.</p>
+    {% endif %}
+  </div>
+
+  <button class="bouton_principal" type="submit">Envoyer le lien</button>
+
+  {% if message %}
+    <p class="texte_mini" aria-live="polite" style="margin-top: 12px; text-align:center; color: rgba(15,23,42,0.65);">
+      {{ message }}
+    </p>
+  {% endif %}
+
+  <div class="mot_de_passe_oublie_pied">
+    <a class="lien_secondaire" href="{{ path('connexion') }}">Retour à la connexion</a>
+  </div>
+
+</form>
+    </section>
+  </main>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script src="{{ asset('js/mot_de_passe_oublie.js') }}" defer></script>
+{% endblock %}

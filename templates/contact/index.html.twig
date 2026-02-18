@@ -1,0 +1,52 @@
+{# templates/contact/index.html.twig #}
+{# Plan (structure contact/index.html.twig) :
+
+  1. En-tête : fourni par base.html.twig
+     - fragment : fragments/entete_public.html.twig
+
+  2. Zone centrale :
+     - panneau beige centré
+     - titre "Contact"
+     - texte court
+     - liens : email + éventuellement téléphone (plus tard) + horaires (optionnel)
+
+  3. Pied de page : fourni par base.html.twig
+     - fragment : fragments/pied_de_page.html.twig
+#}
+
+{% extends 'base.html.twig' %}{% block title %}
+Contact - EcoRide
+{% endblock %}
+
+	{% block stylesheets %}
+	{{ parent() }}
+<link rel="stylesheet" href="{{ asset('css/contact.css') }}"> {% endblock %}
+
+{% block body %}
+	<main class="page_contact">
+		<section class="panneau_contact" aria-labelledby="titre_contact">
+			<h1 id="titre_contact">Contact</h1>
+
+			<p class="contact_texte texte_secondaire">
+				Une question sur EcoRide ? Écrivez-nous, nous vous répondrons au plus vite.
+			</p>
+
+			<div class="contact_bloc">
+				<p class="contact_ligne">
+					<span class="contact_libelle">Email</span>
+					<a class="contact_valeur" href="mailto:contact@ecoride.fr">contact@ecoride.fr</a>
+				</p>
+
+				<p class="contact_ligne">
+					<span class="contact_libelle">Objet</span>
+					<span class="contact_valeur">Support / Informations</span>
+				</p>
+
+				<p class="contact_ligne">
+					<span class="contact_libelle">Réponse</span>
+					<span class="contact_valeur">sous 24 à 48h</span>
+				</p>
+			</div>
+		</section>
+	</main>
+{% endblock %}

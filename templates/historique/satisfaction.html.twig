@@ -1,0 +1,110 @@
+{# templates/historique/satisfaction.html.twig #}
+{# PLAN (satisfaction) :
+  1) Page protégée : arrivée depuis l'historique (passager)
+  2) Panneau beige cohérent (mêmes classes que historique)
+  3) Formulaire :
+     - note (1 à 5) avec étoiles (radio + labels)
+     - commentaire (optionnel)
+     - CSRF + id_covoiturage
+  4) Erreurs : sous le champ + classes champ_en_erreur
+  5) Boutons : envoyer + retour
+#}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Donner mon avis{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/historique.css') }}">
+{% endblock %}
+
+{% block entete %}
+  {% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+
+{% block body %}
+  {# Garde-fous #}
+  {% set id_covoiturage = id_covoiturage|default(0) %}
+  {% set ancien = ancien|default({}) %}
+  {% set erreurs = erreurs|default({}) %}
+
+  <main class="page_historique">
+    <section class="panneau_historique" aria-labelledby="titre_satisfaction">
+      <header class="entete_historique">
+        <h1 id="titre_satisfaction">Donner mon avis</h1>
+        <p class="texte_secondaire">Notez le trajet et laissez un commentaire (optionnel).</p>
+      </header>
+
+      <form method="post" action="{{ path('enregistrer_satisfaction') }}" class="formulaire_satisfaction">
+        <input type="hidden" name="_token" value="{{ csrf_token('enregistrer_satisfaction') }}">
+        <input type="hidden" name="id_covoiturage" value="{{ id_covoiturage }}">
+
+        {# NOTE (étoiles) #}
+        <div class="champ_formulaire">
+          <label class="libelle_champ" for="note_5">Votre note</label>
+
+          <div class="etoiles" role="radiogroup" aria-label="Note sur 5">
+
+            {% set note_ancienne = ancien.note|default('') %}
+
+            <input class="etoile_radio" type="radio" name="note" id="note_5" value="5"
+                   {% if note_ancienne == 5 %}checked{% endif %}>
+            <label class="etoile_label" for="note_5" aria-label="5 sur 5">★</label>
+
+            <input class="etoile_radio" type="radio" name="note" id="note_4" value="4"
+                   {% if note_ancienne == 4 %}checked{% endif %}>
+            <label class="etoile_label" for="note_4" aria-label="4 sur 5">★</label>
+
+            <input class="etoile_radio" type="radio" name="note" id="note_3" value="3"
+                   {% if note_ancienne == 3 %}checked{% endif %}>
+            <label class="etoile_label" for="note_3" aria-label="3 sur 5">★</label>
+
+            <input class="etoile_radio" type="radio" name="note" id="note_2" value="2"
+                   {% if note_ancienne == 2 %}checked{% endif %}>
+            <label class="etoile_label" for="note_2" aria-label="2 sur 5">★</label>
+
+            <input class="etoile_radio" type="radio" name="note" id="note_1" value="1"
+                   {% if note_ancienne == 1 %}checked{% endif %}>
+            <label class="etoile_label" for="note_1" aria-label="1 sur 5">★</label>
+          </div>
+
+          {% if erreurs.note is defined %}
+            <p class="champ_erreur">{{ erreurs.note }}</p>
+          {% endif %}
+        </div>
+
+        {# COMMENTAIRE #}
+        <div class="champ_formulaire">
+          <label class="libelle_champ" for="commentaire">Votre commentaire (optionnel)</label>
+
+          <textarea
+            id="commentaire"
+            name="commentaire"
+            rows="5"
+            class="champ_texte {{ erreurs.commentaire is defined ? 'champ_en_erreur' : '' }}"
+            maxlength="1000"
+          >{{ ancien.commentaire|default('') }}</textarea>
+
+          <p class="texte_mini">1000 caractères maximum.</p>
+
+          {% if erreurs.commentaire is defined %}
+            <p class="champ_erreur">{{ erreurs.commentaire }}</p>
+          {% endif %}
+        </div>
+
+        <div class="actions_formulaire">
+          <button class="bouton_valider" type="submit">
+            <span class="icone_bouton icone_valide" aria-hidden="true"></span>
+            Envoyer mon avis
+          </button>
+
+          <a class="bouton_secondaire" href="{{ path('historique', {onglet: 'participations'}) }}">
+            Retour à mes participations
+          </a>
+        </div>
+      </form>
+    </section>
+  </main>
+{% endblock %}

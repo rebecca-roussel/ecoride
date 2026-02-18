@@ -1,0 +1,147 @@
+/* public/css/mot_de_passe_oublie.css */
+/*
+  PLAN (mot de passe oublié) :
+
+  1) Page : centrer la carte
+  2) Carte : fond beige, arrondis, ombre douce
+  3) Titre + sous-titre : centrés
+  4) Champ email : style identique à connexion
+  5) Bouton : grand bouton vert centré
+  6) Lien retour : centré
+*/
+
+.page_mot_de_passe_oublie{
+  min-height: calc(100vh - 140px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+}
+
+.panneau_mot_de_passe_oublie{
+  width: 100%;
+  max-width: 640px;
+  background: rgba(245, 241, 232, 0.98);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 18px;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.22);
+  padding: 46px 56px 40px;
+}
+
+.mot_de_passe_oublie_entete{
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.mot_de_passe_oublie_titre{
+  margin: 0 0 8px;
+  font-size: 40px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.mot_de_passe_oublie_sous_titre{
+  margin: 0;
+  font-size: 16px;
+  color: rgba(15, 23, 42, 0.55);
+}
+
+.mot_de_passe_oublie_formulaire{
+  margin-top: 18px;
+}
+
+/* On réutilise les mêmes classes de champs que connexion (cohérence) */
+.bloc_champ{
+  margin-top: 18px;
+}
+
+.champ_libelle{
+  display: block;
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.60);
+}
+
+.champ_texte{
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(226, 232, 240, 0.70);
+  color: #0F172A;
+  outline: none;
+}
+
+.champ_texte::placeholder{
+  color: rgba(15, 23, 42, 0.35);
+}
+
+.champ_texte:focus{
+  border-color: rgba(63, 107, 79, 0.55);
+  box-shadow: 0 0 0 4px rgba(63, 107, 79, 0.18);
+}
+
+.champ_erreur{
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #9B2C2C;
+}
+
+.bouton_principal{
+  width: 100%;
+  margin-top: 22px;
+  height: 54px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-radius: 12px;
+  background: #3F6B4F;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.bouton_principal:hover{
+  filter: brightness(1.03);
+}
+
+.bouton_principal:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(63, 107, 79, 0.28);
+}
+
+.mot_de_passe_oublie_pied{
+  margin-top: 22px;
+  text-align: center;
+}
+
+.lien_secondaire{
+  color: rgba(15, 23, 42, 0.65);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.lien_secondaire:hover{
+  color: rgba(15, 23, 42, 0.85);
+}
+
+/*RESPONSIVE*/
+
+@media (max-width: 560px){
+  .panneau_mot_de_passe_oublie{
+    padding: 34px 22px 28px;
+  }
+
+  .mot_de_passe_oublie_titre{
+    font-size: 32px;
+  }
+
+  .bouton_principal{
+    font-size: 18px;
+  }
+}

@@ -1,0 +1,317 @@
+{# templates/details/index.html.twig #}
+{# Plan (structure de la page details/index.html.twig) :
+
+  1. En-tête : fourni par base.html.twig
+     - fragment : fragments/entete_public.html.twig
+
+  2. Zone centrale (contenu principal) :
+     - un grand panneau beige centré (panneau_details)
+     - en-tête du panneau :
+       - titre : "Détail du covoiturage :"
+       - sous-texte : "Annonce publiée par …"
+       - bloc chauffeur à droite : photo + note
+
+  3. Contenu du panneau :
+     - grille départ / arrivée + dates/heures
+     - ligne d’indicateurs : places / crédits / durée
+     - section voiture : marque / couleur / carburant / ancienneté
+     - préférences du chauffeur
+     - Avis sur le chauffeur 
+     - action : bouton "Participer"
+
+  4. Pied de page : fourni par base.html.twig
+     - fragment : fragments/pied_de_page.html.twig
+
+  Rappel convention :
+  - Chauffeur = la personne qui conduit
+  - Covoiturage = l’annonce publiée
+  - Trajet = le chemin départ → arrivée (texte)
+#}
+
+{% extends 'base.html.twig' %}
+
+	{% block title %}
+Détails du covoiturage - EcoRide
+{% endblock %}
+
+	{% block stylesheets %}
+	{{ parent() }}
+<link rel="stylesheet" href="{{ asset('css/details.css') }}"> {% endblock %}
+
+{% block body %}
+<main class="page_details">
+	<section
+		class="panneau_details" aria-labelledby="titre_details">
+
+		{# En-tête du panneau : titre + chauffeur #}
+		<div class="entete_details">
+			<div class="entete_details_texte">
+				<h1 id="titre_details">Détails du covoiturage :</h1>
+				<p class="sous_titre texte_secondaire">
+					Annonce publiée par
+					{{ detail.pseudo_chauffeur|default('chauffeur') }}
+				</p>
+			</div>
+
+			<div class="chauffeur_resume" aria-label="Chauffeur et note">
+				{% set photo = detail.photo_chauffeur|default('') %}
+				<img class="chauffeur_photo" src="{{ photo ? asset(photo) : asset('icones/avatar.svg') }}" alt="Photo de {{ detail.pseudo_chauffeur|default('chauffeur') }}">
+
+				<p class="chauffeur_note">
+					<span class="etoile" aria-hidden="true">★</span>
+
+					{% set nb_avis = detail.nb_avis_valides|default(0) %}
+
+					{% if nb_avis > 0 %}
+						<span class="valeur_note">
+							{{ detail.note_moyenne|default(0)|number_format(1, '.', '') }}
+						</span>
+						<span class="texte_mini texte_secondaire">({{ nb_avis }}
+							avis)</span>
+					{% else %}
+						<span class="valeur_note">Nouveau</span>
+					{% endif %}
+				</p>
+			</div>
+		</div>
+
+		{# Départ/Arrivée #}
+		<div class="bloc_lieux">
+			<div class="lieu">
+				<h2 class="lieu_titre">Départ</h2>
+
+				<p class="lieu_ville">
+					{{ detail.ville_depart|default('—') }}
+					{% if detail.adresse_depart is defined and detail.adresse_depart %}
+						<span class="texte_mini texte_secondaire">—
+							{{ detail.adresse_depart }}</span>
+					{% endif %}
+				</p>
+
+				<p class="lieu_date texte_secondaire">
+					Le
+					{{ detail.date_heure_depart ? detail.date_heure_depart|date('d/m/Y') : '—' }}
+					à
+					{{ detail.date_heure_depart ? detail.date_heure_depart|date('H:i') : '—' }}
+				</p>
+			</div>
+
+			<div class="lieu">
+				<h2 class="lieu_titre">Arrivée</h2>
+
+				<p class="lieu_ville">
+					{{ detail.ville_arrivee|default('—') }}
+					{% if detail.adresse_arrivee is defined and detail.adresse_arrivee %}
+						<span class="texte_mini texte_secondaire">—
+							{{ detail.adresse_arrivee }}</span>
+					{% endif %}
+				</p>
+
+				<p class="lieu_date texte_secondaire">
+					Le
+					{{ detail.date_heure_arrivee ? detail.date_heure_arrivee|date('d/m/Y') : '—' }}
+					à
+					{{ detail.date_heure_arrivee ? detail.date_heure_arrivee|date('H:i') : '—' }}
+				</p>
+			</div>
+		</div>
+
+		<hr
+		class="separateur_details" aria-hidden="true">
+
+		{# Indicateurs covoiturage #}
+		<div class="bloc_indicateurs">
+			<div class="indicateur">
+				<h3 class="indicateur_titre">Places disponibles</h3>
+
+				{# Places #}
+				{% set places = detail.nb_places_dispo|default(0) %}
+				<p class="indicateur_valeur">
+					{{ places }}
+					place{{ places > 1 ? 's' : '' }}
+				</p>
+			</div>
+
+			<div class="indicateur">
+				<h3 class="indicateur_titre">Crédits par place</h3>
+				<p class="indicateur_valeur">
+					{{ detail.prix_credits|default('—') }}
+				</p>
+			</div>
+
+			<div class="indicateur">
+				<h3 class="indicateur_titre">Durée</h3>
+
+				{% if detail.date_heure_depart and detail.date_heure_arrivee %}
+					{% set minutes = (detail.date_heure_arrivee|date('U') - detail.date_heure_depart|date('U')) // 60 %}
+					{% set heures = minutes // 60 %}
+					{% set reste = minutes % 60 %}
+					<p class="indicateur_valeur">
+						{{ '%02d'|format(heures) }}h
+						{{ '%02d'|format(reste) }}min
+					</p>
+				{% else %}
+					<p class="indicateur_valeur">—</p>
+				{% endif %}
+			</div>
+		</div>
+
+		<hr
+		class="separateur_details" aria-hidden="true">
+
+		{# Voiture du chauffeur #}
+		<div class="bloc_voiture">
+			<h2 class="voiture_titre">
+				Voiture de
+				{{ detail.pseudo_chauffeur|default('chauffeur') }}
+			</h2>
+		</div>
+
+		<div class="voiture_grille">
+			<div class="champ">
+				<h3 class="champ_titre">Marque</h3>
+
+				{# Marque voiture #}
+				{% set marque = detail.marque|default('') %}
+				<p class="champ_valeur">
+					{% if marque %}
+						{{ marque|lower|capitalize }}
+					{% else %}
+						—
+					{% endif %}
+				</p>
+			</div>
+
+			<div class="champ">
+				<h3 class="champ_titre">Couleur</h3>
+
+				{# Couleur voiture #}
+				{% set couleur = detail.couleur|default('') %}
+				<p class="champ_valeur">
+					{% if couleur %}
+						{{ couleur|lower|capitalize }}
+					{% else %}
+						—
+					{% endif %}
+				</p>
+			</div>
+
+			<div class="champ">
+				<h3 class="champ_titre">Carburant</h3>
+
+				{% set energie = detail.energie|default('') %}
+
+				{# Énergie #}
+				{% set libelles_energie = {
+            'ESSENCE': 'Essence',
+            'DIESEL': 'Diesel',
+            'ETHANOL': 'Éthanol',
+            'HYBRIDE': 'Hybride',
+            'ELECTRIQUE': 'Électrique'
+          } %}
+
+				<p class="champ_valeur">
+					{% if energie %}
+						{{ libelles_energie[energie]|default(energie) }}
+						{% if energie == 'ELECTRIQUE' %}
+							(écologique)
+						{% endif %}
+					{% else %}
+						—
+					{% endif %}
+				</p>
+			</div>
+
+			<div class="champ">
+				<h3 class="champ_titre">Ancienneté</h3>
+
+				{% if detail.date_1ere_mise_en_circulation %}
+					{# Ancienneté #}
+					{% set age = ('now'|date('Y')) - (detail.date_1ere_mise_en_circulation|date('Y')) %}
+					<p class="champ_valeur">
+						{{ age }}
+						{{ age > 1 ? 'ans' : 'an' }}
+					</p>
+				{% else %}
+					<p class="champ_valeur">—</p>
+				{% endif %}
+			</div>
+		</div>
+
+		<hr
+		class="separateur_details" aria-hidden="true">
+
+		{# Préférences du chauffeur #}
+		<div class="bloc_preferences">
+			<h3 class="preferences_titre">
+				Préférences de
+				{{ detail.pseudo_chauffeur|default('chauffeur') }}
+			</h3>
+			<ul
+				class="preferences_liste">
+				{# Non-fumeur #}
+				{% if detail.est_non_fumeur %}
+					<li>Fumeurs non acceptés</li>
+				{% else %}
+					<li>Fumeurs acceptés</li>
+				{% endif %}
+
+				{# Animaux #}
+				{% if detail.accepte_animaux %}
+					<li>Animaux acceptés</li>
+				{% else %}
+					<li>Animaux non acceptés</li>
+				{% endif %}
+
+				{% if detail.preferences_libre is defined and detail.preferences_libre %}
+					<li>{{ detail.preferences_libre }}</li>
+				{% endif %}
+			</ul>
+		</div>
+
+		<hr
+		class="separateur_details" aria-hidden="true">
+
+		{# Avis sur le chauffeur #}
+		<div class="bloc_avis">
+			<h3 class="avis_titre">
+				Avis sur
+				{{ detail.pseudo_chauffeur|default('le chauffeur') }}
+			</h3>
+
+			{% if avis_chauffeur is defined and avis_chauffeur|length > 0 %}
+				<ul class="avis_liste">
+					{% for avis in avis_chauffeur %}
+						<li class="avis_item">
+							<p class="avis_entete">
+								<span class="avis_etoile" aria-hidden="true">★</span>
+								<strong>{{ avis.note }}</strong>/5
+								<span class="texte_mini texte_secondaire">
+									—
+									{{ avis.pseudo_auteur|default('passager') }},
+																																														                    le
+									{{ avis.date_depot ? avis.date_depot|date('d/m/Y') : '—' }}
+								</span>
+							</p>
+
+							{% if avis.commentaire is not empty %}
+								<p class="avis_commentaire">{{ avis.commentaire }}</p>
+							{% else %}
+								<p class="avis_commentaire texte_secondaire texte_mini">Sans commentaire.</p>
+							{% endif %}
+						</li>
+					{% endfor %}
+				</ul>
+			{% else %}
+				<p class="texte_secondaire">Aucun avis pour le moment.</p>
+			{% endif %}
+		</div>
+
+		{# Action participation #}
+		<div class="bloc_actions">
+			<form method="post" action="{{ path('participer_covoiturage', { id: detail.id_covoiturage }) }}">
+				<input type="hidden" name="_token" value="{{ csrf_token('participer_covoiturage_' ~ detail.id_covoiturage) }}">
+
+				{% set places = detail.nb_places_dispo|default(0) %}
+
+				<button class="bouton_principal" type="submit" {% if places <= 0 %}disabled{% endif %}> {% if places <= 0 %} Complet {% else %} Participer {% endif %} </button> </form> </div> </section> </main> {% endblock %}

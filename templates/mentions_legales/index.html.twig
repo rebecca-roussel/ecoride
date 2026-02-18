@@ -1,0 +1,76 @@
+{# templates/mentions_legales/index.html.twig #}
+{# Plan (structure mentions_legales/index.html.twig) :
+
+  1. En-tête : fourni par base.html.twig (entete_public)
+  2. Zone centrale :
+     - panneau beige centré
+     - titre "Mentions légales"
+     - blocs de texte lisibles
+  3. Pied de page : fourni par base.html.twig (pied_de_page)
+#}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Mentions légales - EcoRide{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/mentions_legales.css') }}">
+{% endblock %}
+
+{% block body %}
+  <main class="page_mentions">
+    <section class="panneau_mentions" aria-labelledby="titre_mentions">
+      <h1 id="titre_mentions">Mentions légales</h1>
+
+      <p class="mentions_intro texte_secondaire">
+        Les informations ci-dessous sont fournies à titre indicatif pour le projet EcoRide.
+      </p>
+
+      <hr class="separateur_mentions" aria-hidden="true">
+
+      <section class="mentions_bloc" aria-labelledby="titre_editeur">
+        <h2 id="titre_editeur" class="mentions_titre">Éditeur du site</h2>
+        <p class="mentions_texte">
+          EcoRide — Projet pédagogique (TP Développeur Web et Web Mobile).
+        </p>
+        <p class="mentions_texte">
+          Contact : <a href="mailto:contact@ecoride.fr">contact@ecoride.fr</a>
+        </p>
+      </section>
+
+      <section class="mentions_bloc" aria-labelledby="titre_hebergeur">
+        <h2 id="titre_hebergeur" class="mentions_titre">Hébergeur</h2>
+        <p class="mentions_texte">
+           Hébergement : Hostinger (VPS).
+        </p>
+      </section>
+
+      <section class="mentions_bloc" aria-labelledby="titre_donnees">
+        <h2 id="titre_donnees" class="mentions_titre">Données personnelles</h2>
+        <p class="mentions_texte">
+          EcoRide traite des données nécessaires au fonctionnement du service (compte utilisateur, covoiturages,
+          participations, avis). Les données sont utilisées uniquement dans le cadre du service.
+        </p>
+        <p class="mentions_texte">
+          Pour toute demande relative aux données, contactez : <a href="mailto:contact@ecoride.fr">contact@ecoride.fr</a>
+        </p>
+      </section>
+
+      <section class="mentions_bloc" aria-labelledby="titre_cookies">
+        <h2 id="titre_cookies" class="mentions_titre">Cookies</h2>
+        <p class="mentions_texte">
+          EcoRide utilise des cookies techniques nécessaires au bon fonctionnement du site (session, sécurité).
+        </p>
+      </section>
+
+      <section class="mentions_bloc" aria-labelledby="titre_responsabilite">
+        <h2 id="titre_responsabilite" class="mentions_titre">Responsabilité</h2>
+        <p class="mentions_texte">
+          Les contenus sont fournis à titre informatif. EcoRide ne saurait être tenu responsable d’un mauvais usage
+          ou d’une indisponibilité temporaire.
+        </p>
+      </section>
+    </section>
+  </main>
+{% endblock %}

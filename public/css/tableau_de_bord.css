@@ -1,0 +1,241 @@
+/* public/css/tableau_de_bord.css */
+/*
+  A FAIRE (tableau de bord) :
+  1) zone centrale : panneau beige centré
+  2) en-tête : titre + photo de profil
+  3) infos rapides : 2 cartes
+  4) actions : cartes cliquables, 2 colonnes + 1 pleine largeur
+*/
+
+.page_tableau_de_bord{
+  padding: 48px 16px;
+  box-sizing: border-box;
+}
+
+.panneau_tableau_de_bord{
+  max-width: 980px;
+  margin: 0 auto;
+  background: var(--surface_beige);
+  color: var(--fond_principal);
+  border: 1px solid var(--bordure);
+  border-radius: 18px;
+  padding: 32px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.28);
+}
+
+.tableau_entete{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.tableau_titre{
+  font-size: 34px;
+}
+
+.tableau_sous_titre{
+  margin-top: 6px;
+}
+
+.tableau_avatar{
+  width: 78px;
+  height: 78px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 2px solid rgba(199,195,184,0.75);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+  background: #ddd;
+  flex: 0 0 auto;
+}
+
+.tableau_avatar_image{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.separateur{
+  border: none;
+  height: 1px;
+  background: var(--bordure);
+  margin: 32px 0;
+}
+
+.bloc_titre{
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+
+/* Icônes */
+.carte_icone{
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(63, 93, 74, 0.10);
+  border: 1px solid rgba(63, 93, 74, 0.25);
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+
+.carte_icone img{
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+/* Pictogramme recolorable */
+.carte_icone .icone{
+  width: 22px;
+  height: 22px;
+  display: block;
+
+  background-color: var(--action_principale);
+
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+/* Association des fichiers SVG */
+.icone_credits{
+  -webkit-mask-image: url("/icones/credits.svg");
+  mask-image: url("/icones/credits.svg");
+}
+
+.icone_avatars{
+  -webkit-mask-image: url("/icones/avatars.svg");
+  mask-image: url("/icones/avatars.svg");
+}
+
+.icone_avatar{
+  -webkit-mask-image: url("/icones/avatar.svg");
+  mask-image: url("/icones/avatar.svg");
+}
+
+.icone_covoit{
+  -webkit-mask-image: url("/icones/covoit.svg");
+  mask-image: url("/icones/covoit.svg");
+}
+
+.icone_cadran{
+  -webkit-mask-image: url("/icones/cadran.svg");
+  mask-image: url("/icones/cadran.svg");
+}
+
+.icone_durable{
+  -webkit-mask-image: url("/icones/durable.svg");
+  mask-image: url("/icones/durable.svg");
+}
+
+/* Infos rapides */
+.grille_infos{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.carte_info{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(15,23,42,0.16);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.carte_info_texte{
+  min-width: 0;
+}
+
+.carte_info_libelle{
+  margin: 0;
+  font-size: 13px;
+}
+
+.carte_info_valeur{
+  margin: 4px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* Actions */
+.grille_actions{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.carte_action{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  text-decoration: none;
+  color: inherit;
+
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(15,23,42,0.16);
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 78px;
+}
+
+.carte_action_texte{
+  min-width: 0;
+}
+
+.carte_action:hover{
+  border-color: rgba(15,23,42,0.28);
+  transform: translateY(-1px);
+}
+
+.carte_action_titre{
+  margin: 0;
+  font-weight: 700;
+}
+
+.carte_action_desc{
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+
+.carte_action_large{
+  grid-column: 1 / -1;
+}
+
+/* RESPONSIVE*/
+
+@media (max-width: 820px){
+  .panneau_tableau_de_bord{
+    padding: 22px;
+  }
+
+  .tableau_titre{
+    font-size: 28px;
+  }
+
+  .grille_infos,
+  .grille_actions{
+    grid-template-columns: 1fr;
+  }
+}
+
+.carte_action{
+  position: relative;
+  z-index: 1;
+}
+
+.carte_action::before,
+.carte_action::after{
+  pointer-events: none;
+}

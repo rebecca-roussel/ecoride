@@ -1,0 +1,193 @@
+/* public/css/roles.css */
+/*
+  PAGE GÉRER MES RÔLES
+  - fond sombre global (global.css)
+  - panneau beige centré
+  - cartes rôle + interrupteurs
+*/
+
+.page_roles{
+  display: flex;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.panneau_roles{
+  width: min(900px, 100%);
+  background: var(--surface_beige);
+  border: 1px solid var(--bordure);
+  border-radius: 18px;
+  padding: 40px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+  color: var(--fond_principal);
+}
+
+.formulaire_roles{
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.carte_role{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 22px;
+  border-radius: 14px;
+  border: 1px solid var(--bordure);
+}
+
+.role_infos{
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.icone{
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-color: var(--action_principale);
+
+  -webkit-mask: no-repeat center / contain;
+  mask: no-repeat center / contain;
+}
+
+.icone_avatar{
+  -webkit-mask-image: url("/icones/avatar.svg");
+  mask-image: url("/icones/avatar.svg");
+}
+
+.icone_covoit{
+  -webkit-mask-image: url("/icones/covoit.svg");
+  mask-image: url("/icones/covoit.svg");
+}
+
+/* Boîte icône */
+.icone_role{
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icone_role img{
+  width: 32px;
+  height: 32px;
+}
+
+/* Interrupteur */
+
+.interrupteur{
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+
+.interrupteur input{
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.curseur{
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #c7c3b8;
+  border-radius: 50px;
+  transition: .3s;
+}
+
+.curseur::before{
+  content: "";
+  position: absolute;
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  top: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: .3s;
+}
+
+input:checked + .curseur{
+  background-color: var(--action_principale);
+}
+
+input:checked + .curseur::before{
+  transform: translateX(22px);
+}
+
+/* Messages */
+
+.message_succes{
+  background: var(--etat_succes);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-top: 15px;
+}
+
+.message_erreur{
+  background: var(--etat_erreur);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-top: 15px;
+}
+
+.bouton_roles{
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+  display: flex;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* RESPONSIVE */
+
+/* Responsive : mobile / petits écrans */
+@media (max-width: 700px){
+
+  .page_roles{
+    padding: 36px 12px;
+  }
+
+  .panneau_roles{
+    padding: 22px;
+    border-radius: 16px;
+  }
+
+  .formulaire_roles{
+    gap: 16px;
+  }
+
+  .carte_role{
+    padding: 16px;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .role_infos{
+    gap: 12px;
+    min-width: 0; 
+  }
+
+  .role_infos *{
+    min-width: 0;
+  }
+
+  .interrupteur{
+    flex: 0 0 auto; 
+    margin-top: 2px;
+  }
+
+  .bouton_roles{
+    font-size: 16px;
+  }
+}

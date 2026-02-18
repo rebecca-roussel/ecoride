@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Réinitialiser le mot de passe - EcoRide{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  {# On réutilise exactement le même CSS pour garder la même carte #}
+  <link rel="stylesheet" href="{{ asset('css/mot_de_passe_oublie.css') }}">
+{% endblock %}
+
+{% block body %}
+  <main class="page_mot_de_passe_oublie">
+    <section class="panneau_mot_de_passe_oublie" aria-labelledby="titre_reinitialisation">
+
+      <header class="mot_de_passe_oublie_entete">
+        <h1 id="titre_reinitialisation" class="mot_de_passe_oublie_titre">Réinitialisation</h1>
+        <p class="mot_de_passe_oublie_sous_titre">Choisissez un nouveau mot de passe.</p>
+      </header>
+
+      {% if erreur %}
+        <p class="champ_erreur" aria-live="polite" style="text-align:center;">
+          {{ erreur }}
+        </p>
+      {% endif %}
+
+      {% if message %}
+        <p class="texte_mini" aria-live="polite" style="margin-top: 12px; text-align:center; color: rgba(15,23,42,0.65);">
+          {{ message }}
+        </p>
+
+        <div class="mot_de_passe_oublie_pied">
+          <a class="lien_secondaire" href="{{ path('connexion') }}">Aller à la connexion</a>
+        </div>
+
+      {% else %}
+        <form class="mot_de_passe_oublie_formulaire"
+              action="{{ path('reinitialiser_mot_de_passe', { jeton: jeton }) }}"
+              method="post"
+              novalidate>
+
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token('reinitialiser_mot_de_passe') }}">
+
+          <div class="bloc_champ">
+            <label class="champ_libelle" for="mot_de_passe">Nouveau mot de passe</label>
+            <input class="champ_texte"
+                   id="mot_de_passe"
+                   name="mot_de_passe"
+                   type="password"
+                   autocomplete="new-password"
+                   required>
+          </div>
+
+          <div class="bloc_champ">
+            <label class="champ_libelle" for="mot_de_passe_confirmation">Confirmer le mot de passe</label>
+            <input class="champ_texte"
+                   id="mot_de_passe_confirmation"
+                   name="mot_de_passe_confirmation"
+                   type="password"
+                   autocomplete="new-password"
+                   required>
+          </div>
+
+          <button class="bouton_principal" type="submit">Mettre à jour</button>
+
+          <div class="mot_de_passe_oublie_pied">
+            <a class="lien_secondaire" href="{{ path('connexion') }}">Retour à la connexion</a>
+          </div>
+
+        </form>
+      {% endif %}
+
+    </section>
+  </main>
+{% endblock %}

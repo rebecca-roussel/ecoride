@@ -1,0 +1,308 @@
+/* public/css/resultats.css */ 
+/*
+  A FAIRE (mise en forme resultats.css) :
+
+  1) PAGE / CONTENEUR
+     - garder le fond global sombre (global.css)
+     - ajouter une zone centrale avec du padding autour
+     - limiter la largeur de la zone centrale (max-width) et la centrer
+
+  2) PANNEAU PRINCIPAL (bulle beige)
+     - afficher un panneau beige clair (surface_beige)
+     - bordure arrondie + bordure fine (bordure)
+     - ombre portée douce
+     - texte sombre à l’intérieur (fond_principal)
+
+  3) EN-TÊTE DE LA PAGE RESULTATS
+     - titre : "Résultats de recherche" (h1)
+     - ligne de rappel : départ / arrivée / date / heure (texte secondaire)
+     - bouton "Filtrer les résultats" : style bouton principal (charte)
+
+  4) LISTE DES RESULTATS
+     - empiller les cartes verticalement
+     - espacement régulier entre les cartes (24px)
+
+  5) CARTE COVOITURAGE (une carte = un résultat)
+     - fond gris-vert (texte_secondaire ou couleur dédiée)
+     - coins arrondis + ombre douce
+     - disposition horizontale : photo à gauche, contenu au centre, bouton à droite
+     - aligner verticalement les éléments pour un rendu propre
+
+  6) CONTENU DE LA CARTE
+     - ligne identité : prénom + étoile + note
+     - préférences : texte secondaire
+     - trajet : plus visible (hiérarchie)
+     - date/heure : lisible
+     - bas de carte : énergie + places restantes + prix en crédits
+
+  7) ACTIONS
+     - bouton "Voir détails" aligné à droite
+     - taille confortable + arrondis + hover (charte)
+*/
+
+
+/* PAGE / ZONE CENTRALE */
+
+.page_resultats{
+  padding: 40px 24px 40px;
+}
+
+
+/* PANNEAU PRINCIPAL */
+
+.panneau_resultats{
+  max-width: 1060px;
+  padding: 31px 32px;
+  margin: 0 auto;
+
+  background: var(--surface_beige);
+  color: var(--fond_principal);
+
+  border: 1px solid var(--bordure);
+  border-radius: 12px;
+  box-shadow: 0 0 18px rgba(0,0,0,0.30);
+}
+
+
+.panneau_resultats h1{
+  margin: 0 0 12px;
+}
+
+
+.rappel_recherche{
+  margin: 0 0 22px;
+}
+
+
+.message_avertissement{
+  color: var(--etat_erreur);
+  font-weight: 600;
+  margin: 12px 0 18px;
+}
+
+.actions_resultats{
+  margin: 0 0 26px;
+}
+
+/* LISTE DES RESULTATS */
+
+.liste_covoiturages{
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* CARTE COVOITURAGE */
+
+.carte_covoiturage{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 24px;
+  align-items: start;
+
+  background: var(--texte_secondaire);
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid rgba(15,23,42,0.10);
+  box-shadow: 0 8px 14px rgba(0,0,0,0.16);
+}
+
+/* INFOS CHAUFFEUR */
+
+
+.bloc_chauffeur{
+display: flex;
+align-items: flex-start;
+gap: 16px;
+min-width: 0;
+}
+
+
+.photo_profil{
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  object-fit: cover;
+  flex: 0 0 64px;
+}
+
+.chauffeur_texte{
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ligne_identite{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.2;
+}
+
+.pseudo_chauffeur{
+  font-weight: 600;
+}
+
+.note_chauffeur{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--action_principale);
+}
+
+.etoile{
+  font-size: 16px;
+  line-height: 1;
+}
+
+.preferences_chauffeur{
+  line-height: 1.2;
+}
+
+
+/* CONTENU TRAJET */
+
+.contenu_carte{
+  min-width: 0;
+}
+
+.trajet{
+  margin: 8px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.date_heure{
+  margin: 6px 0 0;
+}
+
+.details_bas{
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.separateur{
+  opacity: 0.55;
+}
+
+.prix{
+  font-weight: 600;
+}
+
+
+/* BOUTON “VOIR DETAILS” */
+
+.zone_bouton_details{
+  align-self: end;
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 6px;
+  min-width: auto;
+}
+
+.bouton_details{
+  text-decoration: none;
+  margin-top: 10px;
+  max-width: 100%;
+}
+
+.chauffeur_texte,
+.contenu_carte{
+  min-width: 0;
+}
+
+.trajet,
+.rappel_recherche{
+  overflow-wrap: anywhere;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px){
+  .panneau_resultats{
+    padding: 28px 18px 28px;
+  }
+
+  .carte_covoiturage{
+    grid-template-columns: 1fr;
+    row-gap: 16px;
+  }
+
+  .zone_bouton_details{
+    min-width: auto;
+    justify-content: flex-start;
+  }
+}
+
+.carte_covoiturage .texte_secondaire{
+  color: rgba(15, 23, 42, 0.65);
+}
+
+@media (max-height: 850px){
+  .page_resultats{
+    padding: 24px 18px 24px;
+  }
+
+  .panneau_resultats{
+    padding: 24px 24px;
+  }
+}
+
+@media (max-height: 720px){
+  .panneau_resultats{
+    padding: 24px 24px;
+  }
+
+  .liste_covoiturages{
+    gap: 16px; 
+  }
+
+  .carte_covoiturage{
+    padding: 12px; 
+  }
+}
+
+/* PANNEAU FILTRES */
+
+.panneau_filtres{
+  margin: 0 0 18px;
+  padding: 14px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,0.12);
+  background: #C7C3B8;
+}
+
+.grille_filtres{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.champ_filtre{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.actions_filtres{
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.lien_reinitialiser{
+  color: var(--fond_principal);
+  text-decoration: underline;
+}
+
+@media (max-width: 900px){
+  .grille_filtres{
+    grid-template-columns: 1fr;
+  }
+}

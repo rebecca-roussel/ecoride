@@ -1,0 +1,170 @@
+{# templates/vehicules/ajouter.html.twig #}
+{# Plan (ajouter.html.twig) :
+  1) Hériter du socle commun (base.html.twig)
+     - global.css + accueil.css (socle visuel du site)
+  2) Remplacer l’en-tête par l’en-tête utilisateur
+  3) Afficher le formulaire d’ajout véhicule + jeton CSRF
+#}
+
+{% extends 'base.html.twig' %}
+
+	{% block title %}
+Ajouter un véhicule — EcoRide
+{% endblock %}
+
+	{% block stylesheets %}
+	{{ parent() }}
+<link rel="stylesheet" href="{{ asset('css/vehicules_ajouter.css') }}"> {% endblock %}
+
+{% block entete %}
+	{# En-tête : ici on est dans l’espace utilisateur #}
+	{% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+{% set est_modification = est_modification|default(false) %}
+
+
+{% block body %}
+	<main class="page_vehicule_ajouter">
+		<section class="panneau_vehicule_ajouter" aria-labelledby="titre_page">
+			<header class="entete_panneau">
+				<h1 id="titre_page">
+					{{ est_modification ? 'Modifier un véhicule' : 'Ajouter un véhicule' }}
+				</h1>
+				<p class="texte_secondaire">Renseignez les informations du véhicule.</p>
+			</header>
+
+			{# Messages (flash) : on affiche le dernier de chaque type pour éviter les piles #}
+			{% set messages_succes = app.flashes('succes') %}
+			{% if messages_succes|length > 0 %}
+				<div class="message_succes" role="status">{{ messages_succes|last }}</div>
+			{% endif %}
+
+			{% set messages_erreur = app.flashes('erreur') %}
+			{% if messages_erreur|length > 0 %}
+				<div class="message_erreur" role="alert">{{ messages_erreur|last }}</div>
+			{% endif %}
+
+			{% if erreurs.formulaire is defined %}
+				<p class="champ_erreur" role="alert">{{ erreurs.formulaire }}</p>
+			{% endif %}
+
+
+			{# Formulaire d’ajout
+						- method POST : on envoie les données
+						- action : route de traitement
+						- jeton CSRF : protège contre les soumissions forcées #}
+			<form method="post" action="{{ est_modification ? path('vehicule_modifier_traitement', { idVoiture: id_voiture }) : path('vehicule_ajouter_traitement') }}" class="formulaire">
+
+				<input type="hidden" name="_jeton_csrf" value="{{ csrf_token(est_modification ? 'modifier_vehicule_' ~ id_voiture : 'ajouter_vehicule') }}">
+
+
+				<div class="champ">
+					<label for="immatriculation">Immatriculation</label>
+
+					{# Aide utilisateur : format attendu #}
+					<p class="texte_mini texte_secondaire">
+						Majuscules + chiffres uniquement (sans espaces). Exemple : AA123BB
+					</p>
+
+					<input id="immatriculation" name="immatriculation" required value="{{ valeurs.immatriculation|default('') }}" autocomplete="off" inputmode="text">
+
+					{% if erreurs.immatriculation is defined %}
+						<p class="champ_erreur">{{ erreurs.immatriculation }}</p>
+					{% endif %}
+				</div>
+
+				<div class="champ">
+					<label for="date_1ere_mise_en_circulation">Date 1ère mise en circulation</label>
+
+					<input id="date_1ere_mise_en_circulation" name="date_1ere_mise_en_circulation" type="date" required value="{{ valeurs.date_1ere_mise_en_circulation|default('') }}">
+
+					{% if erreurs.date_1ere_mise_en_circulation is defined %}
+						<p class="champ_erreur">{{ erreurs.date_1ere_mise_en_circulation }}</p>
+					{% endif %}
+				</div>
+
+				<div class="champ">
+					<label for="marque">Marque</label>
+
+					{# Aide utilisateur #}
+					<p class="texte_mini texte_secondaire">
+						Exemple : Honda, Renault, Tesla
+					</p>
+
+					<input id="marque" name="marque" required value="{{ valeurs.marque|default('') }}" autocomplete="off">
+
+					{% if erreurs.marque is defined %}
+						<p class="champ_erreur">{{ erreurs.marque }}</p>
+					{% endif %}
+				</div>
+
+				<div class="champ">
+					<label for="couleur">Couleur</label>
+
+					{# Aide utilisateur #}
+					<p class="texte_mini texte_secondaire">
+						Exemple : Rouge, Noir, Gris
+					</p>
+
+					<input id="couleur" name="couleur" required value="{{ valeurs.couleur|default('') }}" autocomplete="off">
+
+					{% if erreurs.couleur is defined %}
+						<p class="champ_erreur">{{ erreurs.couleur }}</p>
+					{% endif %}
+				</div>
+
+				<div class="champ">
+					<label for="energie">Énergie</label>
+
+					{# Énergie #}
+					{% set libelles_energie = {
+            'ESSENCE': 'Essence',
+            'DIESEL': 'Diesel',
+            'ETHANOL': 'Éthanol',
+            'HYBRIDE': 'Hybride',
+            'ELECTRIQUE': 'Électrique'
+          } %}
+
+					<select id="energie" name="energie" required>
+						{% for e in ['ESSENCE','DIESEL','ETHANOL','HYBRIDE','ELECTRIQUE'] %}
+							<option value="{{ e }}" {% if valeurs.energie|default('ESSENCE') == e %} selected {% endif %}>
+								{{ libelles_energie[e] }}
+							</option>
+						{% endfor %}
+					</select>
+
+					{% if erreurs.energie is defined %}
+						<p class="champ_erreur">{{ erreurs.energie }}</p>
+					{% endif %}
+				</div>
+
+				<div class="champ">
+					<label for="nb_places">Places</label>
+
+					{# Places : 1 à 4. Si rien n’est fourni, je mets 1 par défaut. #}
+					<select id="nb_places" name="nb_places" required>
+						{% for n in 1..4 %}
+							<option value="{{ n }}" {% if valeurs.nb_places|default(1) == n %} selected {% endif %}>
+								{{ n }}
+							</option>
+						{% endfor %}
+					</select>
+
+					{% if erreurs.nb_places is defined %}
+						<p class="champ_erreur">{{ erreurs.nb_places }}</p>
+					{% endif %}
+				</div>
+
+				<div
+					class="actions_formulaire">
+					{# Annuler #}
+					<a class="lien_annuler" href="{{ path('gerer_vehicules') }}">Annuler</a>
+
+					{# Enregistrer #}
+					<button class="bouton_principal" type="submit">Enregistrer</button>
+				</div>
+			</form>
+		</section>
+	</main>
+{% endblock %}

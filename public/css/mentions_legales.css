@@ -1,0 +1,71 @@
+/* public/css/mentions_legales.css */
+
+/* Page : centrée */
+.page_mentions{
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px;
+}
+
+/* Panneau */
+.panneau_mentions{
+  width: 100%;
+  max-width: 1060px;
+  padding: 34px 40px;
+
+  background: var(--surface_beige);
+  color: var(--fond_principal);
+
+  border: 1px solid var(--bordure);
+  border-radius: 12px;
+  box-shadow: 0 0 18px rgba(0,0,0,0.30);
+}
+
+.panneau_mentions h1{
+  margin: 0 0 10px;
+  font-size: 40px;
+  line-height: 1.1;
+  letter-spacing: -0.2px;
+}
+
+.mentions_intro{
+  margin: 0 0 18px;
+}
+
+.separateur_mentions{
+  border: 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.12);
+  margin: 18px 0 22px;
+}
+
+.mentions_bloc{
+  margin: 0 0 18px;
+}
+
+.mentions_titre{
+  margin: 0 0 8px;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.mentions_texte{
+  margin: 0 0 8px;
+}
+
+.mentions_texte a{
+  color: inherit;
+}
+
+/* Responsive */
+
+@media (max-width: 900px){
+  .panneau_mentions{
+    padding: 26px 18px;
+  }
+
+  .panneau_mentions h1{
+    font-size: 32px;
+  }
+}

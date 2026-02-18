@@ -1,0 +1,350 @@
+/* public/css/espace_employe.css */
+/*
+  PLAN (espace employé) :
+  1) Page + panneau beige centré (cohérent avec la charte)
+  2) En-tête + onglets
+  3) Messages flash
+  4) Listes + cartes (infos à gauche / actions à droite)
+  5) Badges + méta + icônes (mask)
+  6) Boutons (secondaire / valider / refuser) + états
+  7) Blocs "détail" (commentaire, listes simples)
+  8) Responsive
+*/
+
+/* PAGE */
+
+.page_espace_employe{
+  padding: 48px 16px;
+  box-sizing: border-box;
+}
+
+/* PANNEAU */
+
+.panneau_espace_employe{
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  background: var(--surface_beige);
+  border: 1px solid rgba(199,195,184,0.65);
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.25);
+  padding: 28px;
+  box-sizing: border-box;
+  color: #0F172A;
+}
+
+.entete_espace_employe{
+  margin-bottom: 14px;
+}
+
+.entete_espace_employe h1{
+  margin: 0 0 6px;
+}
+
+.entete_espace_employe p{
+  margin: 0;
+}
+
+/* FLASH */
+
+.zone_flash{
+  margin: 16px 0 6px;
+  display: grid;
+  gap: 10px;
+}
+
+.flash{
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15,23,42,0.12);
+  font-weight: 600;
+}
+
+.flash_succes{ background: rgba(107,142,122,0.25); }
+.flash_avertissement{ background: rgba(191,169,122,0.25); }
+.flash_erreur{ background: rgba(155,79,79,0.18); }
+
+/* ONGLET */
+
+.onglets_employe{
+  display: flex;
+  gap: 22px;
+  margin: 18px 0 22px;
+  border-bottom: 1px solid rgba(15,23,42,0.12);
+}
+
+.onglet{
+  padding: 10px 2px;
+  text-decoration: none;
+  color: rgba(15,23,42,0.55);
+  font-weight: 700;
+  border-bottom: 3px solid transparent;
+}
+
+.onglet:hover{
+  color: #0F172A;
+}
+
+.onglet.actif{
+  color: #0F172A;
+  border-bottom-color: var(--action_principale);
+}
+
+/* LISTE */
+
+.bloc_liste{
+  display: grid;
+  gap: 16px;
+}
+
+.etat_vide{
+  margin: 0;
+  padding: 16px;
+  background: rgba(255,255,255,0.65);
+  border: 1px dashed rgba(15,23,42,0.18);
+  border-radius: 14px;
+}
+
+/* CARTE */
+
+.carte_item{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+
+  background: #ffffff;
+  border: 1px solid rgba(15,23,42,0.10);
+  border-radius: 14px;
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+.carte_gauche{
+  min-width: 0;
+}
+
+.carte_actions{
+  display: flex;
+  flex-direction: column;    
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 10px;
+  min-width: 180px;
+}
+
+
+.carte_actions form{
+  margin: 0;
+}
+
+.ligne_titre{
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.note,
+.libelle_incident{
+  font-weight: 800;
+}
+
+/* BADGES */
+
+.badge{
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.12);
+  background: rgba(15,23,42,0.05);
+}
+
+.badge_attente{
+  background: rgba(191,169,122,0.28);
+}
+
+/* META */
+
+.meta{
+  display: grid;
+  gap: 8px;
+  color: rgba(15,23,42,0.72);
+  font-size: 14px;
+}
+
+.meta_ligne{
+  display: flex;
+  align-items: flex-start; 
+  gap: 10px;
+  min-height: 22px;
+}
+
+.meta_ligne span{
+  min-width: 0;
+}
+
+/* ICÔNES (mask) */
+.icone{
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  flex: 0 0 18px;
+
+  background-color: var(--action_principale);
+
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+.icone_avatar{
+  -webkit-mask-image: url("/icones/avatar.svg");
+  mask-image: url("/icones/avatar.svg");
+}
+
+.icone_direction{
+  -webkit-mask-image: url("/icones/direction.svg");
+  mask-image: url("/icones/direction.svg");
+}
+
+.icone_cadran{
+  -webkit-mask-image: url("/icones/cadran.svg");
+  mask-image: url("/icones/cadran.svg");
+}
+
+.icone_valide{
+  -webkit-mask-image: url("/icones/valide.svg");
+  mask-image: url("/icones/valide.svg");
+}
+
+.icone_x{
+  -webkit-mask-image: url("/icones/x.svg");
+  mask-image: url("/icones/x.svg");
+}
+
+.icone_alerte{
+  background-color: var(--etat_erreur);
+  -webkit-mask-image: url("/icones/alerte.svg");
+  mask-image: url("/icones/alerte.svg");
+}
+
+.icone_covoit{
+  -webkit-mask-image: url("/icones/covoit.svg");
+  mask-image: url("/icones/covoit.svg");
+}
+
+.icone_oeil{
+  -webkit-mask-image: url("/icones/oeil.svg");
+  mask-image: url("/icones/oeil.svg");
+}
+
+/* BOUTONS*/
+
+.bouton_action{
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(15,23,42,0.12);
+  background: rgba(15,23,42,0.06);
+  color: #0F172A;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.bouton_action:hover{
+  filter: brightness(0.98);
+}
+
+.bouton_action:disabled{
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bouton_action .icone{
+  background-color: currentColor;
+}
+
+.bouton_secondaire{
+  background: rgba(15,23,42,0.07);
+}
+
+.bouton_valider{
+  background: var(--action_principale);
+  color: var(--texte_principal);
+  border-color: rgba(199,195,184,0.35);
+}
+
+.bouton_valider:hover{
+  background: var(--action_survol);
+  filter: none;
+}
+
+.bouton_refuser{
+  background: rgba(155,79,79,0.92);
+  color: var(--texte_principal);
+  border-color: rgba(155,79,79,0.25);
+}
+
+.bouton_refuser:hover{
+  filter: brightness(0.95);
+}
+
+/* Mini texte utilitaire  */
+
+.texte_mini{
+  font-size: 12px;
+  color: rgba(15,23,42,0.60);
+}
+
+/* BLOCS DÉTAIL */
+
+.bloc_texte{
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(15,23,42,0.10);
+}
+
+.titre_secondaire{
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+
+.paragraphe{
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.liste_simple{
+  margin: 0;
+  padding-left: 18px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px){
+  .carte_item{
+    grid-template-columns: 1fr;
+  }
+
+  .carte_actions{
+    min-width: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .bouton_action{
+    width: auto;
+  }
+}

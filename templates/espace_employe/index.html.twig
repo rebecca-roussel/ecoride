@@ -1,0 +1,198 @@
+{# templates/espace_employe/index.html.twig #}
+{# PLAN (espace employé) :
+  1) Héritage : base.html.twig + css espace_employe.css
+  2) En-tête : entete_utilisateur (espace connecté)
+  3) Messages flash : visibles et accessibles (aria-live)
+  4) Onglets : avis / signalements (contrôle par paramètre ?onglet=)
+  5) Listes : état vide + cartes (infos à gauche / actions à droite)
+  6) Actions en POST : CSRF obligatoire (valider/refuser/traiter)
+  7) Garde-fous Twig : on évite les crashs si une clé manque (default + is defined)
+#}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Espace employé{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/espace_employe.css') }}">
+{% endblock %}
+
+{% block entete %}
+  {% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+{% block body %}
+<main class="page_espace_employe">
+  <section class="panneau_espace_employe">
+
+    <header class="entete_espace_employe">
+      <h1>Espace employé</h1>
+      <p class="texte_secondaire">Modération des avis et gestion des signalements</p>
+    </header>
+
+    {# Messages flash #}
+    <div class="zone_flash" aria-live="polite">
+      {% for type, messages in app.flashes %}
+        {% for message in messages %}
+          <div class="flash flash_{{ type|e }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+<nav class="onglets_employe" aria-label="Onglets espace employé">
+  <a class="onglet {{ onglet == 'avis' ? 'actif' : '' }}"
+     href="{{ path('espace_employe', { onglet: 'avis' }) }}">
+    Avis à modérer
+  </a>
+
+  <a class="onglet {{ onglet == 'signalements' ? 'actif' : '' }}"
+     href="{{ path('espace_employe', { onglet: 'signalements' }) }}">
+    Signalements
+  </a>
+</nav>
+
+
+    {# ONGLET : AVIS #}
+    {% if onglet == 'avis' %}
+      <section class="bloc_liste" aria-label="Liste des avis à modérer">
+        {% if avis|default([])|length == 0 %}
+          <p class="etat_vide">Aucun avis en attente.</p>
+        {% else %}
+          {% for a in avis %}
+            <article class="carte_item">
+              <div class="carte_gauche">
+                <div class="ligne_titre">
+                  <span class="badge badge_attente">En attente</span>
+                  <strong class="note">{{ a.note|default(0) }}/5</strong>
+                </div>
+
+                <div class="meta">
+                  <div class="meta_ligne">
+                    <span class="icone icone_avatar" aria-hidden="true"></span>
+                    <span>{{ a.pseudo_passager|default('') }}</span>
+                  </div>
+
+                  <div class="meta_ligne">
+                    <span class="icone icone_direction" aria-hidden="true"></span>
+                    <span>{{ a.ville_depart|default('') }} → {{ a.ville_arrivee|default('') }}</span>
+                  </div>
+
+                  <div class="meta_ligne">
+                    <span class="icone icone_cadran" aria-hidden="true"></span>
+                    <span>{{ a.date_depot|default('') }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="carte_actions">
+                {# Bouton détail : seulement si l'id est présent #}
+                {% if a.id_avis is defined and a.id_avis %}
+                  <a class="bouton_action bouton_secondaire"
+                     href="{{ path('espace_employe_avis_detail', { idAvis: a.id_avis }) }}">
+                    Détail
+                  </a>
+                {% else %}
+                  <span class="texte_mini">Détail indisponible</span>
+                {% endif %}
+
+                <form method="post" action="{{ path('espace_employe_avis_valider') }}">
+                  <input type="hidden" name="id_avis" value="{{ a.id_avis|default(0) }}">
+                  <input type="hidden" name="_token" value="{{ csrf_token('avis_valider_' ~ (a.id_avis|default(0))) }}">
+                  <button class="bouton_action bouton_valider" type="submit">
+                    <span class="icone icone_valide" aria-hidden="true"></span>
+                    Valider
+                  </button>
+                </form>
+
+                <form method="post" action="{{ path('espace_employe_avis_refuser') }}">
+                  <input type="hidden" name="id_avis" value="{{ a.id_avis|default(0) }}">
+                  <input type="hidden" name="_token" value="{{ csrf_token('avis_refuser_' ~ (a.id_avis|default(0))) }}">
+                  <button class="bouton_action bouton_refuser" type="submit">
+                    <span class="icone icone_x" aria-hidden="true"></span>
+                    Refuser
+                  </button>
+                </form>
+              </div>
+            </article>
+          {% endfor %}
+        {% endif %}
+      </section>
+    {% endif %}
+
+    {# ONGLET : SIGNALEMENTS #}
+    {% if onglet == 'signalements' %}
+      <section class="bloc_liste" aria-label="Liste des signalements">
+        {% if signalements|default([])|length == 0 %}
+          <p class="etat_vide">Aucun signalement en attente.</p>
+        {% else %}
+          {% for s in signalements %}
+            <article class="carte_item">
+              <div class="carte_gauche">
+                <div class="ligne_titre">
+                  <span class="badge badge_attente">En attente</span>
+                  <strong class="libelle_incident">{{ s.libelle|default('Signalement') }}</strong>
+                </div>
+
+                <div class="meta">
+                  <div class="meta_ligne">
+                    <span class="icone icone_alerte" aria-hidden="true"></span>
+                    <span>
+                      Chauffeur :
+                      <strong>{{ s.pseudo_chauffeur|default('') }}</strong>
+                    </span>
+                  </div>
+
+                  {# Passager #}
+                  {% if s.pseudo_passager is defined and s.pseudo_passager|trim != '' %}
+                    <div class="meta_ligne">
+                      <span class="icone icone_avatar" aria-hidden="true"></span>
+                      <span>
+                        Passager :
+                        <strong>{{ s.pseudo_passager }}</strong>
+                      </span>
+                    </div>
+                  {% endif %}
+
+                  <div class="meta_ligne">
+                    <span class="icone icone_direction" aria-hidden="true"></span>
+                    <span>{{ s.ville_depart|default('') }} → {{ s.ville_arrivee|default('') }}</span>
+                  </div>
+
+                  <div class="meta_ligne">
+                    <span class="icone icone_cadran" aria-hidden="true"></span>
+                    <span>{{ s.date_depart|default('') }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="carte_actions">
+                {# Bouton détail incident #}
+                {% if s.id_covoiturage is defined and s.id_covoiturage %}
+                  <a class="bouton_action bouton_secondaire"
+                     href="{{ path('espace_employe_incident_detail', { idCovoiturage: s.id_covoiturage }) }}">
+                    Détail
+                  </a>
+                {% else %}
+                  <span class="texte_mini">Détail indisponible</span>
+                {% endif %}
+
+                <form method="post" action="{{ path('espace_employe_incident_traite') }}">
+                  <input type="hidden" name="id_covoiturage" value="{{ s.id_covoiturage|default(0) }}">
+                  <input type="hidden" name="_token" value="{{ csrf_token('incident_traite_' ~ (s.id_covoiturage|default(0))) }}">
+                  <button class="bouton_action bouton_valider" type="submit">
+                    <span class="icone icone_valide" aria-hidden="true"></span>
+                    Marquer comme traité
+                  </button>
+                </form>
+              </div>
+            </article>
+          {% endfor %}
+        {% endif %}
+      </section>
+    {% endif %}
+
+  </section>
+</main>
+{% endblock %}

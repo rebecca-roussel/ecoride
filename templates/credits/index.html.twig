@@ -1,0 +1,81 @@
+{# templates/credits/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes crédits
+{% endblock %}
+
+{% block stylesheets %}
+	{{ parent() }}
+	<link rel="stylesheet" href="{{ asset('css/credits.css') }}">
+{% endblock %}
+
+{% block entete %}
+	{% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+{% block body %}
+	{# Valeurs de secours #}
+	{% set solde_credits = solde_credits|default(0) %}
+	{% set operations = operations|default([]) %}
+
+	<main class="page_credits">
+		<section class="panneau_credits" aria-labelledby="titre_credits">
+
+			<header class="entete_credits">
+				<h1 id="titre_credits">Mes crédits</h1>
+				<p class="texte_secondaire">Consultez votre solde et l’historique de vos opérations</p>
+			</header>
+
+			<div class="carte_solde" aria-label="Solde actuel">
+				<div class="carte_solde_texte">
+					<p class="carte_solde_label">Solde actuel</p>
+					<p class="carte_solde_valeur">{{ solde_credits }}
+						crédits</p>
+				</div>
+
+				<span class="pastille_icone" aria-hidden="true">
+					<span class="icone_masque icone_credits"></span>
+				</span>
+			</div>
+
+			<h2 class="titre_operations">Historique des opérations</h2>
+
+			{% if operations|length == 0 %}
+				<p class="texte_secondaire">Aucune opération pour le moment.</p>
+			{% else %}
+				<div class="liste_operations">
+					{% for op in operations %}
+						{% set montant = op.montant_credits|default(0) %}
+						{% set est_gain = montant >= 0 %}
+
+						<article class="operation">
+							<div class="operation_gauche">
+								<span class="pastille_operation" aria-hidden="true">
+									<span class="icone_masque {{ est_gain ? 'icone_hausse' : 'icone_baisse' }}"></span>
+								</span>
+
+								<div class="operation_texte">
+									<p class="operation_libelle">
+										{{ op.libelle|default('Opération') }}
+										{% if op.ville_depart is defined and op.ville_arrivee is defined %}
+											{{ ' ' ~ op.ville_depart ~ ' → ' ~ op.ville_arrivee }}
+										{% endif %}
+									</p>
+
+									<p class="operation_date texte_mini texte_secondaire">
+										{{ op.date_mouvement ? op.date_mouvement|date('d/m/Y') : '—' }}
+									</p>
+								</div>
+							</div>
+
+							<p class="operation_montant {{ est_gain ? 'montant_positif' : 'montant_negatif' }}">
+								{{ est_gain ? '+' : '' }}{{ montant }}
+							</p>
+						</article>
+					{% endfor %}
+				</div>
+			{% endif %}
+
+		</section>
+	</main>
+{% endblock %}

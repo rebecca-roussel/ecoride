@@ -1,0 +1,193 @@
+/* public/css/vehicules.css */
+/*
+  A FAIRE (mise en forme vehicules.css) :
+
+  1) Page
+     - garder fond global sombre (global.css)
+     - centrer un grand panneau beige
+
+  2) Panneau beige
+     - surface_beige + bordure + arrondis
+     - ombre douce
+     - texte foncé à l’intérieur
+
+  3) Cartes véhicule
+     - une carte blanche arrondie
+     - grille 5 colonnes
+     - actions à droite (crayon / poubelle)
+     - fidèle à la maquette : boutons icône en pastille
+
+  4) Bouton "Ajouter un véhicule"
+     - large, vert (action_principale), centré, comme maquette
+*/
+
+.page_vehicules{
+  padding: 60px 18px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+}
+
+.panneau_vehicules{
+  width: min(1100px, 100%);
+  background: var(--surface_beige);
+  border: 1px solid rgba(199,195,184,0.65);
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.25);
+  padding: 28px;
+  box-sizing: border-box;
+  color: #0F172A; 
+
+ 
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 22px;
+}
+
+
+.entete_panneau h1{
+  margin: 0 0 6px 0;
+}
+
+.entete_panneau .texte_secondaire{
+  margin: 0;
+  color: rgba(15, 23, 42, 0.65);
+}
+
+.message{
+  margin: 14px 0 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.message_succes{
+  background: rgba(107,142,122,0.20);
+  border: 1px solid rgba(107,142,122,0.45);
+}
+
+.message_erreur{
+  background: rgba(155,79,79,0.15);
+  border: 1px solid rgba(155,79,79,0.35);
+}
+
+.liste_vehicules{
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.etat_vide{
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(199,195,184,0.65);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.carte_vehicule{
+  background: #FFFFFF;
+  border: 1px solid rgba(199,195,184,0.75);
+  border-radius: 14px;
+  padding: 16px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.grille_infos{
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(110px, 1fr));
+  gap: 10px 18px;
+}
+
+.bloc_info{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.libelle{
+  font-size: 13px;
+  color: rgba(15, 23, 42, 0.60);
+}
+
+.valeur{
+  font-weight: 700;
+  font-size: 16px;
+  color: #0F172A;
+}
+
+.actions{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bouton_icone{
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(199,195,184,0.75);
+  background: #EEF0F2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.bouton_icone img{
+  width: 18px;
+  height: 18px;
+}
+
+.bouton_icone_danger{
+  background: #F3E9E9;
+  border-color: rgba(155,79,79,0.35);
+}
+
+.form_suppression{
+  margin: 0;
+}
+
+.zone_action_principale{
+  margin-top: 22px;
+}
+
+.bouton_ajouter{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--action_principale);
+  color: var(--texte_principal);
+  border: 1px solid rgba(199,195,184,0.35);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.bouton_ajouter:hover{
+  background: var(--action_survol);
+}
+
+.plus{
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* RESPONSIVE */ 
+
+@media (max-width: 900px){
+  .panneau_vehicules{ padding: 20px; }
+  .carte_vehicule{ align-items: flex-start; }
+  .grille_infos{
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+}

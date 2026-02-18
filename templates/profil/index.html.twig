@@ -1,0 +1,84 @@
+{# templates/profil/index.html.twig #}
+{# Plan :
+  1) En-tête : base.html.twig (on utilise l’en-tête utilisateur)
+  2) Panneau central (surface beige)
+  3) Titre : "Gérer mon profil"
+  4) Zone avatar :
+     - photo ronde
+     - bouton "Modifier la photo" (pictogramme)
+  5) Formulaire :
+     - pseudo (éditable)
+     - email (éditable)
+     - statut (lecture seule)
+     - bouton principal "Enregistrer les modifications"
+#}
+
+{% extends 'base.html.twig' %}
+	{% block title %}
+Gérer mon profil - EcoRide
+{% endblock %}
+
+	{% block stylesheets %}
+	{{ parent() }}
+<link rel="stylesheet" href="{{ asset('css/profil.css') }}"> {% endblock %}
+
+{% block entete %}
+	{% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+{% block body %}
+	<main class="page_profil">
+		<section class="panneau_profil" aria-labelledby="titre_profil">
+
+			<h1 id="titre_profil" class="profil_titre">Gérer mon profil</h1>
+
+			<div class="bloc_avatar">
+				<img
+				class="profil_avatar" src="{{ donnees.photo is defined and donnees.photo ? donnees.photo : asset('icones/avatar.svg') }}" alt="Photo de profil" loading="lazy">
+
+				{# Formulaire dédié à la photo #}
+				<form class="profil_action_photo" method="post" action="{{ path('profil') }}" enctype="multipart/form-data">
+					<input type="hidden" name="action" value="photo">
+
+					<input class="champ_fichier" type="file" id="photo_profil" name="photo_profil" accept="image/*">
+
+
+					<label class="bouton_secondaire" for="photo_profil">
+						<span class="bouton_icone_masque" aria-hidden="true"></span>
+						Modifier ma photo de profil
+					</label>
+				</div>
+			</div>
+
+			<hr class="separateur_profil">
+
+			<form class="formulaire_profil" method="post" action="#">
+				<div class="champ">
+					<label for="pseudo">Pseudo</label>
+					<input id="pseudo" name="pseudo" type="text" value="{{ donnees.pseudo ?? 'EcoRider' }}" autocomplete="nickname">
+				</div>
+
+				<div class="champ">
+					<label for="email">Email</label>
+					<input id="email" name="email" type="email" value="{{ donnees.email ?? '' }}" autocomplete="email">
+				</div>
+
+				<div class="champ">
+					<label for="statut">Statut du compte</label>
+					<input id="statut" name="statut" type="text" value="{{ donnees.statut ?? 'Actif' }}" readonly>
+				</div>
+
+				<button class="bouton_principal bouton_enregistrer" type="submit">
+					Enregistrer mes modifications
+				</button>
+			</form>
+
+		</section>
+	</main>
+
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	<script src="{{ asset('js/profil.js') }}"></script>
+{% endblock %}

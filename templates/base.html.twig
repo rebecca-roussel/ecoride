@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title>
+			{% block title %}
+				EcoRide
+			{% endblock %}
+		</title>
+
+		<link rel="stylesheet" href="{{ asset('css/global.css') }}">
+		<link rel="stylesheet" href="{{ asset('css/accueil.css') }}"> {% block stylesheets %}{% endblock %}
+
+		</head>
+
+		<body>
+
+			{# En-tête conditionné #}
+			{% block entete %}
+				{% set est_connecte = app.session is not null and app.session.get('utilisateur_id') is not null %}
+
+				{% if est_connecte %}
+					{% include 'fragments/entete_utilisateur.html.twig' %}
+				{% else %}
+					{% include 'fragments/entete_public.html.twig' %}
+				{% endif %}
+			{% endblock %}
+
+
+			{% block body %}{% endblock %}
+
+			{# Pied de page commun #}
+			{% block pied_de_page %}
+				{% include 'fragments/pied_de_page.html.twig' %}
+			{% endblock %}
+
+			{# JS commun menu mobile #}
+			<script src="{{ asset('js/menu_navigation.js') }}"></script>
+
+			{% block javascripts %}{% endblock %}
+
+		</body>
+	</html>

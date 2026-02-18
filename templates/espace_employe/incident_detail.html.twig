@@ -1,0 +1,124 @@
+{# templates/espace_employe/incident_detail.html.twig #}
+{# PLAN (détail incident) :
+  1) Héritage + css espace_employe.css
+  2) Panneau beige centré
+  3) 1 carte : même structure que la liste (réutilise le CSS)
+  4) Contexte : trajet + chauffeur + passagers
+  5) Contenu : commentaire incident
+  6) Actions : marquer traité (POST + CSRF) + retour
+  7) Garde-fous : incident absent -> message + retour
+#}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Détail signalement{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/espace_employe.css') }}">
+{% endblock %}
+
+{% block entete %}
+  {% include 'fragments/entete_utilisateur.html.twig' %}
+{% endblock %}
+
+{% block body %}
+<main class="page_espace_employe page_espace_employe_detail">
+  <section class="panneau_espace_employe">
+
+    <header class="entete_espace_employe">
+      <h1>Détail d’un signalement</h1>
+      <p class="texte_secondaire">Incident ouvert à traiter</p>
+    </header>
+
+    {% if incident is not defined or incident is empty %}
+      <p class="etat_vide">Signalement introuvable ou déjà traité.</p>
+
+      <a class="bouton_action bouton_secondaire"
+         href="{{ path('espace_employe', { onglet: 'signalements' }) }}">
+        Retour liste
+      </a>
+    {% else %}
+      <section class="bloc_liste" aria-label="Détail signalement">
+        <article class="carte_item">
+          <div class="carte_gauche">
+            <div class="ligne_titre">
+              <span class="badge badge_attente">En attente</span>
+              <strong class="libelle_incident">{{ incident.libelle|default('Signalement') }}</strong>
+            </div>
+
+            <div class="meta">
+              <div class="meta_ligne">
+                <span class="icone icone_alerte" aria-hidden="true"></span>
+                <span>
+                  Chauffeur :
+                  <strong>{{ incident.pseudo_chauffeur|default('') }}</strong>
+                  <span class="texte_secondaire">({{ incident.email_chauffeur|default('') }})</span>
+                </span>
+              </div>
+
+              <div class="meta_ligne">
+                <span class="icone icone_direction" aria-hidden="true"></span>
+                <span>{{ incident.ville_depart|default('') }} → {{ incident.ville_arrivee|default('') }}</span>
+              </div>
+
+              <div class="meta_ligne">
+                <span class="icone icone_cadran" aria-hidden="true"></span>
+                <span>Départ : {{ incident.date_depart|default('') }}</span>
+              </div>
+
+              <div class="meta_ligne">
+                <span class="icone icone_cadran" aria-hidden="true"></span>
+                <span>Statut : {{ incident.statut|default('') }}</span>
+              </div>
+            </div>
+
+            <div class="bloc_texte">
+              <h2 class="titre_secondaire">Commentaire du signalement</h2>
+
+              {% set commentaire = incident.incident_commentaire|default('')|trim %}
+              {% if commentaire == '' %}
+                <p class="texte_secondaire">Aucun commentaire (cas rare).</p>
+              {% else %}
+                <p class="paragraphe">{{ commentaire }}</p>
+              {% endif %}
+            </div>
+
+            <div class="bloc_texte">
+              <h2 class="titre_secondaire">Passagers concernés</h2>
+
+              {% if incident.passagers|default([])|length == 0 %}
+                <p class="texte_secondaire">Aucun passager actif sur ce covoiturage.</p>
+              {% else %}
+                <ul class="liste_simple">
+                  {% for p in incident.passagers %}
+                    <li><strong>{{ p.pseudo|default('') }}</strong> <span class="texte_secondaire">({{ p.email|default('') }})</span></li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="carte_actions">
+            <a class="bouton_action bouton_secondaire"
+               href="{{ path('espace_employe', { onglet: 'signalements' }) }}">
+              Retour liste
+            </a>
+
+            <form method="post" action="{{ path('espace_employe_incident_traite') }}">
+              <input type="hidden" name="id_covoiturage" value="{{ incident.id_covoiturage|default(0) }}">
+              <input type="hidden" name="_token" value="{{ csrf_token('incident_traite_' ~ (incident.id_covoiturage|default(0))) }}">
+              <button class="bouton_action bouton_valider" type="submit">
+                <span class="icone icone_valide" aria-hidden="true"></span>
+                Marquer comme traité
+              </button>
+            </form>
+          </div>
+        </article>
+      </section>
+    {% endif %}
+
+  </section>
+</main>
+{% endblock %}
+
