@@ -51,6 +51,36 @@ CREATE TABLE utilisateur (
   UNIQUE (email)
 );
 
+/* Table mot de passe 
+*/
+
+-- Table technique : réinitialisation de mot de passe (jetons hashés + expiration)
+CREATE TABLE reinitialisation_mot_de_passe (
+  id_reinitialisation INTEGER GENERATED ALWAYS AS IDENTITY,
+  id_utilisateur INTEGER NOT NULL,
+
+  -- On stocke le hash (sha256 hex => 64 caractères), jamais le jeton en clair.
+  jeton_hash CHAR(64) NOT NULL,
+
+  date_creation TIMESTAMP NOT NULL DEFAULT now(),
+  date_expiration TIMESTAMP NOT NULL,
+  date_utilisation TIMESTAMP NULL,
+
+  PRIMARY KEY (id_reinitialisation),
+
+  CONSTRAINT fk_reinitialisation_utilisateur
+    FOREIGN KEY (id_utilisateur) REFERENCES utilisateur(id_utilisateur) ON DELETE CASCADE,
+
+  CONSTRAINT uq_reinitialisation_jeton_hash UNIQUE (jeton_hash)
+);
+
+CREATE INDEX idx_reinitialisation_utilisateur
+  ON reinitialisation_mot_de_passe (id_utilisateur);
+
+CREATE INDEX idx_reinitialisation_expiration
+  ON reinitialisation_mot_de_passe (date_expiration);
+
+
 /*
   Table voiture
 */

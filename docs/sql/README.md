@@ -22,7 +22,7 @@ Il doit être exécuté en premier.
 
 ### 02_donnees_demo.sql
 
-Ce script permet d’insérer des données de démonstration cohérentes avec le modèle :
+Ce script insère des données de démonstration cohérentes avec le modèle :
 
 - utilisateurs et rôles (administrateur, employé),
 - véhicules,
@@ -30,9 +30,9 @@ Ce script permet d’insérer des données de démonstration cohérentes avec le
 - participations,
 - avis.
 
-Ces données servent uniquement à illustrer le fonctionnement de l’application et à permettre les vérifications.
+Ces données servent à illustrer le fonctionnement de l’application et à faciliter les vérifications.
 
-Il doit être exécuté après le script de création du schéma.
+Mot de passe commun des comptes de démonstration : **Ecoride2026!**
 
 ---
 
@@ -48,18 +48,18 @@ Ce script contient une série de requêtes `SELECT` permettant de vérifier :
 
 Ces requêtes servent de **preuves de cohérence** entre les tables et s’appuient sur les clés étrangères définies dans le schéma.
 
-Les alias utilisés dans les requêtes suivent une convention simple :
+Convention d’alias utilisée :
 
-- les 4 premières lettres du nom de la table (ex. `util`, `voit`, `part`, `avis`),
+- les 4 premières lettres du nom de la table (ex. util, voit, part, avis),
   afin d’améliorer la lisibilité dans un contexte pédagogique.
 
 ---
 
-### capture_ecran_requetes_sql/
+### capture_ecran_requetes.sql
 
-Ce dossier contient les captures d’écran des résultats obtenus dans DBeaver lors de l’exécution des requêtes de vérification.
+Ce fichier regroupe (ou référence) les captures d’écran des résultats obtenus lors de l’exécution des requêtes de vérification.
 
-Elles constituent une preuve visuelle du bon fonctionnement de la base de données.
+Il constitue une preuve visuelle du bon fonctionnement de la base de données.
 
 ---
 
@@ -71,9 +71,18 @@ Elles constituent une preuve visuelle du bon fonctionnement de la base de donné
 
 ---
 
+## Exécution en environnement Docker (commande type)
+
+Depuis la racine du projet :
+
+```bash
+docker compose exec -T postgresql psql -U ecoride -d ecoride < docs/sql/01_schema.sql
+docker compose exec -T postgresql psql -U ecoride -d ecoride < docs/sql/02_donnees_demo.sql
+docker compose exec -T postgresql psql -U ecoride -d ecoride < docs/sql/03_requetes_verification.sql
+```
+
 ## Outils utilisés
 
 - PostgreSQL
-- DBeaver
 
----
+- DBeaver

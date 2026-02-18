@@ -32,60 +32,61 @@ INSERT INTO utilisateur (
 VALUES
 /* Admin */
 ('jose',     'jose@ecoride.fr',
- '$2y$10$2yW4Acq9GFz6Y1t9EwL56nGisiWgNZq6ITZM5jtgUe52RvEJgwBuN',
+ '$2y$10$Yv9ydXW2ewlFnjyY7o8e6u/Ti2e9IC5kIZ7iL9HN9dnemR.UD6D1a',
  20,
  false, false, true,
  'images/img_jose.jpg', 'ACTIF', NULL),
 
 /* Employés */
 ('sophie',   'sophie@ecoride.fr',
- '$2y$10$O6n9JEC3HqdZ6J6afU1zT0YQOaNF03vpUuT3em6KopZ9jZICffu4G',
+ '$2y$10$Yv9ydXW2ewlFnjyY7o8e6u/Ti2e9IC5kIZ7iL9HN9dnemR.UD6D1a',
  20,
  false, false, true,
  'images/img_sophie.jpg', 'ACTIF', NULL),
 
 ('thomas',   'thomas@ecoride.fr',
- '$2y$10$2yW4Acq9GFz6Y1t9EwL56nGisiWgNZq6ITZM5jtgUe52RvEJgwBuN',
+ '$2y$10$Yv9ydXW2ewlFnjyY7o8e6u/Ti2e9IC5kIZ7iL9HN9dnemR.UD6D1a',
  20,
  false, false, true,
  'images/img_thomas.jpg', 'SUSPENDU', '2026-12-16 10:00:00'),
 
 /* Utilisateurs "métier" */
 ('muriel',   'muriel@ecoride.fr',
- '$2y$10$7FgtJsThJv07In9ZMJLsCfMZyuKpslm0lcNQqEefRWi4j7c1f5S71',
+ '$2y$10$Yv9ydXW2ewlFnjyY7o8e6u/Ti2e9IC5kIZ7iL9HN9dnemR.UD6D1a',
  20,
  true,  true,  false,
  'images/img_muriel.jpg', 'ACTIF', NULL),
 
 ('benjamin', 'benjamin@ecoride.fr',
- '$2y$10$IRz1THrHZp2n5RL08ALrCFQPS6YwfuNhFLOv2mpbUrhToxYkvB0dg',
+ '$2y$10$Yv9ydXW2ewlFnjyY7o8e6u/Ti2e9IC5kIZ7iL9HN9dnemR.UD6D1a',
  20,
  true,  false, false,
  'images/img_benji.jpg', 'ACTIF', NULL),
 
 ('raoul',    'raoul@ecoride.fr',
- '$2y$10$Yj2Soc0KO67IMRebhOmM1Khzfx1hcMbm9lThEnUZd7RbIBNg1qeoe',
+ '$2y$10$Yv9ydXW2ewlFnjyY7o8e6u/Ti2e9IC5kIZ7iL9HN9dnemR.UD6D1a',
  50,
  false, true,  false,
  'images/img_raoul.jpg', 'ACTIF', NULL),
 
 ('nina',     'nina@ecoride.fr',
- '$2y$10$Yj2Soc0KO67IMRebhOmM1Khzfx1hcMbm9lThEnUZd7RbIBNg1qeoe',
+ '$2y$10$Yv9ydXW2ewlFnjyY7o8e6u/Ti2e9IC5kIZ7iL9HN9dnemR.UD6D1a',
  50,
  false, true,  false,
  'images/img_nina.jpg', 'ACTIF', NULL),
 
 ('luc',      'luc@ecoride.fr',
- '$2y$10$IRz1THrHZp2n5RL08ALrCFQPS6YwfuNhFLOv2mpbUrhToxYkvB0dg',
+ '$2y$10$Yv9ydXW2ewlFnjyY7o8e6u/Ti2e9IC5kIZ7iL9HN9dnemR.UD6D1a',
  50,
  true,  true,  false,
  'images/img_luc.jpg', 'ACTIF', NULL),
 
 ('emma',     'emma@ecoride.fr',
- '$2y$10$O6n9JEC3HqdZ6J6afU1zT0YQOaNF03vpUuT3em6KopZ9jZICffu4G',
+ '$2y$10$Yv9ydXW2ewlFnjyY7o8e6u/Ti2e9IC5kIZ7iL9HN9dnemR.UD6D1a',
  20,
  false, true,  false,
  'images/img_emma.jpg', 'SUSPENDU', '2026-12-15 09:00:00');
+-- Mot de passe démo commun : Ecoride2026! (hash bcrypt commun ci-dessus)
 
 /*
    2) RÔLES SPÉCIALISÉS
