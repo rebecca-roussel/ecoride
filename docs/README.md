@@ -1,38 +1,41 @@
-# Gestion de projet — EcoRide
+# Documentation — EcoRide
 
-Ce dossier regroupe les éléments liés à la gestion et au suivi du projet EcoRide.
+Ce dossier regroupe la documentation et les livrables du projet EcoRide.
 
-## Règle importante : liens centralisés
+## Arborescence
 
-Les liens utiles sont centralisés dans :
+- `gestion_projet/`  
+  Organisation et suivi du projet : cahier des charges, réflexion initiale, user story mapping, et une synthèse PDF.  
+  **Règle : les liens sont centralisés dans `gestion_projet/liens_gestion_projet/` (kanban + user story mapping).**
 
-- `liens_gestion_projet/`
+- `interface/`  
+  Charte graphique, maquettes et éléments liés à l’interface (UI).
 
-Éviter de dupliquer des liens dans les autres documents.  
-Si un lien doit être ajouté ou modifié, le faire dans `liens_gestion_projet/`.
+- `modelisation_donnees/`  
+  Modélisation, schémas et explications des choix (données et logique métier).
 
-## Contenu du dossier
+- `manuel_utilisation/`  
+  Manuel d’utilisation de l’application (PDF).
 
-- `cahier_des_charges/`  
-  Documents du cahier des charges.
+- `ressources/`  
+  Fichiers complémentaires (exports routes, capture Mailhog).
 
-- `reflexion_initiale/`  
-  Documents de réflexion initiale.
+- `sql/`  
+  Scripts SQL du projet (schéma, données de démonstration, requêtes de vérification).
 
-- `user_story_mapping/`  
-  Documents de user story mapping.
+- `uml/`  
+  Diagrammes UML et explications associées.
 
-- `liens_gestion_projet/`  
-  Répertoire centralisé des liens (kanban Notion et Users Story mapping Miro).
+## Points d’entrée conseillés
 
-- `justification_gestion_projet.pdf`  
-  Synthèse de gestion de projet : organisation, planning, choix de méthode et kanban.
+1. **Manuel d’utilisation** : `manuel_utilisation/`
+2. **Base de données** : `sql/` puis `modelisation_donnees/`
+3. **Interface** : `interface/`
+4. **Gestion de projet** : `gestion_projet/` (liens dans `gestion_projet/liens_gestion_projet/`)
+5. **UML** : `uml/`
 
-## Point d’entrée conseillé
+## Notes
 
-1. `justification_gestion_projet.pdf`
-2. `cahier_des_charges/`
-3. `user_story_mapping/`  
-   Les liens vers le user story mapping Miro sont dans `liens_gestion_projet/`.
-4. `liens_gestion_projet/`  
-   Liens vers le kanban et vers le user story mapping Miro.
+- Les fichiers PDF sont des livrables prêts à être consultés.
+- Les scripts SQL sont numérotés pour indiquer l’ordre d’exécution (voir `docs/sql/README.md`).
+- Les liens (kanban + user story mapping) sont centralisés dans `gestion_projet/liens_gestion_projet/`
