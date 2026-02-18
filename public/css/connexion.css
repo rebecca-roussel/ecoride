@@ -1,6 +1,6 @@
 /* public/css/connexion.css */
 /*
-  PLAN (page connexion) :
+  PLAN de mise en forme pour page connexion.css :
 
   1. centrer la carte sur la hauteur
   2. Carte fond beige, arrondis, ombre douce, largeur maîtrisée
@@ -13,6 +13,7 @@
 */
 
 /* Page */
+
 .page_connexion {
     min-height: calc(100vh - 140px);
     /* laisse respirer entête + pied */
@@ -23,6 +24,7 @@
 }
 
 /* Carte */
+
 .panneau_connexion {
     width: 100%;
     max-width: 640px;
@@ -34,6 +36,7 @@
 }
 
 /* En-tête */
+
 .connexion_entete {
     text-align: center;
     margin-bottom: 30px;
@@ -53,7 +56,8 @@
     color: rgba(15, 23, 42, 0.55);
 }
 
-/* Formulaire / champs */
+/* Formulaire */
+
 .connexion_formulaire * {
     box-sizing: border-box;
 }
@@ -91,6 +95,7 @@
 }
 
 /* Erreur */
+
 .champ_erreur {
     margin: 8px 0 0;
     font-size: 13px;
@@ -98,23 +103,25 @@
 }
 
 /* Actions sous champ */
+
 .actions_secondaires {
     margin-top: 10px;
     display: flex;
     justify-content: flex-end;
 }
 
-/* Mot de passe : champ + bouton œil dans le champ */
+/* Mot de passe */
+
 .champ_mdp {
     position: relative;
 }
 
-/* On réserve de la place à droite pour le bouton */
 .champ_mdp .champ_texte {
     padding-right: 56px;
 }
 
 /* Bouton œil */
+
 .bouton_oeil {
     position: absolute;
     right: 10px;
@@ -138,6 +145,7 @@
 }
 
 /* Survol + focus */
+
 .bouton_oeil:hover {
     background-color: #3f6b4f30;
     border-radius: 12px;
@@ -150,6 +158,7 @@
 
 
 /* Bouton principal */
+
 .bouton_principal {
     width: 100%;
     margin-top: 22px;
@@ -166,13 +175,14 @@
     cursor: pointer;
 }
 
-/* Pied */
+
 .connexion_pied {
     margin-top: 22px;
     text-align: center;
 }
 
-/* Liens (style discret) */
+/* Liens */
+
 .lien_secondaire {
     color: rgba(15, 23, 42, 0.65);
     text-decoration: underline;
@@ -183,7 +193,9 @@
     color: rgba(15, 23, 42, 0.85);
 }
 
-/* Responsive simple */
+
+/* Responsive */
+
 @media (max-width: 560px) {
     .panneau_connexion {
         padding: 34px 22px 28px;

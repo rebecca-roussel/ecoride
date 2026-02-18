@@ -24,7 +24,7 @@ final class InscriptionController extends AbstractController
     ): Response {
         $erreur = null;
 
-        /* Valeurs à ré-afficher si je retombe sur le formulaire */
+        /* Valeurs à réafficher */
         $pseudoSaisi = '';
         $emailSaisi = '';
         $roleChauffeur = false;
@@ -48,7 +48,7 @@ final class InscriptionController extends AbstractController
             } elseif (mb_strlen($motDePasse) < 8) {
                 $erreur = 'Le mot de passe doit faire au moins 8 caractères.';
             } else {
-                /* Photo optionnelle */
+
                 $photoPath = null;
 
                 /** @var UploadedFile|null $photo */

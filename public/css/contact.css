@@ -1,26 +1,28 @@
 /* public/css/contact.css */
 /*
-  A FAIRE (mise en forme contact.css) :
+  Mise en forme contact.css :
 
-  1. PAGE / CONTENEUR
+  1. PAGE :
      - garder le fond global sombre (global.css)
      - zone centrale avec padding autour
 
-  2. PANNEAU PRINCIPAL (beige)
+  2. PANNEAU PRINCIPAL :
      - panneau beige clair, bordure fine, ombre douce
      - largeur max cohérente avec le reste
 
-  3. CONTENU
+  3. CONTENU :
      - titre + texte court
      - bloc d’infos en lignes (label / valeur)
 */
 
 /* PAGE */
+
 .page_contact{
   padding: 56px 24px 56px;
 }
 
 /* PANNEAU */
+
 .panneau_contact{
   max-width: 1060px;
   margin: 0 auto;
@@ -39,18 +41,21 @@
 }
 
 /* TEXTE INTRO */
+
 .contact_texte{
   margin: 0 0 18px;
 }
 
 /* BLOC INFOS */
+
 .contact_bloc{
   margin-top: 18px;
   padding-top: 18px;
   border-top: 1px solid rgba(15, 23, 42, 0.12);
 }
 
-/* LIGNE : libellé / valeur */
+/* LIGNE */
+
 .contact_ligne{
   margin: 0 0 14px;
   display: grid;
@@ -72,7 +77,21 @@ a.contact_valeur{
   text-underline-offset: 3px;
 }
 
+.page_contact{
+  flex: 1;             
+  display: flex;
+  align-items: center; 
+  justify-content: center; 
+  padding: 56px 24px; 
+}
+
+.panneau_contact{
+  width: 100%;
+  max-width: 1060px;
+}
+
 /* RESPONSIVE */
+
 @media (max-width: 700px){
   .page_contact{
     padding: 40px 18px 40px;
@@ -88,17 +107,4 @@ a.contact_valeur{
   }
 }
 
-/* Centre le panneau dans la zone visible */
-.page_contact{
-  flex: 1;                 /* main prend l’espace restant (footer reste en bas) */
-  display: flex;
-  align-items: center;      /* centrage vertical */
-  justify-content: center;  /* centrage horizontal */
-  padding: 56px 24px;       /* ajuste ici si tu veux le panneau un poil plus bas */
-}
 
-/* Panneau */
-.panneau_contact{
-  width: 100%;
-  max-width: 1060px;
-}

@@ -130,6 +130,8 @@
   color: rgba(15, 23, 42, 0.85);
 }
 
+/*RESPONSIVE*/
+
 @media (max-width: 560px){
   .panneau_mot_de_passe_oublie{
     padding: 34px 22px 28px;

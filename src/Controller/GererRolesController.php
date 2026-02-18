@@ -42,7 +42,7 @@ final class GererRolesController extends AbstractController
         PersistanceUtilisateurPostgresql $persistanceUtilisateur,
         JournalEvenements $journalEvenements,
     ): Response {
-        // 1) Sécurité : connecté ?
+        // Sécurité : connecté ?
         $utilisateur = $sessionUtilisateur->obtenirUtilisateurConnecte();
         if ($utilisateur === null) {
             return $this->redirectToRoute('connexion');
@@ -50,11 +50,7 @@ final class GererRolesController extends AbstractController
 
         $idUtilisateur = (int) $utilisateur['id_utilisateur'];
 
-        /*
-          Valeurs d’affichage (GET) 
-          - après reconnexion, la session ne contient pas forcément les rôles
-          - obtenirDonneesTableauDeBord renvoie role_* en int (0/1)
-        */
+        /* Valeurs d’affichage */
         $donnees = $persistanceUtilisateur->obtenirDonneesTableauDeBord($idUtilisateur);
         if ($donnees === null) {
             throw $this->createNotFoundException('Utilisateur introuvable.');
@@ -63,7 +59,7 @@ final class GererRolesController extends AbstractController
         $rolePassager = ((int) ($donnees['role_passager'] ?? 0)) === 1;
         $roleChauffeur = ((int) ($donnees['role_chauffeur'] ?? 0)) === 1;
 
-        // 2) POST : traitement du formulaire
+        // POST : traitement du formulaire
         if ($requete->isMethod('POST')) {
             // 2.a) CSRF
             $csrf = (string) $requete->request->get('_csrf_token', '');
@@ -72,11 +68,11 @@ final class GererRolesController extends AbstractController
                 return $this->redirectToRoute('gerer_roles');
             }
 
-            // 2.b) Lecture des champs 
+            // Lecture des champs 
             $rolePassager = $requete->request->has('role_passager');
             $roleChauffeur = $requete->request->has('role_chauffeur');
 
-            // 2.c) pas 0 rôle
+            // pas 0 rôle
             if (!$rolePassager && !$roleChauffeur) {
                 $this->addFlash('erreur', 'Vous devez garder au moins un rôle : chauffeur ou passager.');
 
@@ -86,7 +82,7 @@ final class GererRolesController extends AbstractController
                 ]);
             }
 
-            // 2.d) Enregistrement BDD
+            // Enregistrement BDD
             try {
                 $persistanceUtilisateur->mettreAJourRoles($idUtilisateur, $roleChauffeur, $rolePassager);
             } catch (RuntimeException $exception) {
@@ -98,10 +94,10 @@ final class GererRolesController extends AbstractController
                 ]);
             }
 
-            // 2.e) Mise à jour session
+            // Mise à jour session
             $sessionUtilisateur->mettreAJourRolesUtilisateurConnecte($roleChauffeur, $rolePassager);
 
-            // 2.f) Journal MongoDB
+            // Journal MongoDB
             $journalEvenements->enregistrer(
                 'roles_mis_a_jour',
                 'utilisateur',
@@ -116,7 +112,7 @@ final class GererRolesController extends AbstractController
             return $this->redirectToRoute('gerer_roles');
         }
 
-        // 3) GET : journal + affichage
+        // GET : journal + affichage
         $journalEvenements->enregistrer(
             'page_gerer_roles_ouverte',
             'utilisateur',

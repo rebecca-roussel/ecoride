@@ -15,13 +15,12 @@ final class PersistanceCovoituragePostgresql
 
     1) Rôle de ce service
        - pont entre Symfony et PostgreSQL pour les covoiturages
-       - le SQL reste ici (pas dans les contrôleurs)
 
     2) Ce que je gère dans ce fichier
        - recherche de covoiturages avec filtres
        - détails et infos relatives au covoiturage 
        - liste d’avis valides 
-       - création d’un covoiturage planifié (publication)
+       - création d’un covoiturage planifié 
 
     3) Principe important
        - la base est la source de vérité

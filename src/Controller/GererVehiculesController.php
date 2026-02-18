@@ -20,8 +20,8 @@ final class GererVehiculesController extends AbstractController
       PLAN (GererVehiculesController) :
 
       1) Accès sécurisé
-         - utiliser SessionUtilisateur (source unique de vérité)
-         - si pas connecté : rediriger vers la connexion
+         - utiliser SessionUtilisateur 
+         - si pas connecté rediriger vers la connexion
 
       2) Afficher la page "Gérer mes véhicules"
          - demander la liste des véhicules à PersistanceVoiturePostgresql
@@ -45,7 +45,7 @@ final class GererVehiculesController extends AbstractController
     */
 
     public function __construct(
-        // Ici je reçois les outils services via l’injection de dépendances.
+
         private PersistanceVoiturePostgresql $persistanceVoiturePostgresql,
         private JournalEvenements $journalEvenements,
         private SessionUtilisateur $sessionUtilisateur
@@ -55,13 +55,12 @@ final class GererVehiculesController extends AbstractController
     #[Route('/espace/vehicules', name: 'gerer_vehicules', methods: ['GET'])]
     public function index(): Response
     {
-        // Sécurité : si l’utilisateur n’est pas connecté, je ne laisse pas accéder à l’espace.
+        // Sécurité : si l’utilisateur pas connecté, n'accède pas à l’espace.
         if (!$this->sessionUtilisateur->estConnecte()) {
             return $this->redirectToRoute('connexion');
         }
 
-        // Je récupère l’id utilisateur depuis la session.
-        // Si jamais il est absent, on redirige aussi.
+
         $idUtilisateur = $this->sessionUtilisateur->idUtilisateur();
         if ($idUtilisateur === null) {
             return $this->redirectToRoute('connexion');
@@ -77,22 +76,19 @@ final class GererVehiculesController extends AbstractController
             ]
         );
 
-        // Je récupère la liste des véhicules actifs de cet utilisateur.
-        // Actif = suppression : le véhicule existe encore en base mais il est désactivé.
         $vehicules = $this->persistanceVoiturePostgresql->listerVehiculesActifsParUtilisateur($idUtilisateur);
 
-        // Je prépare un champ “ancienneté” pour l’affichage.
+    
         foreach ($vehicules as &$vehicule) {
-            // Je force en string pour éviter les surprises.
+
             $date = (string) ($vehicule['date_1ere_mise_en_circulation'] ?? '');
 
-            // délègue le calcul à un service 
             $vehicule['anciennete_annees'] = $this->persistanceVoiturePostgresql
                 ->calculerAncienneteEnAnnees($date, $idUtilisateur);
         }
         unset($vehicule);
 
-        // envoie les données à Twig.
+
         return $this->render('vehicules/index.html.twig', [
             'vehicules' => $vehicules,
         ]);
@@ -157,7 +153,7 @@ final class GererVehiculesController extends AbstractController
 
             $this->addFlash('succes', 'Véhicule supprimé.');
         } catch (RuntimeException $e) {
-            // Je capture les erreurs métier.
+
             $this->addFlash('erreur', $e->getMessage());
         }
 

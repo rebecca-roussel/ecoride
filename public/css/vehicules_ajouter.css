@@ -60,7 +60,6 @@
   font-weight: 600;
 }
 
-/* Champs : largeur confortable + même “look” */
 .champ input,
 .champ select{
   width: 100%;
@@ -73,9 +72,7 @@
   color: var(--fond_principal);
 }
 
-/* Erreurs : déjà géré par global.css (.champ_erreur) */
 
-/* Actions : aligner les boutons */
 .actions_formulaire{
   display: flex;
   gap: 12px;
@@ -84,7 +81,6 @@
   margin-top: 6px;
 }
 
-/* Annuler : lien discret, même couleur même si déjà visité */
 .lien_annuler,
 .lien_annuler:visited{
   color: var(--fond_principal);
@@ -104,7 +100,8 @@
   border-radius: 6px;
 }
 
-/* Mobile */
+/* RESPONSIVE */
+
 @media (max-width: 900px){
   .panneau_vehicule_ajouter{
     padding: 20px;

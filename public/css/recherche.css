@@ -5,6 +5,7 @@
 */
 
 /* Zone centrale  */
+
 .zone_centrale {
     flex: 1;
     display: flex;
@@ -15,6 +16,7 @@
 }
 
 /* Carte formulaire */
+
 .carte_recherche {
     width: 100%;
     max-width: 768px;
@@ -25,6 +27,7 @@
 }
 
 /* Titre dans la carte */
+
 .titre_carte {
     margin: 0 0 32px 0;
     text-align: center;
@@ -35,6 +38,7 @@
 }
 
 /* Formulaire */
+
 .formulaire_recherche_maquette {
     display: grid;
     gap: 20px;
@@ -100,6 +104,7 @@
 }
 
 /* Suggestions géocodage */
+
 .champ_groupe,
 .groupe_champ,
 .champ{
@@ -121,6 +126,7 @@
 }
 
 /* Chaque suggestion */
+
 .suggestion_item{
   width: 100%;
   text-align: left;
@@ -150,6 +156,7 @@
 
 
 /* Responsive */
+
 @media (max-width: 900px) {
     .carte_recherche {
         padding: 28px 18px;

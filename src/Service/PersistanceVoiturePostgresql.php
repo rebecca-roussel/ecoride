@@ -15,7 +15,7 @@ final class PersistanceVoiturePostgresql
       PLAN (PersistanceVoiturePostgresql) :
 
       1) Lister les voitures actives d’un utilisateur
-         - une seule méthode “source de vérité”
+         - une seule méthode source de vérité
          - sert à “Gérer mes véhicules” et à “Publier un covoiturage”
 
       2) Trouver une voiture (sécurité : id + utilisateur)
@@ -245,11 +245,7 @@ final class PersistanceVoiturePostgresql
 
         $pdo = $this->connexionPostgresql->obtenirPdo();
 
-        /*
-          Sécurité !
-          - l’immatriculation est unique
-          - je refuse une collision (sauf le véhicule actuel)
-        */
+
         $sqlVerif = "
             SELECT 1
             FROM voiture
@@ -300,10 +296,7 @@ final class PersistanceVoiturePostgresql
 
     public function desactiverVehicule(int $idVoiture, int $idUtilisateur): void
     {
-        /*
-          - suppression logique donc désactivation
-          - on garde l’historique
-        */
+
 
         if ($idVoiture <= 0 || $idUtilisateur <= 0) {
             $this->journalEvenements->enregistrer(
@@ -364,7 +357,7 @@ final class PersistanceVoiturePostgresql
     {
         /*
           - calcul simple pour l’affichage
-          - si date invalide on renvoie 0 et on peut tracer
+          - si date invalide on renvoie 0 
         */
 
         $date = DateTimeImmutable::createFromFormat('Y-m-d', $dateYmd);

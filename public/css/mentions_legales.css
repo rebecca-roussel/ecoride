@@ -59,6 +59,7 @@
 }
 
 /* Responsive */
+
 @media (max-width: 900px){
   .panneau_mentions{
     padding: 26px 18px;

@@ -105,7 +105,7 @@ final class HistoriqueController extends AbstractController
         $utilisateur = $sessionUtilisateur->exigerUtilisateurConnecte();
         $idUtilisateur = (int) $utilisateur['id_utilisateur'];
 
-        // Fail fast : id de route invalide
+        // Si route invalide
         if ($id <= 0) {
             $this->addFlash('erreur', 'Trajet invalide.');
             $this->logRefus($journalEvenements, 'incident_formulaire_refuse', 'id_invalide', $idUtilisateur, 'covoiturage', $id);
@@ -145,7 +145,7 @@ final class HistoriqueController extends AbstractController
             return $this->redirectToRoute('historique', ['onglet' => 'participations']);
         }
 
-        // Sécurité : uniquement le passager autorisé + statut cohérent + avis pas déjà donné (règle persistance)
+        // Sécurité : uniquement le passager autorisé + statut cohérent + avis pas encore soumis
         if (!$persistance->peutDonnerAvis($idUtilisateur, $id)) {
             $this->addFlash('erreur', "Accès refusé ou avis déjà donné.");
             $this->logRefus($journalEvenements, 'satisfaction_formulaire_refuse', 'acces_interdit', $idUtilisateur, 'covoiturage', $id);
@@ -164,7 +164,7 @@ final class HistoriqueController extends AbstractController
         ]);
     }
 
-    /* ACTIONS PASSAGER (POST) */
+    /* ACTIONS PASSAGER */
 
     #[Route('/historique/annuler-participation', name: 'annuler_participation', methods: ['POST'])]
     public function annulerParticipation(
@@ -222,7 +222,7 @@ final class HistoriqueController extends AbstractController
             $erreurs['commentaire'] = 'Commentaire trop long (1000 caractères maximum).';
         }
 
-        // Si erreur on réaffiche le formulaire avec les valeurs saisies
+        // Si erreur réaffiche le formulaire avec les valeurs saisies
         if (!empty($erreurs)) {
             $this->logRefus($journalEvenements, 'satisfaction_refusee', 'parametres_invalides', $idUtilisateur, 'covoiturage', $idCovoiturage);
             return $this->render('historique/satisfaction.html.twig', [
@@ -235,7 +235,7 @@ final class HistoriqueController extends AbstractController
             ]);
         }
 
-        // Sécurité: on revalide que l'utilisateur peut bien donner avis maintenant
+        // Sécurité: revalide que l'utilisateur peut bien donner son avis au moment opportun
         if (!$persistance->peutDonnerAvis($idUtilisateur, $idCovoiturage)) {
             $this->addFlash('erreur', "Accès refusé ou avis déjà donné.");
             $this->logRefus($journalEvenements, 'satisfaction_refusee', 'acces_interdit', $idUtilisateur, 'covoiturage', $idCovoiturage);
@@ -391,7 +391,7 @@ final class HistoriqueController extends AbstractController
         // Récupération de l'id immédiate 
         $idCovoiturage = (int) $requete->request->get('id_covoiturage', 0);
 
-        // 1) Préparer la liste des emails avant
+        // Préparer la liste des emails avant
         $emailsParticipants = [];
         if ($idCovoiturage > 0) {
             try {
@@ -408,7 +408,7 @@ final class HistoriqueController extends AbstractController
             }
         }
 
-        // 2) Terminer via le helper (CSRF + id + service + logs)
+        // Terminer via le helper (CSRF + id + service + logs)
         $resultat = $this->executerActionSimple(
             $requete,
             $sessionUtilisateur,
@@ -422,7 +422,7 @@ final class HistoriqueController extends AbstractController
             'covoiturages'
         );
 
-        // 3) Envoyer les emails uniquement si succès
+        // Envoyer les emails uniquement si succès
         if ($resultat['succes'] === true) {
             foreach ($emailsParticipants as $emailDestinataire) {
                 $emailDestinataire = trim((string) $emailDestinataire);
@@ -502,8 +502,7 @@ final class HistoriqueController extends AbstractController
         return $this->redirectToRoute('historique', ['onglet' => 'covoiturages']);
     }
     /*
-     HELPER :
-     - utile pour les actions "id + csrf + service"
+     HELPER pour les actions "id + csrf + service"
      - renvoie aussi si l'action a réussi
    */
 

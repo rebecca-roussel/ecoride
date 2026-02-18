@@ -75,7 +75,7 @@ Détails du covoiturage - EcoRide
 			</div>
 		</div>
 
-		{# Départ / Arrivée #}
+		{# Départ/Arrivée #}
 		<div class="bloc_lieux">
 			<div class="lieu">
 				<h2 class="lieu_titre">Départ</h2>
@@ -124,7 +124,7 @@ Détails du covoiturage - EcoRide
 			<div class="indicateur">
 				<h3 class="indicateur_titre">Places disponibles</h3>
 
-				{# Places : j'évite les "place s" en construisant la phrase d'un coup #}
+				{# Places #}
 				{% set places = detail.nb_places_dispo|default(0) %}
 				<p class="indicateur_valeur">
 					{{ places }}
@@ -171,7 +171,7 @@ Détails du covoiturage - EcoRide
 			<div class="champ">
 				<h3 class="champ_titre">Marque</h3>
 
-				{# Marque : j'affiche joli (en base ça peut être en majuscules) #}
+				{# Marque voiture #}
 				{% set marque = detail.marque|default('') %}
 				<p class="champ_valeur">
 					{% if marque %}
@@ -185,7 +185,7 @@ Détails du covoiturage - EcoRide
 			<div class="champ">
 				<h3 class="champ_titre">Couleur</h3>
 
-				{# Couleur : pareil, affichage propre pour l'utilisateur #}
+				{# Couleur voiture #}
 				{% set couleur = detail.couleur|default('') %}
 				<p class="champ_valeur">
 					{% if couleur %}
@@ -201,9 +201,7 @@ Détails du covoiturage - EcoRide
 
 				{% set energie = detail.energie|default('') %}
 
-				{# Énergie :
-																	             - value = constante (BDD / back-end)
-																	             - texte affiché = libellé lisible (utilisateur) #}
+				{# Énergie #}
 				{% set libelles_energie = {
             'ESSENCE': 'Essence',
             'DIESEL': 'Diesel',
@@ -228,7 +226,7 @@ Détails du covoiturage - EcoRide
 				<h3 class="champ_titre">Ancienneté</h3>
 
 				{% if detail.date_1ere_mise_en_circulation %}
-					{# Ancienneté : je veux "1 an / 2 ans" sans espace bizarre #}
+					{# Ancienneté #}
 					{% set age = ('now'|date('Y')) - (detail.date_1ere_mise_en_circulation|date('Y')) %}
 					<p class="champ_valeur">
 						{{ age }}
@@ -251,7 +249,7 @@ Détails du covoiturage - EcoRide
 			</h3>
 			<ul
 				class="preferences_liste">
-				{# Non-fumeur : je teste "vrai/faux" au lieu de == 1 #}
+				{# Non-fumeur #}
 				{% if detail.est_non_fumeur %}
 					<li>Fumeurs non acceptés</li>
 				{% else %}
@@ -291,7 +289,7 @@ Détails du covoiturage - EcoRide
 								<span class="texte_mini texte_secondaire">
 									—
 									{{ avis.pseudo_auteur|default('passager') }},
-																																					                    le
+																																														                    le
 									{{ avis.date_depot ? avis.date_depot|date('d/m/Y') : '—' }}
 								</span>
 							</p>

@@ -93,6 +93,7 @@
 }
 
 /* Formulaire */
+
 .formulaire_profil{
   display: grid;
   gap: 14px;
@@ -128,7 +129,8 @@
   margin-right: auto;
 }
 
-/* Mobile */
+/* RESPONSIVE */
+
 @media (max-width: 820px){
   .panneau_profil{
     padding: 26px 18px;

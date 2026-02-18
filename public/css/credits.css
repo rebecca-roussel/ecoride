@@ -7,6 +7,7 @@
 }
 
 /* PANNEAU */
+
 .panneau_credits{
   width: min(980px, 100%);
   margin: 0 auto;
@@ -26,6 +27,7 @@
 }
 
 /* CARTE SOLDE */
+
 .carte_solde{
   margin-top: 18px;
 
@@ -67,12 +69,14 @@
 }
 
 /* TITRE LISTE */
+
 .titre_operations{
   margin-top: 22px;
   font-size: 18px;
 }
 
 /* LISTE */
+
 .liste_operations{
   margin-top: 12px;
   display: grid;
@@ -129,19 +133,20 @@
 }
 
 /* PASTILLE OPERATION */
+
 .pastille_operation{
   width: 28px;
   height: 28px;
   border-radius: 999px;
   border: 1px solid rgba(15,23,42,0.10);
   background: rgba(15,23,42,0.03);
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-/* ICÔNES : masque recolorable */
+/* ICÔNES */
+
 .icone_masque{
   width: 18px;
   height: 18px;
@@ -177,6 +182,7 @@
 }
 
 /* RESPONSIVE */
+
 @media (max-width: 900px){
   .carte_solde_valeur{ font-size: 30px; }
   .operation{ align-items: flex-start; }

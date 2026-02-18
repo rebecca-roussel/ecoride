@@ -135,7 +135,7 @@ textarea:focus-visible{
 }
 
 
-/* Bouton principal : charte (couleur, arrondi, hover, désactivé) */
+/* Bouton principal : charte graphique */
 .bouton_principal{
   padding: 12px 18px;
   background: var(--action_principale);
@@ -155,7 +155,7 @@ textarea:focus-visible{
   cursor: not-allowed;
 }
 
-/* Formulaires : texte lisible + erreurs explicites */
+/* Formulaires : texte lisible et erreurs explicites */
 input, select, textarea{
   font-size: 16px;
 }
@@ -169,7 +169,7 @@ input, select, textarea{
   border-color: var(--etat_erreur) !important;
 }
 
-/* Mobile : réduction des titres sans casser la hiérarchie */
+/* Responsive : réduction des titres sans casser la hiérarchie */
 @media (max-width: 900px){
   h1{ font-size: 28px; }
   h2{ font-size: 22px; }

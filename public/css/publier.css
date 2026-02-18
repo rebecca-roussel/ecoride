@@ -34,13 +34,11 @@
      - bouton aligné à droite (puis pleine largeur sur mobile)
 */
 
-/* Page */
 .page_publier{
   padding: 48px 16px;
   box-sizing: border-box;
 }
 
-/* Panneau beige */
 .panneau_publier{
   width: min(980px, 100%);
   margin: 0 auto;
@@ -66,7 +64,7 @@
   margin: 8px 0 0 0;
 }
 
-/* Formulaire + grille */
+/* Formulaire */
 .formulaire_publier{
   margin-top: 14px;
 }
@@ -108,13 +106,12 @@
   color: #0F172A;
 }
 
-/* Légère hauteur  */
+
 .champ input,
 .champ select{
   height: 44px;
 }
 
-/* Textarea  */
 .champ textarea{
   min-height: 92px;
   resize: vertical;
@@ -219,9 +216,8 @@
   border-color: rgba(63,93,74,0.35);
 }
 
+/* RESPONSIVE */
 
-
-/* Mobile */
 @media (max-width: 900px){
   .panneau_publier{
     padding: 18px;

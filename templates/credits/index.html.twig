@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block body %}
-	{# Valeurs de secours : évite les "Variable does not exist" côté Twig #}
+	{# Valeurs de secours #}
 	{% set solde_credits = solde_credits|default(0) %}
 	{% set operations = operations|default([]) %}
 

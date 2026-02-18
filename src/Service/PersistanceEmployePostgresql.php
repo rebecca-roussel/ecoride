@@ -31,7 +31,7 @@ final class PersistanceEmployePostgresql
     /**
      * Lister les avis dont la modération est EN_ATTENTE.
      * - On récupère l’avis + le passager + les villes du covoiturage
-     * - Limite pour éviter une liste trop longue
+     * - Limité pour éviter une liste trop longue
      *
      * @return array<int, array{
      *   id_avis:int,
@@ -48,7 +48,7 @@ final class PersistanceEmployePostgresql
         // 1) Connexion PDO 
         $pdo = $this->connexion->obtenirPdo();
 
-        // 2) Avis en attente + contexte (passager + trajet)
+        // 2) Avis en attente 
         $stmt = $pdo->prepare("
             SELECT
               a.id_avis,
@@ -195,7 +195,6 @@ final class PersistanceEmployePostgresql
             'id_avis' => $idAvis,
         ]);
 
-        // 3) rowCount > 0 => une ligne a bien été modifiée
         return $stmt->rowCount() > 0;
     }
 

@@ -35,11 +35,11 @@ Connexion - EcoRide
 				<div class="bloc_champ">
 					<label class="champ_libelle" for="email">Email</label>
 
-					{# Je ré-affiche l'email saisi en cas d'erreur (confort utilisateur) #}
+					{# Ré-affiche l'email saisi en cas d'erreur #}
 					<input
 					class="champ_texte" id="email" name="email" type="email" autocomplete="email" placeholder="exemple@domaine.fr" value="{{ email_saisi|default('')|e }}">
 
-					{# Erreur côté JS (validation format) : masquée par défaut #}
+					{# Erreur côté JS masquée par défaut #}
 					<p class="champ_erreur" id="erreur_email" aria-live="polite" hidden>
 						Adresse email invalide.
 					</p>
@@ -53,11 +53,11 @@ Connexion - EcoRide
 						<input
 						class="champ_texte" id="mot_de_passe" name="mot_de_passe" type="password" autocomplete="current-password" placeholder="••••••••">
 
-						{# Le bouton "œil" est géré par connexion.js #}
+						{# Le bouton œil #}
 						<button class="bouton_oeil" type="button" id="toggle_mot_de_passe" aria-label="Afficher le mot de passe" aria-pressed="false"></button>
 					</div>
 
-					{# Erreur côté serveur (PDO) : identifiants invalides / compte suspendu / etc... #}
+					{# Erreur côté serveur #}
 					{% if erreur %}
 						<p class="champ_erreur" role="alert">{{ erreur }}</p>
 					{% endif %}
@@ -70,7 +70,7 @@ Connexion - EcoRide
 				{# Bouton principal #}
 				<button class="bouton_principal" type="submit">Se connecter</button>
 
-				{# Optionnel : lien vers inscription #}
+				{# Lien vers inscription #}
 				<p class="connexion_pied texte_secondaire">
 					Pas encore de compte ?
 					<a class="lien_secondaire" href="{{ path('inscription') }}">Créer un compte</a>
