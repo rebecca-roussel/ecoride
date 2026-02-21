@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Créer un employé - EcoRide{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/espace_administrateur.css') }}">
+{% endblock %}
+
+{% block body %}
+<main class="page_espace_admin">
+  <section class="panneau_espace_admin panneau_espace_admin--etroit">
+
+    <header class="entete_espace_admin">
+      <h1 class="titre_espace_admin">Créer un compte employé</h1>
+      <p class="texte_secondaire">Création d’un compte interne.</p>
+    </header>
+
+    {% if erreurs is defined and erreurs|length > 0 %}
+      <div class="bloc_erreurs">
+        <ul>
+          {% for e in erreurs %}
+            <li class="champ_erreur">{{ e }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+<form method="post"
+      action="{{ path('espace_administrateur_creer_employe') }}"
+      class="form_admin"
+      novalidate>
+
+  <input type="hidden" name="_csrf" value="{{ csrf_token('creer_employe') }}">
+
+  <div class="bloc_champ">
+    <label class="champ_libelle" for="pseudo">Pseudo</label>
+    <input class="champ_texte" id="pseudo" name="pseudo" type="text"
+           value="{{ valeurs.pseudo|default('')|e }}" required>
+  </div>
+
+  <div class="bloc_champ">
+    <label class="champ_libelle" for="email">Email</label>
+    <input class="champ_texte" id="email" name="email" type="email"
+           value="{{ valeurs.email|default('')|e }}" required autocomplete="email">
+  </div>
+
+  <div class="bloc_champ">
+    <label class="champ_libelle" for="mot_de_passe">Mot de passe</label>
+    <input class="champ_texte" id="mot_de_passe" name="mot_de_passe" type="password"
+           autocomplete="new-password" required>
+  </div>
+
+  <div class="bloc_champ">
+    <label class="champ_libelle" for="confirmation">Confirmation</label>
+    <input class="champ_texte" id="confirmation" name="confirmation" type="password"
+           autocomplete="new-password" required>
+  </div>
+
+  <div class="ligne_actions_admin">
+    <button class="bouton_principal" type="submit">Créer l’employé</button>
+    <a class="lien_secondaire" href="{{ path('espace_administrateur', {onglet: 'comptes'}) }}">Annuler</a>
+  </div>
+</form>
+
+  </section>
+</main>
+{% endblock %}

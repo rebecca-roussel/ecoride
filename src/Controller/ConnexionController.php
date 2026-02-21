@@ -18,17 +18,16 @@ final class ConnexionController extends AbstractController
     /*
       PLAN (ConnexionController) :
 
-      1) Afficher la page de connexion (GET)
-         - si déjà connecté : rediriger vers le tableau de bord
-         - sinon : afficher le formulaire
+      1) Afficher la page de connexion (GET/POST)
+         - si déjà connecté : redirection selon le profil
 
-      2) Traiter le formulaire (POST)
-         a) lire et valider les champs (email / mot de passe)
-         b) chercher l’utilisateur en base par email
+      2) POST : traiter le formulaire
+         a) lire email + mot de passe
+         b) charger l’utilisateur en base par email
          c) vérifier : existe ? statut ACTIF ? mot de passe ok ?
          d) calculer les rôles (chauffeur / passager / employé / administrateur)
          e) ouvrir la session via SessionUtilisateur->connecter(...)
-         f) rediriger vers le tableau de bord
+         f) rediriger selon le profil
 
       3) Déconnexion
          - supprimer les clés de session
@@ -41,39 +40,44 @@ final class ConnexionController extends AbstractController
         ConnexionPostgresql $connexion,
         SessionUtilisateur $sessionUtilisateur,
     ): Response {
-        /* Si déjà connecté, pas de page connexion*/
+        // 1) Déjà connecté : redirection selon le profil
         if ($sessionUtilisateur->estConnecte()) {
+            if ($sessionUtilisateur->estAdmin()) {
+                return $this->redirectToRoute('espace_administrateur');
+            }
+
+            if ($sessionUtilisateur->estEmploye()) {
+                return $this->redirectToRoute('espace_employe');
+            }
+
             return $this->redirectToRoute('tableau_de_bord');
         }
 
-        // Variables d'affichage 
+        // Variables d'affichage
         $erreur = null;
         $emailSaisi = '';
 
-        /*
-          Si on reçoit le formulaire (POST), on essaie de connecter l’utilisateur
-             Sinon (GET) : on affiche juste la page.
-        */
         if ($request->isMethod('POST')) {
-            // Lecture des champs (on nettoie l’email, le mot de passe reste tel quel)
             $emailSaisi = trim((string) $request->request->get('email', ''));
             $motDePasse = (string) $request->request->get('mot_de_passe', '');
 
-            // Validation minimale
             if ($emailSaisi === '' || $motDePasse === '') {
                 $erreur = 'Email et mot de passe sont obligatoires.';
             } else {
                 try {
-                    /*
-                      Connexion à la base via notre service (PDO)
-                      - ici on fait une requête préparée pour éviter les injections SQL
-                    */
                     $pdo = $connexion->obtenirPdo();
 
                     /*
-                      On récupère l’utilisateur par email + ses infos utiles
-                      - + 2 colonnes booléennes pour savoir s'il est employé / admin
-                        (via EXISTS sur les tables employe / administrateur)
+                      On récupère l’utilisateur par email + ses infos utiles,
+                      et on calcule 2 drapeaux via EXISTS :
+                      - est_employe
+                      - est_administrateur
+
+                      ⚠️ PostgreSQL peut renvoyer :
+                      - true/false
+                      - 1/0
+                      - 't'/'f'
+                      donc on normalise ensuite.
                     */
                     $stmt = $pdo->prepare('
                         SELECT
@@ -101,12 +105,6 @@ final class ConnexionController extends AbstractController
                     $stmt->execute(['email' => $emailSaisi]);
                     $utilisateur = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                    /*
-                      Contrôles :
-                      - utilisateur trouvé ?
-                      - compte actif ?
-                      - mot de passe valide ?
-                    */
                     if (!is_array($utilisateur)) {
                         $erreur = 'Identifiants invalides.';
                     } elseif (($utilisateur['statut'] ?? '') !== 'ACTIF') {
@@ -117,23 +115,13 @@ final class ConnexionController extends AbstractController
                         if ($hash === '' || !password_verify($motDePasse, $hash)) {
                             $erreur = 'Identifiants invalides.';
                         } else {
-                            /*
-                              Extraction et conversion des champs
-                              - on force les types
-                            */
                             $idUtilisateur = (int) ($utilisateur['id_utilisateur'] ?? 0);
                             $pseudo = (string) ($utilisateur['pseudo'] ?? '');
 
                             $roleChauffeur = (bool) ($utilisateur['role_chauffeur'] ?? false);
                             $rolePassager = (bool) ($utilisateur['role_passager'] ?? false);
 
-                            /*
-                              PostgreSQL (via PDO) peut renvoyer les booléens en :
-                              - true/false
-                              - 1/0
-                              - 't'/'f'
-                              Donc normalisation en bool propre.
-                            */
+                            // Normalisation EXISTS -> bool
                             $estEmployeBrut = $utilisateur['est_employe'] ?? false;
                             $estAdministrateurBrut = $utilisateur['est_administrateur'] ?? false;
 
@@ -149,16 +137,10 @@ final class ConnexionController extends AbstractController
                                 || $estAdministrateurBrut === '1'
                                 || $estAdministrateurBrut === 't';
 
-                            /*
-                            Sécurité : on évite une session incohérente
-                            */
                             if ($idUtilisateur <= 0 || trim($pseudo) === '') {
                                 $erreur = 'Erreur lors de la connexion.';
                             } else {
-                                /*
-                            Création de la session utilisateur
-                                  donc service SessionUtilisateur devient la source de vérité
-                                */
+                                // Création de la session utilisateur (source de vérité)
                                 $sessionUtilisateur->connecter(
                                     $idUtilisateur,
                                     $pseudo,
@@ -168,13 +150,7 @@ final class ConnexionController extends AbstractController
                                     $estAdministrateur
                                 );
 
-                                /*
-                                Connexion OK - redirection selon le type de compte
-                                Règle EcoRide :
-                                - administrateur : va directement dans son espace
-                                - employé : va directement dans son espace
-                                - sinon : tableau de bord (chauffeur/passager)
-                                */
+                                // Redirection selon le profil (règle EcoRide)
                                 if ($estAdministrateur) {
                                     return $this->redirectToRoute('espace_administrateur');
                                 }
@@ -184,21 +160,15 @@ final class ConnexionController extends AbstractController
                                 }
 
                                 return $this->redirectToRoute('tableau_de_bord');
-
                             }
                         }
                     }
                 } catch (PDOException) {
-                    // On reste volontairement vague (sécurité + UX)
                     $erreur = 'Erreur lors de la connexion.';
                 }
             }
         }
 
-        /*
-        Affichage final
-          - on renvoie l’erreur + l’email saisi pour éviter de le retaper
-        */
         return $this->render('connexion/index.html.twig', [
             'erreur' => $erreur,
             'email_saisi' => $emailSaisi,
@@ -210,13 +180,7 @@ final class ConnexionController extends AbstractController
     #[Route('/deconnexion', name: 'deconnexion', methods: ['POST', 'GET'])]
     public function deconnexion(SessionUtilisateur $sessionUtilisateur): Response
     {
-        /*
-          Déconnexion :
-          - on nettoie la session
-          - puis on revient sur l’accueil
-        */
         $sessionUtilisateur->deconnecter();
-
         return $this->redirectToRoute('accueil');
     }
 }

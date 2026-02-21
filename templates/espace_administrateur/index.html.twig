@@ -1,0 +1,240 @@
+{# templates/espace_administrateur/index.html.twig #}
+{# PLAN (Espace administrateur) :
+  1) En-tête : titre + sous-titre
+  2) Tuiles : chiffres clés (stats)
+  3) Onglets : comptes / statistiques (sans JS, via ?onglet=...)
+  4) Bloc Comptes : tableau + actions
+  5) Bloc Statistiques : 2 zones graphiques (placeholders pour l’instant)
+#}
+
+{% extends 'base.html.twig' %}
+	{% block title %}
+Espace administrateur - EcoRide
+{% endblock %}
+
+	{% block stylesheets %}
+	{{ parent() }}
+<link rel="stylesheet" href="{{ asset('css/espace_administrateur.css') }}"> {% endblock %}
+
+{# Sécurité Twig si le contrôleur oublie d’envoyer onglet #}
+{% set onglet = onglet|default('comptes') %}
+
+
+{% block body %}
+	<main class="page_espace_admin">
+		<section class="panneau_espace_admin">
+
+			<header class="entete_espace_admin">
+				<h1 class="titre_espace_admin">Espace administrateur</h1>
+				<p class="texte_secondaire">Vision globale et gestion de la plateforme EcoRide</p>
+			</header>
+
+			{# Messages de confirmation / erreur (après redirection POST) #}
+			{% for message in app.flashes('succes') %}
+				<div class="message_flash message_succes" role="status">{{ message }}</div>
+			{% endfor %}
+
+			{% for message in app.flashes('avertissement') %}
+				<div class="message_flash message_avertissement" role="status">{{ message }}</div>
+			{% endfor %}
+
+			{% for message in app.flashes('erreur') %}
+				<div class="message_flash message_erreur" role="alert">{{ message }}</div>
+			{% endfor %}
+
+			{# Tuiles chiffres #}
+			{% set stats = stats|default({}) %}
+
+			<div class="tuiles_admin">
+				<div class="tuile_admin">
+					<span class="icone_tuile icone_utilisateurs" aria-hidden="true"></span>
+					<div class="tuile_texte">
+						<p class="tuile_valeur">{{ stats.nb_utilisateurs_actifs|default(0) }}</p>
+						<p class="tuile_libelle texte_secondaire">Utilisateurs actifs</p>
+					</div>
+				</div>
+
+				<div class="tuile_admin">
+					<span class="icone_tuile icone_employes" aria-hidden="true"></span>
+					<div class="tuile_texte">
+						<p class="tuile_valeur">{{ stats.nb_employes_actifs|default(0) }}</p>
+						<p class="tuile_libelle texte_secondaire">Employés actifs</p>
+					</div>
+				</div>
+
+				<div class="tuile_admin">
+					<span class="icone_tuile icone_covoiturages" aria-hidden="true"></span>
+					<div class="tuile_texte">
+						<p class="tuile_valeur">{{ stats.nb_covoiturages_publies|default(0) }}</p>
+						<p class="tuile_libelle texte_secondaire">Covoiturages publiés</p>
+					</div>
+				</div>
+
+				<div class="tuile_admin">
+					<span class="icone_tuile icone_credits" aria-hidden="true"></span>
+					<div class="tuile_texte">
+						<p class="tuile_valeur">{{ stats.credits_generes|default(0) }}</p>
+						<p class="tuile_libelle texte_secondaire">Crédits générés</p>
+					</div>
+				</div>
+			</div>
+
+			<nav class="onglets_admin" aria-label="Navigation espace administrateur">
+				<a class="onglet_admin {{ onglet == 'comptes' ? 'onglet_actif' : '' }}" href="{{ path('espace_administrateur', { onglet: 'comptes' }) }}" {{ onglet == 'comptes' ? 'aria-current="page"' : '' }}>Comptes</a>
+
+				<a class="onglet_admin {{ onglet == 'statistiques' ? 'onglet_actif' : '' }}" href="{{ path('espace_administrateur', { onglet: 'statistiques' }) }}" {{ onglet == 'statistiques' ? 'aria-current="page"' : '' }}>Statistiques</a>
+			</nav>
+
+			<hr
+			class="separateur_admin">
+
+			{# ONGLET COMPTES #}
+			{% if onglet == 'comptes' %}
+				<section id="comptes" class="bloc_admin">
+					<div class="ligne_titre_admin">
+						<h2 class="titre_bloc_admin">Gestion des comptes</h2>
+
+						<a class="bouton_principal" href="{{ path('espace_administrateur_creer_employe') }}">
+							Créer un compte employé
+						</a>
+					</div>
+
+					<div class="table_admin">
+						<div class="ligne_table_admin ligne_entete">
+							<span>Pseudo</span>
+							<span>Rôle</span>
+							<span>Statut</span>
+							<span class="col_actions">Actions</span>
+						</div>
+
+						{% set comptes = comptes|default([]) %}
+
+						{% if comptes|length == 0 %}
+							<div class="ligne_table_admin ligne_vide">
+								<span class="texte_secondaire">Aucun compte à afficher.</span>
+							</div>
+						{% else %}
+							{% for compte in comptes %}
+								{% set id_utilisateur = compte.id_utilisateur|default(0) %}
+								{% set pseudo = compte.pseudo|default('') %}
+								{% set role = compte.role|default('UTILISATEUR') %}
+								{% set statut = compte.statut|default('ACTIF') %}
+								{% set est_mon_compte = (pseudo == pseudo_connecte|default('')) %}
+
+								<div class="ligne_table_admin">
+									<span>{{ pseudo }}</span>
+
+									<span>
+										<span class="badge badge_role">
+											{% if role == 'ADMIN' %}
+												Administrateur
+											{% elseif role == 'EMPLOYE' %}
+												Employé
+											{% else %}
+												Utilisateur
+											{% endif %}
+										</span>
+									</span>
+
+									<span>
+										<span class="badge badge_statut {{ statut == 'SUSPENDU' ? 'badge_statut_suspendu' : 'badge_statut_actif' }}">
+											{{ statut == 'SUSPENDU' ? 'Suspendu' : 'Actif' }}
+										</span>
+									</span>
+
+									<span class="col_actions">
+										{% if id_utilisateur <= 0 %}
+											<button class="bouton_action" type="button" disabled>Indisponible</button>
+
+										{% elseif est_mon_compte %}
+											<button class="bouton_action" type="button" disabled>Votre compte</button>
+
+										{% elseif statut == 'SUSPENDU' %}
+											<form method="post" action="{{ path('espace_admin_reactiver_compte') }}">
+												<input type="hidden" name="id_utilisateur" value="{{ id_utilisateur }}">
+												<input type="hidden" name="_token" value="{{ csrf_token('reactiver_compte_' ~ id_utilisateur) }}">
+												<button class="bouton_action bouton_reactiver" type="submit">Réactiver</button>
+											</form>
+
+										{% else %}
+											<form method="post" action="{{ path('espace_admin_suspendre_compte') }}">
+												<input type="hidden" name="id_utilisateur" value="{{ id_utilisateur }}">
+												<input type="hidden" name="_token" value="{{ csrf_token('suspendre_compte_' ~ id_utilisateur) }}">
+												<button class="bouton_action bouton_suspendre" type="submit">Suspendre</button>
+											</form>
+										{% endif %}
+									</span>
+								</div>
+							{% endfor %}
+						{% endif %}
+					</div>
+				</section>
+			{% endif %}
+
+			{# ONGLET STATISTIQUES #}
+			{% if onglet == 'statistiques' %}
+				<section id="statistiques" class="bloc_admin">
+					<h2 class="titre_bloc_admin">Statistiques de la plateforme</h2>
+
+					<div
+						class="grille_stats_admin">
+						{# 1) Covoiturages par jour #}
+						<div class="carte_stats_admin">
+							<h3 class="titre_carte_stats">Répartition des covoiturages par jour</h3>
+
+							{% set serie = covoiturages_par_jour|default([]) %}
+
+							{% set max_nb = 1 %}
+							{% for point in serie %}
+								{% set max_nb = max(max_nb, point.nb|default(0)) %}
+							{% endfor %}
+
+							{% if serie|length == 0 %}
+								<p class="texte_secondaire">Aucune donnée pour le moment.</p>
+							{% else %}
+								<div class="graphique_barres" aria-label="Covoiturages par jour">
+									{% for point in serie %}
+										{% set valeur = point.nb|default(0) %}
+										{% set hauteur = (valeur / max_nb * 100)|round(0, 'floor') %}
+										<div class="barre_item" title="{{ point.jour }} : {{ valeur }}">
+											<div class="barre" style="height: {{ hauteur }}%"></div>
+											<div class="barre_legende">{{ point.jour|slice(8,2) }}</div>
+										</div>
+									{% endfor %}
+								</div>
+							{% endif %}
+						</div>
+
+						{# 2) Crédits par jour #}
+						<div class="carte_stats_admin">
+							<h3 class="titre_carte_stats">Répartition des crédits par jour</h3>
+
+							{% set serie2 = credits_par_jour|default([]) %}
+							{% set max_credits = 1 %}
+							{% for point in serie2 %}
+								{% set max_credits = max(max_credits, point.credits|default(0)) %}
+							{% endfor %}
+
+							{% if serie2|length == 0 %}
+								<p class="texte_secondaire">Aucune donnée pour le moment.</p>
+							{% else %}
+								<div class="graphique_barres" aria-label="Crédits par jour">
+									{% for point in serie2 %}
+										{% set valeur = point.credits|default(0) %}
+										{% set hauteur = (valeur / max_credits * 100)|round(0, 'floor') %}
+										<div class="barre_item" title="{{ point.jour }} : {{ valeur }} crédits">
+											<div class="barre barre_credits" style="height: {{ hauteur }}%"></div>
+											<div class="barre_legende">{{ point.jour|slice(8,2) }}</div>
+										</div>
+									{% endfor %}
+								</div>
+							{% endif %}
+						</div>
+					</div>
+				</section>
+			{% endif %}
+
+
+		</section>
+	</main>
+{% endblock %}
