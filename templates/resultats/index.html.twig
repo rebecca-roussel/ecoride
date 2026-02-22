@@ -176,7 +176,7 @@ Résultats de recherche - EcoRide
 								<div
 									class="chauffeur_texte">
 
-									{# 1. Ligne identité : pseudo + étoile + note sur une seule ligne #}
+									{# Ligne identité : pseudo + étoile + note sur une seule ligne #}
 									<div class="ligne_identite">
 										<span class="pseudo_chauffeur">{{ c.pseudo_chauffeur|default('—') }}</span>
 
@@ -195,10 +195,7 @@ Résultats de recherche - EcoRide
 										</span>
 									</div>
 
-									{# 2. Préférences (ligne dessous) #}
-									<p class="preferences_chauffeur texte_secondaire">Préférences : —</p>
-
-									{# 3. Contenu trajet #}
+									{# Contenu trajet #}
 									<div class="contenu_carte">
 										<p class="trajet">
 											{{ c.ville_depart|default('—') }}
