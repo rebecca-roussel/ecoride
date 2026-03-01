@@ -61,21 +61,21 @@ final class ResultatsController extends AbstractController
         $energieBrut = trim((string) $requete->query->get('energie', ''));
         $energie = ('' === $energieBrut) ? null : strtoupper($energieBrut);
 
-        // Prix max : uniquement si > 0
-        $prixMaxBrut = $requete->query->getInt('prix_max');
-        $prixMax = ($prixMaxBrut > 0) ? $prixMaxBrut : null;
+        // Prix max : uniquement si entier > 0
+        $prixMaxTexte = trim((string) $requete->query->get('prix_max', ''));
+        $prixMax = (ctype_digit($prixMaxTexte) && (int) $prixMaxTexte > 0) ? (int) $prixMaxTexte : null;
 
-        // Age max voiture : uniquement si > 0
-        $ageMaxVoitureBrut = $requete->query->getInt('age_max_voiture');
-        $ageMaxVoiture = ($ageMaxVoitureBrut > 0) ? $ageMaxVoitureBrut : null;
+        // Âge max voiture : uniquement si entier > 0
+        $ageMaxVoitureTexte = trim((string) $requete->query->get('age_max_voiture', ''));
+        $ageMaxVoiture = (ctype_digit($ageMaxVoitureTexte) && (int) $ageMaxVoitureTexte > 0) ? (int) $ageMaxVoitureTexte : null;
 
-        // Note min : bornée entre 1 et 5
-        $noteMinBrut = $requete->query->getInt('note_min');
-        $noteMin = ($noteMinBrut >= 1 && $noteMinBrut <= 5) ? $noteMinBrut : null;
+        // Note min : entier entre 1 et 5
+        $noteMinTexte = trim((string) $requete->query->get('note_min', ''));
+        $noteMin = (ctype_digit($noteMinTexte) && (int) $noteMinTexte >= 1 && (int) $noteMinTexte <= 5) ? (int) $noteMinTexte : null;
 
-        // Durée max (minutes) : bornée entre 10 et 1440
-        $dureeMaxMinutesBrut = $requete->query->getInt('duree_max_minutes');
-        $dureeMaxMinutes = ($dureeMaxMinutesBrut >= 10 && $dureeMaxMinutesBrut <= 1440) ? $dureeMaxMinutesBrut : null;
+        // Durée max : entier entre 10 et 1440
+        $dureeMaxMinutesTexte = trim((string) $requete->query->get('duree_max_minutes', ''));
+        $dureeMaxMinutes = (ctype_digit($dureeMaxMinutesTexte) && (int) $dureeMaxMinutesTexte >= 10 && (int) $dureeMaxMinutesTexte <= 1440) ? (int) $dureeMaxMinutesTexte : null;
 
         /* 4) Critères*/
         $criteres = [
@@ -185,41 +185,35 @@ final class ResultatsController extends AbstractController
             $dureeMaxMinutes
         );
 
-        /*
-          Repli automatique si aucun résultat dans la plage horaire
-          - si l’utilisateur a donné une heure, mais qu’il n’y a rien autour
-          - je relance une recherche sur la journée 
-          - et j’affiche un indicateur pour une recherche élargie côté Twig
-        */
-        $recherche_elargie = false;
+/* Proposition d'une date alternative la plus proche si aucun résultat */
 
-        if (0 === count($resultats) && null !== $heureSouhaitee) {
-            $resultats = $persistance->rechercherCovoiturages(
-                $villeDepart,
-                $villeArrivee,
-                $dateObjet,
-                null,
-                null,
-                $prixMax,
-                $energie,
-                $ageMaxVoiture,
-                $noteMin,
-                $dureeMaxMinutes
-            );
+$dateAlternative = null;
 
-            $recherche_elargie = true;
-        }
+if (0 === count($resultats)) {
+    $dateAlternative = $persistance->trouverDateDisponibleLaPlusProche(
+        $villeDepart,
+        $villeArrivee,
+        $dateObjet,
+        $heureMin,
+        $heureMax,
+        $prixMax,
+        $energie,
+        $ageMaxVoiture,
+        $noteMin,
+        $dureeMaxMinutes
+    );
+}
 
         /*
           8) Affichage Twig
           - resultats : la liste des covoiturages
           - criteres : ce que l’utilisateur a cherché pour affichage + filtres
-          - recherche_elargie : bool pour afficher un petit message si besoin
+          - date_alternative : date proposée si aucun résultat
         */
         return $this->render('resultats/index.html.twig', [
             'resultats' => $resultats,
             'criteres' => $criteres,
-            'recherche_elargie' => $recherche_elargie,
+            'date_alternative' => $dateAlternative,
         ]);
     }
 }

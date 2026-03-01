@@ -168,6 +168,155 @@ final class PersistanceCovoituragePostgresql
     return $requete->fetchAll(PDO::FETCH_ASSOC) ?: [];
   }
 
+      /**
+     * Trouver une date alternative la plus proche quand aucun covoiturage ne correspond aux critères.
+     * respect des filtres : prix/énergie/âge/note/durée + si une plage horaire existe respect aussi de l'heure
+     */
+    public function trouverDateDisponibleLaPlusProche(
+      string $villeDepart,
+      string $villeArrivee,
+      DateTimeImmutable $date,
+      ?string $heureMin,
+      ?string $heureMax,
+      ?int $prixMax,
+      ?string $energie,
+      ?int $ageMaxVoiture,
+      ?int $noteMin,
+      ?int $dureeMaxMinutes = null,
+    ): ?DateTimeImmutable {
+      $debutJournee = $date->setTime(0, 0, 0);
+      $finJournee = $date->setTime(23, 59, 59);
+
+      $suivante = $this->trouverDateProche('>', 'ASC', $villeDepart, $villeArrivee, $finJournee, $heureMin, $heureMax, $prixMax, $energie, $ageMaxVoiture, $noteMin, $dureeMaxMinutes);
+      $precedente = $this->trouverDateProche('<', 'DESC', $villeDepart, $villeArrivee, $debutJournee, $heureMin, $heureMax, $prixMax, $energie, $ageMaxVoiture, $noteMin, $dureeMaxMinutes);
+
+      if (null === $suivante && null === $precedente) {
+        return null;
+      }
+      if (null === $suivante) {
+        return $precedente;
+      }
+      if (null === $precedente) {
+        return $suivante;
+      }
+
+      // Comparaison stable autour du milieu de journée
+      $reference = $date->setTime(12, 0, 0)->getTimestamp();
+      $ecartSuivant = abs($suivante->getTimestamp() - $reference);
+      $ecartPrecedent = abs($reference - $precedente->getTimestamp());
+
+      return ($ecartPrecedent <= $ecartSuivant) ? $precedente : $suivante;
+    }
+
+    /**
+     * Trouver la date  du premier covoiturage après et avant une borne, avec les mêmes filtres que la recherche
+     */
+    private function trouverDateProche(
+      string $comparateur,
+      string $ordre,
+      string $villeDepart,
+      string $villeArrivee,
+      DateTimeImmutable $borne,
+      ?string $heureMin,
+      ?string $heureMax,
+      ?int $prixMax,
+      ?string $energie,
+      ?int $ageMaxVoiture,
+      ?int $noteMin,
+      ?int $dureeMaxMinutes,
+    ): ?DateTimeImmutable {
+      if (!in_array($comparateur, ['>', '<'], true)) {
+        return null;
+      }
+      if (!in_array($ordre, ['ASC', 'DESC'], true)) {
+        return null;
+      }
+
+      $pdo = $this->connexionPostgresql->obtenirPdo();
+
+      $sql = "
+        SELECT (covoiturage.date_heure_depart::date) AS date_depart
+        FROM covoiturage
+        JOIN voiture
+          ON voiture.id_voiture = covoiturage.id_voiture
+         AND voiture.id_utilisateur = covoiturage.id_utilisateur
+
+        LEFT JOIN (
+            SELECT
+                covoiturage.id_utilisateur AS id_chauffeur,
+                ROUND(AVG(avis.note)::numeric, 2) AS note_moyenne,
+                COUNT(*) AS nb_avis_valides
+            FROM avis
+            JOIN participation
+              ON participation.id_participation = avis.id_participation
+             AND participation.est_annulee = false
+            JOIN covoiturage
+              ON covoiturage.id_covoiturage = participation.id_covoiturage
+            WHERE avis.statut_moderation = 'VALIDE'
+            GROUP BY covoiturage.id_utilisateur
+        ) AS note
+          ON note.id_chauffeur = covoiturage.id_utilisateur
+
+        WHERE covoiturage.statut_covoiturage = 'PLANIFIE'
+          AND covoiturage.nb_places_dispo > 0
+          AND covoiturage.ville_depart ILIKE :ville_depart
+          AND covoiturage.ville_arrivee ILIKE :ville_arrivee
+          AND covoiturage.date_heure_depart $comparateur :borne
+      ";
+
+      $parametres = [
+        'ville_depart' => '%' . trim($villeDepart) . '%',
+        'ville_arrivee' => '%' . trim($villeArrivee) . '%',
+        'borne' => $borne->format('Y-m-d H:i:s'),
+      ];
+
+      // Respect de l’heure si une plage existe
+      if (
+        null !== $heureMin && null !== $heureMax
+        && preg_match('/^\d{2}:\d{2}$/', $heureMin)
+        && preg_match('/^\d{2}:\d{2}$/', $heureMax)
+      ) {
+        $sql .= " AND (covoiturage.date_heure_depart::time BETWEEN (:heure_min)::time AND (:heure_max)::time)";
+        $parametres['heure_min'] = $heureMin;
+        $parametres['heure_max'] = $heureMax;
+      }
+
+      if (null !== $prixMax) {
+        $sql .= ' AND covoiturage.prix_credits <= :prix_max';
+        $parametres['prix_max'] = $prixMax;
+      }
+
+      if (null !== $energie && '' !== $energie) {
+        $energie = strtoupper(trim($energie));
+        $sql .= ' AND voiture.energie = :energie';
+        $parametres['energie'] = $energie;
+      }
+
+      if (null !== $ageMaxVoiture) {
+        $sql .= " AND voiture.date_1ere_mise_en_circulation >= (CURRENT_DATE - (:age_max * INTERVAL '1 year'))";
+        $parametres['age_max'] = $ageMaxVoiture;
+      }
+
+      if (null !== $noteMin) {
+        $sql .= ' AND COALESCE(note.note_moyenne, 0) >= :note_min';
+        $parametres['note_min'] = $noteMin;
+      }
+
+      if (null !== $dureeMaxMinutes) {
+        $sql .= " AND (covoiturage.date_heure_arrivee - covoiturage.date_heure_depart) <= (:duree_max_minutes * INTERVAL '1 minute')";
+        $parametres['duree_max_minutes'] = $dureeMaxMinutes;
+      }
+
+      $sql .= " ORDER BY covoiturage.date_heure_depart $ordre LIMIT 1";
+
+      $requete = $pdo->prepare($sql);
+      $requete->execute($parametres);
+
+      $valeur = $requete->fetchColumn();
+
+      return $valeur ? new DateTimeImmutable((string) $valeur) : null;
+    }
+
   /**
    * Détail d'un covoiturage par id.
    *

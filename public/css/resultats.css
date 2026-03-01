@@ -80,6 +80,31 @@
   margin: 12px 0 18px;
 }
 
+/* ENCADRÉ : suggestion de date alternative */
+.encart_suggestion_date{
+  margin: 12px 0 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,0.12);
+  background: rgba(191,169,122,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.message_suggestion_date{
+  margin: 0;
+  font-weight: 600;
+  color: var(--fond_principal);
+}
+
+.bouton_suggestion_date{
+  text-decoration: none;
+  width: fit-content;
+}
+
 .actions_resultats{
   margin: 0 0 26px;
 }
@@ -263,6 +288,13 @@ min-width: 0;
 
   .carte_covoiturage{
     padding: 12px; 
+  }
+}
+
+@media (max-width: 900px){
+  .bouton_suggestion_date{
+    width: 100%;
+    justify-content: center;
   }
 }
 

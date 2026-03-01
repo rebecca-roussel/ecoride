@@ -89,12 +89,33 @@ Résultats de recherche - EcoRide
 				{% endif %}
 			</p>
 
-			{% if recherche_elargie %}
-				<p class="message_avertissement">
-					Aucun covoiturage autour de
-					{{ criteres.heure_souhaitee|default('—') }},
-										voici les covoiturages du jour :
+			{# Proposition de date alternative affichée uniquement si le contrôleur la fournit #}
+			{% if resultats is defined and resultats|length == 0 %}
+			{% if date_alternative is defined and date_alternative %}
+				<section class="encart_suggestion_date" aria-label="Date alternative proposée">
+				<p class="message_suggestion_date">
+					Aucun covoiturage ne correspond exactement à vos critères.
+					<strong>Date la plus proche disponible : {{ date_alternative|date('d/m/Y') }}</strong>
 				</p>
+
+				<a class="bouton_principal bouton_suggestion_date"
+					href="{{ path('resultats', {
+					ville_depart: criteres.ville_depart|default(''),
+					ville_arrivee: criteres.ville_arrivee|default(''),
+					date: date_alternative|date('Y-m-d'),
+					heure_souhaitee: criteres.heure_souhaitee|default(''),
+					prix_max: criteres.prix_max|default(''),
+					energie: criteres.energie|default(''),
+					age_max_voiture: criteres.age_max_voiture|default(''),
+					duree_max_minutes: criteres.duree_max_minutes|default(''),
+					note_min: criteres.note_min|default('')
+					}) }}">
+					Voir les covoiturages à cette date
+				</a>
+				</section>
+			{% else %}
+				<p class="message_avertissement">Aucun covoiturage ne correspond à vos critères.</p>
+			{% endif %}
 			{% endif %}
 
 			<div class="actions_resultats">
@@ -112,8 +133,7 @@ Résultats de recherche - EcoRide
 					<input type="hidden" name="ville_depart" value="{{ criteres.ville_depart|default('') }}">
 					<input type="hidden" name="ville_arrivee" value="{{ criteres.ville_arrivee|default('') }}">
 					<input type="hidden" name="date" value="{{ criteres.date|default('') }}">
-					<input type="hidden" name="heure_min" value="{{ criteres.heure_min|default('') }}">
-					<input type="hidden" name="heure_max" value="{{ criteres.heure_max|default('') }}">
+					<input type="hidden" name="heure_souhaitee" value="{{ criteres.heure_souhaitee|default('') }}">
 
 					<div class="grille_filtres">
 						<div class="champ_filtre">
@@ -156,8 +176,11 @@ Résultats de recherche - EcoRide
 
 					<div class="actions_filtres">
 						<button type="submit" class="bouton_principal">Appliquer</button>
-						<a class="lien_reinitialiser" href="{{ path('resultats', { ville_depart: criteres.ville_depart|default(''), ville_arrivee: criteres.ville_arrivee|default(''), date: criteres.date|default(''), heure_min: criteres.heure_min|default(''), heure_max: criteres.heure_max|default('') }) }}">
-							Réinitialiser
+						<a class="lien_reinitialiser" 
+						href="{{ path('resultats', { ville_depart: criteres.ville_depart|default(''), 
+						ville_arrivee: criteres.ville_arrivee|default(''), date: criteres.date|default(''), 
+						heure_souhaitee: criteres.heure_souhaitee|default('') }) }}">
+						Réinitialiser
 						</a>
 					</div>
 				</form>
@@ -263,29 +286,31 @@ Résultats de recherche - EcoRide
 							</div>
 						</article>
 					{% endfor %}
-				{% else %}
-					{# Résultats vides #}
-					<article class="carte_covoiturage">
+					{% else %}
+					{% if date_alternative is not defined or not date_alternative %}
+						{# Résultats vides #}
+						<article class="carte_covoiturage">
 						<div class="bloc_chauffeur">
 							<div class="chauffeur_texte">
-								<div class="ligne_identite">
-									<span class="pseudo_chauffeur">Aucun covoiturage disponible</span>
-								</div>
-
-								<div class="contenu_carte">
-									<p class="trajet">
-										{% set a_des_criteres = criteres.ville_depart|default('') or criteres.ville_arrivee|default('') or criteres.date|default('') %}
-										{% if a_des_criteres %}
-											Essayez de modifier la date ou les villes.
-										{% else %}
-											Renseignez une ville de départ, une ville d’arrivée et une date pour lancer la recherche.
-										{% endif %}
-									</p>
-								</div>
+							<div class="ligne_identite">
+								<span class="pseudo_chauffeur">Aucun covoiturage disponible</span>
 							</div>
-						</div>
-					</article>
-				{% endif %}
+
+							<div class="contenu_carte">
+								<p class="trajet">
+								{% set a_des_criteres = criteres.ville_depart|default('') or criteres.ville_arrivee|default('') or criteres.date|default('') %}
+								{% if a_des_criteres %}
+									Essayez de modifier la date ou les villes.
+								{% else %}
+									Renseignez une ville de départ, une ville d’arrivée et une date pour lancer la recherche.
+								{% endif %}
+								</p>
+							</div>
+							</div>
+							</div>
+						</article>
+					{% endif %}
+					{% endif %}
 			</div>
 		</section>
 	</main>
