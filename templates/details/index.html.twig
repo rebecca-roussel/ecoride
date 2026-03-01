@@ -307,11 +307,56 @@ Détails du covoiturage - EcoRide
 			{% endif %}
 		</div>
 
-		{# Action participation #}
-		<div class="bloc_actions">
-			<form method="post" action="{{ path('participer_covoiturage', { id: detail.id_covoiturage }) }}">
-				<input type="hidden" name="_token" value="{{ csrf_token('participer_covoiturage_' ~ detail.id_covoiturage) }}">
+{# Action participation : double confirmation via pop-up #}
+{% set places = detail.nb_places_dispo|default(0) %}
 
-				{% set places = detail.nb_places_dispo|default(0) %}
+<div class="bloc_actions">
+  {# 1er clic : ouvre la pop-up et ne débite pas #}
+  <button type="button"
+          class="bouton_principal"
+          id="bouton_ouvrir_confirmation_participation"
+          {% if places <= 0 %}disabled{% endif %}>
+    {% if places <= 0 %}Complet{% else %}Participer{% endif %}
+  </button>
 
-				<button class="bouton_principal" type="submit" {% if places <= 0 %}disabled{% endif %}> {% if places <= 0 %} Complet {% else %} Participer {% endif %} </button> </form> </div> </section> </main> {% endblock %}
+  {# 2e étape : confirmation explicite avant POST #}
+  <dialog class="fenetre_confirmation_participation"
+          id="fenetre_confirmation_participation"
+          aria-label="Confirmation de participation">
+    <h2>Confirmer la participation</h2>
+
+    <p class="texte_secondaire">
+      Vous allez utiliser <strong>{{ detail.prix_credits }}</strong> crédits.
+    </p>
+
+    <label class="ligne_confirmation">
+      <input type="checkbox" id="case_confirmation_credits">
+      Je confirme vouloir utiliser {{ detail.prix_credits }} crédits pour participer.
+    </label>
+
+    <div class="actions_confirmation">
+      <button type="button"
+              class="bouton_principal"
+              id="bouton_fermer_confirmation_participation">
+        Annuler
+      </button>
+
+      <form method="post" action="{{ path('participer_covoiturage', { id: detail.id_covoiturage }) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('participer_covoiturage_' ~ detail.id_covoiturage) }}">
+        <button type="submit"
+                class="bouton_principal"
+                id="bouton_confirmer_participation"
+                disabled>
+          Confirmer
+        </button>
+      </form>
+    </div>
+  </dialog>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script src="{{ asset('js/details.js') }}" defer></script>
+{% endblock %}
