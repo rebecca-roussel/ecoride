@@ -73,6 +73,10 @@ final class ResultatsController extends AbstractController
         $noteMinBrut = $requete->query->getInt('note_min');
         $noteMin = ($noteMinBrut >= 1 && $noteMinBrut <= 5) ? $noteMinBrut : null;
 
+        // Durée max (minutes) : bornée entre 10 et 1440
+        $dureeMaxMinutesBrut = $requete->query->getInt('duree_max_minutes');
+        $dureeMaxMinutes = ($dureeMaxMinutesBrut >= 10 && $dureeMaxMinutesBrut <= 1440) ? $dureeMaxMinutesBrut : null;
+
         /* 4) Critères*/
         $criteres = [
             'ville_depart' => $villeDepart,
@@ -82,6 +86,7 @@ final class ResultatsController extends AbstractController
             'prix_max' => $prixMax,
             'energie' => $energie,
             'age_max_voiture' => $ageMaxVoiture,
+            'duree_max_minutes' => $dureeMaxMinutes,
             'note_min' => $noteMin,
         ];
 
@@ -176,7 +181,8 @@ final class ResultatsController extends AbstractController
             $prixMax,
             $energie,
             $ageMaxVoiture,
-            $noteMin
+            $noteMin,
+            $dureeMaxMinutes
         );
 
         /*
@@ -197,7 +203,8 @@ final class ResultatsController extends AbstractController
                 $prixMax,
                 $energie,
                 $ageMaxVoiture,
-                $noteMin
+                $noteMin,
+                $dureeMaxMinutes
             );
 
             $recherche_elargie = true;

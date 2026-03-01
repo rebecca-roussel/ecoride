@@ -47,6 +47,7 @@ final class PersistanceCovoituragePostgresql
     ?string $energie,
     ?int $ageMaxVoiture,
     ?int $noteMin,
+    ?int $dureeMaxMinutes = null,
   ): array {
     $pdo = $this->connexionPostgresql->obtenirPdo();
 
@@ -152,6 +153,11 @@ final class PersistanceCovoituragePostgresql
     if (null !== $noteMin) {
       $sql .= ' AND COALESCE(note.note_moyenne, 0) >= :note_min';
       $parametres['note_min'] = $noteMin;
+    }
+
+    if (null !== $dureeMaxMinutes) {
+      $sql .= " AND (covoiturage.date_heure_arrivee - covoiturage.date_heure_depart) <= (:duree_max_minutes * INTERVAL '1 minute')";
+      $parametres['duree_max_minutes'] = $dureeMaxMinutes;
     }
 
     $sql .= ' ORDER BY covoiturage.date_heure_depart ASC';

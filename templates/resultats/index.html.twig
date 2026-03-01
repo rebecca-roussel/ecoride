@@ -137,9 +137,14 @@ Résultats de recherche - EcoRide
 							<label for="age_max_voiture">Âge max voiture (années)</label>
 							<input id="age_max_voiture" name="age_max_voiture" type="number" min="0" value="{{ criteres.age_max_voiture|default('') }}">
 						</div>
+						
+						<div class="champ_filtre">
+        					<label for="duree_max_minutes">Durée max (minutes)</label>
+        					<input id="duree_max_minutes" name="duree_max_minutes" type="number" min="10" max="1440" placeholder="ex: 90 = 1h30" value="{{ criteres.duree_max_minutes|default('') }}">
+						</div>
 
 						<div class="champ_filtre">
-							<label for="note_min">Note min</label>
+							<label for="note_min">Note minimale /5</label>
 							<select id="note_min" name="note_min">
 								<option value="">Toutes</option>
 								{% for n in 1..5 %}
