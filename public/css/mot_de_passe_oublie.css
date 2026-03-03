@@ -50,7 +50,6 @@
   margin-top: 18px;
 }
 
-/* On réutilise les mêmes classes de champs que connexion (cohérence) */
 .bloc_champ{
   margin-top: 18px;
 }
@@ -68,9 +67,13 @@
   padding: 0 16px;
   border-radius: 10px;
   border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(226, 232, 240, 0.70);
+  background: #FFFFFF;
   color: #0F172A;
   outline: none;
+
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .champ_texte::placeholder{
@@ -88,10 +91,15 @@
   color: #9B2C2C;
 }
 
-.bouton_principal{
+.champ_en_erreur{
+  border-color: var(--etat_erreur) !important;
+  box-shadow: 0 0 0 4px rgba(155, 79, 79, 0.18);
+}
+
+.page_mot_de_passe_oublie .bouton_principal{
   width: 100%;
   margin-top: 22px;
-  height: 54px;
+  min-height: 54px;
 
   display: flex;
   align-items: center;
@@ -106,11 +114,11 @@
   cursor: pointer;
 }
 
-.bouton_principal:hover{
+.page_mot_de_passe_oublie .bouton_principal:hover{
   filter: brightness(1.03);
 }
 
-.bouton_principal:focus-visible{
+.page_mot_de_passe_oublie .bouton_principal:focus-visible{
   outline: none;
   box-shadow: 0 0 0 4px rgba(63, 107, 79, 0.28);
 }
@@ -130,7 +138,7 @@
   color: rgba(15, 23, 42, 0.85);
 }
 
-/*RESPONSIVE*/
+/* RESPONSIVE */
 
 @media (max-width: 560px){
   .panneau_mot_de_passe_oublie{
@@ -141,7 +149,7 @@
     font-size: 32px;
   }
 
-  .bouton_principal{
+  .page_mot_de_passe_oublie .bouton_principal{
     font-size: 18px;
   }
 }

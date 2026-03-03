@@ -1,6 +1,7 @@
 /* public/css/credits.css */
 
 /* PAGE */
+
 .page_credits{
   padding: 48px 16px;
   box-sizing: border-box;
@@ -28,19 +29,20 @@
 
 /* CARTE SOLDE */
 
+.carte_solde > *{
+  min-width: 0;
+}
+
 .carte_solde{
   margin-top: 18px;
-
+  padding: 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-
   background: rgba(63,93,74,0.18);
   border: 1px solid rgba(63,93,74,0.25);
   border-radius: 14px;
-
-  padding: 18px;
 }
 
 .carte_solde_label{
@@ -111,6 +113,7 @@
   margin: 0;
   font-weight: 700;
   color: rgba(15,23,42,0.88);
+  overflow-wrap: anywhere;
 }
 
 .operation_date{
@@ -184,6 +187,38 @@
 /* RESPONSIVE */
 
 @media (max-width: 900px){
-  .carte_solde_valeur{ font-size: 30px; }
-  .operation{ align-items: flex-start; }
+  .panneau_credits{
+    padding: 18px;
+  }
+
+  .carte_solde{
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .carte_solde_valeur{
+    font-size: 30px;
+  }
+
+  .pastille_icone{
+    align-self: flex-end; 
+  }
+
+  .operation{
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .operation_montant{
+    text-align: left;
+    min-width: 0;
+    margin-top: 2px;
+  }
+}
+
+@media (max-width: 420px){
+  .page_credits{ padding: 28px 12px; }
+  .panneau_credits{ padding: 16px; }
 }

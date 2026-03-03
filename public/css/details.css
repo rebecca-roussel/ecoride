@@ -56,6 +56,7 @@
 }
 
 /* BLOC CHAUFFEUR */
+
 .chauffeur_resume {
   flex: 0 0 auto;
   display: flex;
@@ -88,10 +89,23 @@
 }
 
 /* SÉPARATEURS */
+
 .separateur_details {
   border: 0;
   border-top: 1px solid rgba(15, 23, 42, 0.403);
   margin: 22px 0;
+}
+
+.bloc_lieux > *,
+.bloc_indicateurs > *,
+.voiture_grille > *{
+  min-width: 0;
+}
+
+.lieu_ville,
+.champ_valeur,
+.indicateur_valeur{
+  overflow-wrap: anywhere;
 }
 
 .bloc_lieux,
@@ -103,6 +117,8 @@
 }
 
 /* DÉPART/ARRIVÉE */
+
+
 .bloc_lieux {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -219,19 +235,19 @@
 
 /* ACTION */
 
-.actions_details {
+.actions_details{
   margin-top: 26px;
 }
 
-.actions_details .bouton_principal {
+.actions_details .bouton_principal{
+  display: flex;
   width: min(360px, 100%);
   min-height: 48px;
 
-  display: inline-flex;
+  margin: 0 auto;
   align-items: center;
   justify-content: center;
 
-  margin: 0 auto;
   font-size: 18px;
   font-weight: 700;
   line-height: 1;
@@ -239,24 +255,40 @@
 
 /* RESPONSIVE */
 
-@media (max-width: 700px) {
-  .panneau_details {
+@media (max-width: 700px){
+  .page_details{
+    padding: 40px 12px 44px;
+  }
+
+  .panneau_details{
     padding: 30px 20px 30px;
   }
 
-  .panneau_details h1 {
+  .panneau_details h1{
     font-size: 32px;
   }
 
-  .bloc_lieux {
+  .entete_details{
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .chauffeur_resume{
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .bloc_lieux{
     grid-template-columns: 1fr;
   }
 
-  .bloc_indicateurs {
+  .bloc_indicateurs{
     grid-template-columns: 1fr;
   }
 
-  .voiture_grille {
+  .voiture_grille{
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -274,5 +306,19 @@
 
   .separateur_details {
     margin: 18px 0;
+  }
+}
+
+@media (max-width: 420px){
+  .panneau_details{
+    padding: 22px 14px 22px;
+  }
+
+  .panneau_details h1{
+    font-size: 28px;
+  }
+
+  .voiture_grille{
+    grid-template-columns: 1fr;
   }
 }

@@ -71,6 +71,7 @@
 
 .rappel_recherche{
   margin: 0 0 22px;
+  color: rgba(15, 23, 42, 0.65);
 }
 
 
@@ -100,12 +101,13 @@
   column-gap: 24px;
   align-items: start;
 
-  background: var(--texte_secondaire);
+  background: rgba(255,255,255,0.55);
   border-radius: 12px;
   padding: 12px;
   border: 1px solid rgba(15,23,42,0.10);
   box-shadow: 0 8px 14px rgba(0,0,0,0.16);
 }
+
 
 /* INFOS CHAUFFEUR */
 
@@ -138,10 +140,12 @@ min-width: 0;
   align-items: center;
   gap: 10px;
   line-height: 1.2;
+  flex-wrap: wrap;
 }
 
 .pseudo_chauffeur{
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .note_chauffeur{
@@ -220,52 +224,6 @@ min-width: 0;
   overflow-wrap: anywhere;
 }
 
-/* RESPONSIVE */
-
-@media (max-width: 900px){
-  .panneau_resultats{
-    padding: 28px 18px 28px;
-  }
-
-  .carte_covoiturage{
-    grid-template-columns: 1fr;
-    row-gap: 16px;
-  }
-
-  .zone_bouton_details{
-    min-width: auto;
-    justify-content: flex-start;
-  }
-}
-
-.carte_covoiturage .texte_secondaire{
-  color: rgba(15, 23, 42, 0.65);
-}
-
-@media (max-height: 850px){
-  .page_resultats{
-    padding: 24px 18px 24px;
-  }
-
-  .panneau_resultats{
-    padding: 24px 24px;
-  }
-}
-
-@media (max-height: 720px){
-  .panneau_resultats{
-    padding: 24px 24px;
-  }
-
-  .liste_covoiturages{
-    gap: 16px; 
-  }
-
-  .carte_covoiturage{
-    padding: 12px; 
-  }
-}
-
 /* PANNEAU FILTRES */
 
 .panneau_filtres{
@@ -288,6 +246,14 @@ min-width: 0;
   gap: 6px;
 }
 
+.champ_filtre input,
+.champ_filtre select{
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 44px;
+}
+
 .actions_filtres{
   margin-top: 12px;
   display: flex;
@@ -301,8 +267,69 @@ min-width: 0;
   text-decoration: underline;
 }
 
+/* RESPONSIVE */
+
 @media (max-width: 900px){
+  .page_resultats{
+    padding: 28px 12px;
+  }
+
+  .panneau_resultats{
+    padding: 24px 16px;
+  }
+
+  .carte_covoiturage{
+    grid-template-columns: 1fr;
+    row-gap: 14px;
+  }
+
+  .zone_bouton_details{
+    justify-content: flex-start;
+  }
+
   .grille_filtres{
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px){
+  .actions_resultats .bouton_principal{
+    width: 100%;
+    justify-content: center;
+  }
+
+  .bouton_details{
+    width: 100%;
+    justify-content: center;
+  }
+
+  .photo_profil{
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+  }
+
+  .actions_filtres{
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions_filtres .bouton_principal{
+    width: 100%;
+    justify-content: center;
+  }
+
+  .lien_reinitialiser{
+    text-align: center;
+  }
+}
+
+@media (max-width: 420px){
+  .panneau_resultats{
+    padding: 20px 12px;
+  }
+
+  .trajet{
+    font-size: 17px;
   }
 }

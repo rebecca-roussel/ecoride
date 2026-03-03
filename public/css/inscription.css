@@ -8,6 +8,7 @@
 */
 
 /* Page */
+
 .page_inscription {
   padding: 40px 24px;
   display: flex;
@@ -15,6 +16,7 @@
 }
 
 /* Panneau */
+
 .panneau_inscription {
   width: 100%;
   max-width: 420px;
@@ -44,6 +46,7 @@
 }
 
 /* Bandeau promotionnel */
+
 .badge_credits {
   box-sizing: border-box;
   display: flex;
@@ -77,6 +80,7 @@
 
 
 /* Formulaire */
+
 .inscription_formulaire {
   margin-top: 12px;
 }
@@ -94,6 +98,8 @@
 
 .champ_texte {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   border: 1px solid rgba(15, 23, 42, 0.10);
   background: #ffffff;
@@ -109,11 +115,14 @@
 }
 
 /* Bloc photo */
+
 .bloc_photo {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
 }
+
 
 .photo_rond {
   width: 44px;
@@ -131,10 +140,11 @@
 }
 
 /* Bouton secondaire  */
+
 .bouton_secondaire {
-  border: 0;
-  background: var(--vert);
-  color: #3F5D4A;
+  background: rgba(63, 93, 74, 0.10);
+  border: 1px solid rgba(63, 93, 74, 0.25);
+  color: var(--action_principale);
   padding: 8px 10px;
   border-radius: 10px;
   font-weight: 600;
@@ -143,6 +153,7 @@
 }
 
 /* Mot de passe*/
+
 .champ_mdp {
   position: relative;
   width: 100%;
@@ -151,7 +162,6 @@
 
 
 .champ_mdp .champ_texte {
-  width: 100%;
   box-sizing: border-box;
   padding-right: 44px;
 }
@@ -181,6 +191,7 @@
 
 
 /* Rôles */
+
 .bloc_roles {
   margin-top: 14px;
   padding: 0;
@@ -193,12 +204,17 @@
   color: #3F5D4A;
 }
 
+.role_ligne > *{
+  min-width: 0;
+}
+
 .role_ligne {
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 13px;
   margin-top: 8px;
+  flex-wrap: wrap;
 }
 
 .role_ligne input {
@@ -208,6 +224,7 @@
 }
 
 /* Bouton principal  */
+
 .actions_inscription {
   margin-top: 16px;
   display: flex;
@@ -224,6 +241,7 @@
 }
 
 /* Texte bas */
+
 .inscription_mentions {
   margin: 12px 0 0;
   text-align: center;
@@ -253,4 +271,9 @@
   .panneau_inscription {
     padding: 18px 16px 12px;
   }
+}
+
+@media (max-width: 420px){
+  .inscription_titre{ font-size: 18px; }
+  .badge_credits{ font-size: 12px; padding: 10px 12px; }
 }
