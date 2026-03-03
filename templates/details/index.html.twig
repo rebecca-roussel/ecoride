@@ -308,10 +308,20 @@ Détails du covoiturage - EcoRide
 		</div>
 
 		{# Action participation #}
-		<div class="bloc_actions">
+		<div class="actions_details">
 			<form method="post" action="{{ path('participer_covoiturage', { id: detail.id_covoiturage }) }}">
 				<input type="hidden" name="_token" value="{{ csrf_token('participer_covoiturage_' ~ detail.id_covoiturage) }}">
 
 				{% set places = detail.nb_places_dispo|default(0) %}
 
-				<button class="bouton_principal" type="submit" {% if places <= 0 %}disabled{% endif %}> {% if places <= 0 %} Complet {% else %} Participer {% endif %} </button> </form> </div> </section> </main> {% endblock %}
+				<button class="bouton_principal" type="submit" 
+				{% if places <= 0 %}disabled{% endif %}> 
+				{% if places <= 0 %} Complet 
+				{% else %} Participer 
+				{% endif %} 
+				</button> 
+				</form> 
+				</div> 
+				</section> 
+				</main> 
+				{% endblock %}
