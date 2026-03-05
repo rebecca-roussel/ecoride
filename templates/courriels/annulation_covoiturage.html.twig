@@ -1,0 +1,10 @@
+<h2>Bonjour {{ pseudo }},</h2>
+
+<p>Le covoiturage suivant a été annulé par le chauffeur :</p>
+
+<ul>
+  <li>Départ : {{ covoiturage.ville_depart }} — {{ covoiturage.date_heure_depart|date('d/m/Y H:i') }}</li>
+  <li>Arrivée : {{ covoiturage.ville_arrivee }}</li>
+</ul>
+
+<p>Vous pouvez relancer une recherche sur EcoRide.</p>
