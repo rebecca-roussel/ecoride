@@ -1,0 +1,10 @@
+<h2>Bonjour {{ pseudo }},</h2>
+
+<p>Votre covoiturage est terminé. Merci de valider le trajet sur EcoRide.</p>
+
+<ul>
+  <li>Départ : {{ covoiturage.ville_depart }} — {{ covoiturage.date_heure_depart|date('d/m/Y H:i') }}</li>
+  <li>Arrivée : {{ covoiturage.ville_arrivee }} — {{ covoiturage.date_heure_arrivee|date('d/m/Y H:i') }}</li>
+</ul>
+
+<p>Rendez-vous dans votre historique pour valider.</p>

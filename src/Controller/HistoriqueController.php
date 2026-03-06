@@ -14,8 +14,9 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
+use App\Service\EnvoiCourriels;
+use App\Service\PersistanceCovoituragePostgresql;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 
 final class HistoriqueController extends AbstractController
@@ -269,198 +270,141 @@ final class HistoriqueController extends AbstractController
         return $this->redirectToRoute('historique', ['onglet' => 'participations']);
     }
 
-    #[Route('/historique/annuler-covoiturage', name: 'annuler_covoiturage', methods: ['POST'])]
-    public function annulerCovoiturage(
-        Request $requete,
-        SessionUtilisateur $sessionUtilisateur,
-        PersistanceHistoriquePostgresql $persistance,
-        JournalEvenements $journalEvenements,
-        MailerInterface $serviceCourriel
-    ): RedirectResponse {
-        $utilisateur = $sessionUtilisateur->exigerUtilisateurConnecte();
-        $idUtilisateur = (int) $utilisateur['id_utilisateur'];
-        $idCovoiturage = (int) $requete->request->get('id_covoiturage', 0);
+   #[Route('/historique/annuler-covoiturage', name: 'annuler_covoiturage', methods: ['POST'])]
+public function annulerCovoiturage(
+    Request $requete,
+    SessionUtilisateur $sessionUtilisateur,
+    PersistanceHistoriquePostgresql $persistanceHistorique,
+    PersistanceCovoituragePostgresql $persistanceCovoiturage,
+    EnvoiCourriels $envoiCourriels,
+    JournalEvenements $journalEvenements
+): RedirectResponse {
+    $utilisateur = $sessionUtilisateur->exigerUtilisateurConnecte();
+    $idUtilisateur = (int) $utilisateur['id_utilisateur'];
 
-        // 1) Préparer la liste des emails 
-        $emailsPassagers = [];
-        if ($idCovoiturage > 0) {
+    $idCovoiturage = (int) $requete->request->get('id_covoiturage', 0);
+    $jeton = (string) $requete->request->get('_token');
+
+    // Récupérer AVANT l’annulation (sinon les participations passent en est_annulee = true)
+    $participants = [];
+    $covoiturage = null;
+
+    // On évite des requêtes si CSRF/id invalides
+    if ($idCovoiturage > 0 && $this->isCsrfTokenValid('annuler_covoiturage', $jeton)) {
+        $participants = $persistanceCovoiturage->listerParticipantsPourCourriel($idCovoiturage);
+        $covoiturage = $persistanceCovoiturage->obtenirResumeCovoituragePourCourriel($idCovoiturage);
+    }
+
+    // Annuler via le helper (CSRF + id + service + logs)
+    $resultat = $this->executerActionSimple(
+        $requete,
+        $sessionUtilisateur,
+        $persistanceHistorique,
+        $journalEvenements,
+        'annuler_covoiturage',
+        'covoiturage',
+        'id_covoiturage',
+        'annulerCovoiturage',
+        'Covoiturage annulé.',
+        'covoiturages'
+    );
+
+    // Courriel uniquement si l’annulation a réussi
+    if ($resultat['succes'] === true && $covoiturage !== null) {
+        try {
+            $envoiCourriels->envoyerAnnulationCovoiturage($participants, $covoiturage);
+        } catch (TransportExceptionInterface $e) {
+            // Ne jamais bloquer l’action si le serveur de courriel est indisponible
+            $this->logErreur(
+                $journalEvenements,
+                'courriel_annulation_envoi_erreur',
+                $idUtilisateur,
+                $e,
+                'annuler_covoiturage',
+                'covoiturage',
+                $idCovoiturage
+            );
+        }
+    }
+
+    return $resultat['reponse'];
+}
+
+#[Route('/historique/terminer-covoiturage', name: 'terminer_covoiturage', methods: ['POST'])]
+public function terminerCovoiturage(
+    Request $requete,
+    SessionUtilisateur $sessionUtilisateur,
+    PersistanceHistoriquePostgresql $persistanceHistorique,
+    PersistanceCovoituragePostgresql $persistanceCovoiturage,
+    EnvoiCourriels $envoiCourriels,
+    JournalEvenements $journalEvenements
+): RedirectResponse {
+    $utilisateur = $sessionUtilisateur->exigerUtilisateurConnecte();
+    $idUtilisateur = (int) $utilisateur['id_utilisateur'];
+
+    $idCovoiturage = (int) $requete->request->get('id_covoiturage', 0);
+
+    // Terminer via le helper (CSRF + id + service + logs)
+    $resultat = $this->executerActionSimple(
+        $requete,
+        $sessionUtilisateur,
+        $persistanceHistorique,
+        $journalEvenements,
+        'terminer_covoiturage',
+        'covoiturage',
+        'id_covoiturage',
+        'terminerCovoiturage',
+        'Covoiturage terminé.',
+        'covoiturages'
+    );
+
+    // Courriel uniquement si succès
+    if ($resultat['succes'] === true) {
+        $participants = $persistanceCovoiturage->listerParticipantsPourCourriel($idCovoiturage);
+        $covoiturage = $persistanceCovoiturage->obtenirResumeCovoituragePourCourriel($idCovoiturage);
+
+        if ($covoiturage !== null) {
             try {
-                $emailsPassagers = $persistance->listerEmailsParticipants($idUtilisateur, $idCovoiturage);
-            } catch (Throwable $e) {
+                $envoiCourriels->envoyerDemandeValidationTrajet($participants, $covoiturage);
+            } catch (TransportExceptionInterface $e) {
                 $this->logErreur(
                     $journalEvenements,
-                    'courriel_annulation_preparation_erreur',
+                    'courriel_terminaison_envoi_erreur',
                     $idUtilisateur,
                     $e,
-                    'annuler_covoiturage',
+                    'terminer_covoiturage',
                     'covoiturage',
                     $idCovoiturage
                 );
-                $emailsPassagers = [];
             }
         }
-
-        // 2) Annuler via le helper 
-        $resultat = $this->executerActionSimple(
-            $requete,
-            $sessionUtilisateur,
-            $persistance,
-            $journalEvenements,
-            'annuler_covoiturage',
-            'covoiturage',
-            'id_covoiturage',
-            'annulerCovoiturage',
-            'Covoiturage annulé.',
-            'covoiturages'
-        );
-
-        // 3) Envoyer les emails uniquement si l'annulation a réussi
-        if ($resultat['succes'] === true) {
-            foreach ($emailsPassagers as $emailDestinataire) {
-                $emailDestinataire = trim((string) $emailDestinataire);
-                if ($emailDestinataire === '') {
-                    continue;
-                }
-
-                try {
-                    $message = (new Email())
-                        ->from('ne-pas-repondre@ecoride.fr')
-                        ->to($emailDestinataire)
-                        ->subject('EcoRide - Annulation de votre covoiturage')
-                        ->text(
-                            "Bonjour,\n\n" .
-                            "Le covoiturage auquel vous étiez inscrit a été annulé par le chauffeur.\n" .
-                            "Vous pouvez consulter votre historique sur EcoRide.\n\n" .
-                            "EcoRide"
-                        );
-
-                    $serviceCourriel->send($message);
-                } catch (Throwable $e) {
-                    $this->logErreur(
-                        $journalEvenements,
-                        'courriel_annulation_envoi_erreur',
-                        $idUtilisateur,
-                        $e,
-                        'annuler_covoiturage',
-                        'covoiturage',
-                        $idCovoiturage
-                    );
-                }
-            }
-        }
-
-        return $resultat['reponse'];
     }
 
+    return $resultat['reponse'];
+}
 
+#[Route('/historique/demarrer-covoiturage', name: 'demarrer_covoiturage', methods: ['POST'])]
+public function demarrerCovoiturage(
+    Request $requete,
+    SessionUtilisateur $sessionUtilisateur,
+    PersistanceHistoriquePostgresql $persistanceHistorique,
+    JournalEvenements $journalEvenements
+): RedirectResponse {
+    $resultat = $this->executerActionSimple(
+        $requete,
+        $sessionUtilisateur,
+        $persistanceHistorique,
+        $journalEvenements,
+        'demarrer_covoiturage',
+        'covoiturage',
+        'id_covoiturage',
+        'demarrerCovoiturage',
+        'Covoiturage démarré.',
+        'covoiturages'
+    );
 
-    #[Route('/historique/demarrer-covoiturage', name: 'demarrer_covoiturage', methods: ['POST'])]
-    public function demarrerCovoiturage(
-        Request $requete,
-        SessionUtilisateur $sessionUtilisateur,
-        PersistanceHistoriquePostgresql $persistance,
-        JournalEvenements $journalEvenements
-    ): RedirectResponse {
-        $resultat = $this->executerActionSimple(
-            $requete,
-            $sessionUtilisateur,
-            $persistance,
-            $journalEvenements,
-            'demarrer_covoiturage',
-            'covoiturage',
-            'id_covoiturage',
-            'demarrerCovoiturage',
-            'Covoiturage démarré.',
-            'covoiturages'
-        );
-
-        return $resultat['reponse'];
-    }
-
-    #[Route('/historique/terminer-covoiturage', name: 'terminer_covoiturage', methods: ['POST'])]
-    public function terminerCovoiturage(
-        Request $requete,
-        SessionUtilisateur $sessionUtilisateur,
-        PersistanceHistoriquePostgresql $persistance,
-        JournalEvenements $journalEvenements,
-        MailerInterface $serviceCourriel
-    ): RedirectResponse {
-        $utilisateur = $sessionUtilisateur->exigerUtilisateurConnecte();
-        $idUtilisateur = (int) $utilisateur['id_utilisateur'];
-
-        // Récupération de l'id immédiate 
-        $idCovoiturage = (int) $requete->request->get('id_covoiturage', 0);
-
-        // Préparer la liste des emails avant
-        $emailsParticipants = [];
-        if ($idCovoiturage > 0) {
-            try {
-                $emailsParticipants = $persistance->listerEmailsParticipants($idUtilisateur, $idCovoiturage);
-            } catch (Throwable $e) {
-                $journalEvenements->enregistrerErreur(
-                    'courriel_terminaison_preparation_erreur',
-                    'covoiturage',
-                    $idCovoiturage,
-                    $e,
-                    ['id_utilisateur' => $idUtilisateur]
-                );
-                $emailsParticipants = [];
-            }
-        }
-
-        // Terminer via le helper (CSRF + id + service + logs)
-        $resultat = $this->executerActionSimple(
-            $requete,
-            $sessionUtilisateur,
-            $persistance,
-            $journalEvenements,
-            'terminer_covoiturage',
-            'covoiturage',
-            'id_covoiturage',
-            'terminerCovoiturage',
-            'Covoiturage terminé.',
-            'covoiturages'
-        );
-
-        // Envoyer les emails uniquement si succès
-        if ($resultat['succes'] === true) {
-            foreach ($emailsParticipants as $emailDestinataire) {
-                $emailDestinataire = trim((string) $emailDestinataire);
-                if ($emailDestinataire === '') {
-                    continue;
-                }
-
-                try {
-                    $message = (new Email())
-                        ->from('ne-pas-repondre@ecoride.fr')
-                        ->to($emailDestinataire)
-                        ->subject('EcoRide - Trajet terminé : merci de valider votre participation')
-                        ->text(
-                            "Bonjour,\n\n"
-                            . "Le chauffeur a indiqué être arrivé à destination.\n"
-                            . "Merci de vous rendre sur EcoRide > Mon historique > Mes participations\n"
-                            . "pour valider si tout s’est bien passé et, si vous le souhaitez, laisser une note et un avis.\n\n"
-                            . "EcoRide"
-                        );
-
-                    $serviceCourriel->send($message);
-                } catch (Throwable $e) {
-                    $journalEvenements->enregistrerErreur(
-                        'courriel_terminaison_envoi_erreur',
-                        'covoiturage',
-                        $idCovoiturage,
-                        $e,
-                        [
-                            'id_utilisateur' => $idUtilisateur,
-                            'destinataire' => $emailDestinataire,
-                        ]
-                    );
-                }
-            }
-        }
-
-        return $resultat['reponse'];
-    }
+    return $resultat['reponse'];
+}
 
     #[Route('/historique/declarer-incident', name: 'declarer_incident', methods: ['POST'])]
     public function declarerIncident(

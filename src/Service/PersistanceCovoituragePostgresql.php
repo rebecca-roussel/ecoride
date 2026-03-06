@@ -598,4 +598,65 @@ final class PersistanceCovoituragePostgresql
 
     return (int) $id;
   }
+
+  /**
+   * Récupérer les participants actifs d’un covoiturage (pseudo + email),
+   * pour l’envoi des courriels (annulation / demande de validation).
+   *
+   * @return array<int, array{pseudo: string, email: string}>
+   */
+  public function listerParticipantsPourCourriel(int $idCovoiturage): array
+  {
+    if ($idCovoiturage <= 0) {
+      return [];
+    }
+
+    $pdo = $this->connexionPostgresql->obtenirPdo();
+
+    $sql = "
+            SELECT u.pseudo, u.email
+            FROM participation p
+            JOIN utilisateur u
+              ON u.id_utilisateur = p.id_utilisateur
+            WHERE p.id_covoiturage = :id_covoiturage
+              AND p.est_annulee = false
+        ";
+
+    $requete = $pdo->prepare($sql);
+    $requete->execute(['id_covoiturage' => $idCovoiturage]);
+
+    return $requete->fetchAll(PDO::FETCH_ASSOC) ?: [];
+  }
+
+  /**
+   * Résumé minimal d’un covoiturage pour alimenter les gabarits Twig de courriel.
+   *
+   * @return array<string, mixed>|null
+   */
+  public function obtenirResumeCovoituragePourCourriel(int $idCovoiturage): ?array
+  {
+    if ($idCovoiturage <= 0) {
+      return null;
+    }
+
+    $pdo = $this->connexionPostgresql->obtenirPdo();
+
+    $sql = "
+            SELECT
+                ville_depart,
+                ville_arrivee,
+                date_heure_depart,
+                date_heure_arrivee
+            FROM covoiturage
+            WHERE id_covoiturage = :id_covoiturage
+            LIMIT 1
+        ";
+
+    $requete = $pdo->prepare($sql);
+    $requete->execute(['id_covoiturage' => $idCovoiturage]);
+
+    $ligne = $requete->fetch(PDO::FETCH_ASSOC);
+
+    return $ligne !== false ? $ligne : null;
+  }
 }
