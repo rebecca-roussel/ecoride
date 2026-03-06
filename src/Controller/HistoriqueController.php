@@ -383,6 +383,29 @@ public function terminerCovoiturage(
     return $resultat['reponse'];
 }
 
+#[Route('/historique/demarrer-covoiturage', name: 'demarrer_covoiturage', methods: ['POST'])]
+public function demarrerCovoiturage(
+    Request $requete,
+    SessionUtilisateur $sessionUtilisateur,
+    PersistanceHistoriquePostgresql $persistanceHistorique,
+    JournalEvenements $journalEvenements
+): RedirectResponse {
+    $resultat = $this->executerActionSimple(
+        $requete,
+        $sessionUtilisateur,
+        $persistanceHistorique,
+        $journalEvenements,
+        'demarrer_covoiturage',
+        'covoiturage',
+        'id_covoiturage',
+        'demarrerCovoiturage',
+        'Covoiturage démarré.',
+        'covoiturages'
+    );
+
+    return $resultat['reponse'];
+}
+
     #[Route('/historique/declarer-incident', name: 'declarer_incident', methods: ['POST'])]
     public function declarerIncident(
         Request $requete,
