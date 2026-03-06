@@ -5,7 +5,7 @@ services:
     image: nginx:1.27-alpine
     container_name: ecoride_nginx
     ports:
-      - "8080:80"
+      - "80:80"
     volumes:
       - ./:/var/www/html:ro
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
@@ -39,7 +39,7 @@ services:
     env_file:
       - .env.docker
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - donnees_postgresql:/var/lib/postgresql/data
     networks:
@@ -48,8 +48,6 @@ services:
   mongodb:
     image: mongo:7
     container_name: ecoride_mongodb
-    ports:
-      - "27017:27017"
     volumes:
       - donnees_mongodb:/data/db
     networks:
@@ -60,8 +58,8 @@ services:
     image: mailhog/mailhog
     container_name: ecoride_mailhog
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
     networks:
       - ecoride_reseau
 
