@@ -31,7 +31,7 @@
      - textarea confortable
 
   7. Actions
-     - bouton aligné à droite (puis pleine largeur sur mobile)
+     - bouton aligné à droite 
 */
 
 .page_publier{
@@ -51,7 +51,12 @@
   color: #0F172A;
 }
 
+.panneau_publier .texte_secondaire{
+  color: rgba(15, 23, 42, 0.65);
+}
+
 /* En-tête */
+
 .entete_publier{
   margin-bottom: 18px;
 }
@@ -65,8 +70,13 @@
 }
 
 /* Formulaire */
+
 .formulaire_publier{
   margin-top: 14px;
+}
+
+.grille > *{
+  min-width: 0;
 }
 
 .grille{
@@ -82,6 +92,7 @@
 }
 
 /* Champs */
+
 .champ{
   display: flex;
   flex-direction: column;
@@ -94,10 +105,13 @@
 }
 
 /* Champs de saisie  */
+
 .champ input,
 .champ select,
 .champ textarea{
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   padding: 12px 12px;
   border-radius: 12px;
@@ -118,17 +132,20 @@
 }
 
 /* Aide / erreurs */
+
 .champ_erreur{
   margin: 0;
   line-height: 1.3;
 }
 
 /* État erreur  */
+
 .champ_en_erreur{
   border-color: var(--etat_erreur) !important;
 }
 
 /* Préférences */
+
 .bloc_preferences{
   border: 1px solid rgba(15,23,42,0.18);
   border-radius: 14px;
@@ -143,6 +160,7 @@
 }
 
 /* Cases à cocher  */
+
 .ligne_cases{
   display: flex;
   gap: 16px;
@@ -168,6 +186,7 @@
 }
 
 /* Actions */
+
 .actions{
   margin-top: 18px;
   display: flex;
@@ -180,13 +199,16 @@
 }
 
 /* Suggestions geocodage */
+
 .panneau_suggestions[hidden]{
   display: none !important;
 }
 
 .panneau_suggestions{
+  width: 100%;
   display: none;             
   margin-top: 8px;
+  box-sizing: border-box;
   background: #ffffff;
   border: 1px solid rgba(199,195,184,0.9);
   border-radius: 12px;
@@ -239,5 +261,15 @@
   .actions .bouton_principal{
     width: 100%;
     justify-content: center;
+  }
+}
+
+@media (max-width: 420px){
+  .page_publier{
+    padding: 28px 12px;
+  }
+
+  .panneau_publier{
+    padding: 16px;
   }
 }

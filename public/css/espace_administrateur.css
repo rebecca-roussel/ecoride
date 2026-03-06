@@ -159,6 +159,8 @@
 
 .onglets_admin{
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 10px;
   gap: 18px;
   margin-top: 8px;
 }
@@ -195,12 +197,18 @@
   background: rgba(255,255,255,0.75);
   border: 1px solid rgba(199,195,184,0.65);
   border-radius: 14px;
-  overflow: hidden;
+  overflow-x: auto;   
+  overflow-y: hidden;
+}
+
+.ligne_table_admin > *{
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ligne_table_admin{
   display: grid;
-  grid-template-columns: 1.4fr 0.9fr 0.9fr 1fr; /* pseudo / rôle / statut / actions */
+  grid-template-columns: 1.4fr 0.9fr 0.9fr 1fr; 
   gap: 10px;
   padding: 12px 14px;
   border-top: 1px solid rgba(199,195,184,0.35);
@@ -300,6 +308,7 @@
 }
 
 /* Formulaire création employé */
+
 .form_admin{
   max-width: 620px;
   margin-top: 18px;
@@ -329,6 +338,7 @@
 }
 
 /* Variante : panneau plus étroit (pages formulaire) */
+
 .panneau_espace_admin--etroit{
   width: min(760px, 100%);
 }
@@ -361,18 +371,21 @@
 }
 
 /* Succès */
+
 .message_succes{
   background: var(--etat_succes);
   color: #fff;
 }
 
 /* Attention */
+
 .message_avertissement{
   background: var(--etat_avertissement);
   color: #0F172A;
 }
 
 /* Erreur  */
+
 .message_erreur{
   background: var(--etat_erreur);
   color: #fff;
@@ -405,7 +418,7 @@
   width: 100%;
   border-radius: 10px;
   background: var(--action_principale);
-  min-height: 4px; /* visible même à 0/1 */
+  min-height: 4px; 
 }
 
 .barre_credits{
@@ -425,4 +438,39 @@
   .grille_stats_admin{ grid-template-columns: 1fr; }
   .ligne_table_admin{ grid-template-columns: 1.2fr 0.9fr 0.9fr 1fr; }
   .col_actions{ justify-content: flex-start; }
+}
+
+@media (max-width: 700px){
+  .tuiles_admin{
+    grid-template-columns: 1fr; 
+  }
+
+  .ligne_table_admin{
+    grid-template-columns: 1fr; 
+    gap: 6px;
+  }
+
+  .col_actions{
+    justify-content: flex-start;
+  }
+
+  .bouton_action{
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ligne_table_admin.ligne_entete{
+    display: none;
+  }
+}
+
+@media (max-width: 420px){
+  .page_espace_admin{
+    padding: 28px 12px;
+  }
+
+  .panneau_espace_admin{
+    padding: 16px;
+    border-radius: 16px;
+  }
 }

@@ -53,6 +53,12 @@
 }
 
 /* Input fichier caché */
+
+.champ input{
+  max-width: 100%;
+  min-width: 0;
+}
+
 .champ_fichier{
   position: absolute;
   left: -9999px;
@@ -72,7 +78,7 @@
   border: 1px solid rgba(199,195,184,0.35);
   cursor: pointer;
   user-select: none;
-  min-height: 40px;          
+  min-height: 44px;          
   font-size: 14px;           
   font-weight: 600;
 }
@@ -93,6 +99,10 @@
 }
 
 /* Formulaire */
+
+.formulaire_profil > *{
+  min-width: 0;
+}
 
 .formulaire_profil{
   display: grid;
@@ -125,6 +135,7 @@
   margin-top: 10px;
   width: min(420px, 100%);
   justify-content: center;
+  display: flex;
   margin-left: auto;
   margin-right: auto;
 }
@@ -138,5 +149,20 @@
 
   .profil_titre{
     font-size: 24px;
+  }
+}
+
+@media (max-width: 420px){
+  .page_profil{
+    padding: 28px 12px;
+  }
+
+  .panneau_profil{
+    padding: 18px 14px;
+  }
+
+  .profil_avatar{
+    width: 96px;
+    height: 96px;
   }
 }
