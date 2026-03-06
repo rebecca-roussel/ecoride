@@ -26,6 +26,12 @@
   --anneau_focus: rgba(199,195,184,0.45);
 }
 
+*,
+*::before,
+*::after{
+  box-sizing: border-box;
+}
+
 /* Polices auto-hébergées : fichiers dans /public/polices */
 @font-face{
   font-family: "Inter";
@@ -110,7 +116,7 @@ label{
   color: var(--texte_secondaire);
 }
 
-/* Zone cliquable confortable sur navigation et boutons */
+/* Zone cliquable sur navigation et boutons */
 .navigation a,
 .bouton_principal,
 button{
@@ -157,6 +163,8 @@ textarea:focus-visible{
 
 /* Formulaires : texte lisible et erreurs explicites */
 input, select, textarea{
+  max-width: 100%;
+  min-width: 0;
   font-size: 16px;
 }
 

@@ -515,48 +515,132 @@
 
 
 /* RESPONSIVE */
+@media (max-width: 900px){
 
-@media (max-width: 900px) {
-    .bouton_menu {
-        display: inline-flex;
-    }
+  .entete{
+    position: relative;
+  }
 
-    .entete {
-        position: relative;
-    }
+  /* BOUTON MENU  */
+  .bouton_menu{
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
 
-    .navigation {
-        position: absolute;
-        z-index: 10;
-        top: calc(100% + 10px);
-        right: 0;
-        left: 0;
+    padding: 6px 10px;
+    border-radius: 10px;
 
-        display: grid;
-        gap: 8px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
 
-        padding: 12px;
-        border-radius: 14px;
+    color: var(--texte_principal);
+    font: inherit;
+    font-weight: 600;
 
-        background: rgba(15, 23, 42, 0.92);
-        border: 1px solid rgba(199, 195, 184, 0.22);
+    cursor: pointer;
+  }
 
-        /* caché par défaut */
-        opacity: 0;
-        transform: translateY(-6px);
-        pointer-events: none;
-    }
+  /* Hover / état ouvert : soulignement comme un lien actif */
+  .bouton_menu:hover,
+  .bouton_menu[aria-expanded="true"]{
+    text-decoration: underline;
+    text-underline-offset: 6px;
+    text-decoration-color: var(--action_principale);
+  }
 
-    /* état ouvert (piloté par js) */
-    .navigation[data-ouvert="true"] {
-        opacity: 1;
-        transform: translateY(0);
-        pointer-events: auto;
-    }
+  /* Focus clavier */
+  .bouton_menu:focus-visible{
+    outline: 3px solid var(--anneau_focus);
+    outline-offset: 3px;
+  }
 
-    .nav_lien {
-        justify-content: center;
-        width: 100%;
-    }
+  /* ICÔNE hamburger */
+  .bouton_menu_icone{
+    width: 22px;
+    height: 16px;
+    position: relative;
+    display: inline-block;
+  }
+
+  .bouton_menu_icone::before,
+  .bouton_menu_icone::after{
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--texte_principal);
+    transition: transform 160ms ease, top 160ms ease, bottom 160ms ease, box-shadow 160ms ease;
+  }
+
+  .bouton_menu_icone::before{
+    top: 2px;
+    box-shadow: 0 6px 0 var(--texte_principal);
+  }
+
+  .bouton_menu_icone::after{
+    bottom: 2px;
+  }
+
+  .bouton_menu[aria-expanded="true"] .bouton_menu_icone::before{
+    top: 7px;
+    transform: rotate(45deg);
+    box-shadow: none;
+  }
+
+  .bouton_menu[aria-expanded="true"] .bouton_menu_icone::after{
+    bottom: 7px;
+    transform: rotate(-45deg);
+  }
+
+  /* PANNEAU NAV : panneau déroulant */
+  .navigation{
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 10px);
+
+    left: 16px;
+    right: 16px;
+
+    display: grid;
+    gap: 8px;
+
+    padding: 12px;
+    border-radius: 14px;
+
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(199, 195, 184, 0.22);
+
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+
+    transition: opacity 160ms ease, transform 160ms ease;
+  }
+
+  /* état ouvert (piloté par JS) */
+  .navigation[data-ouvert="true"]{
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  /* Items pleine largeur */
+  .nav_lien{
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Déconnexion */
+  .navigation_formulaire{
+    display: block;
+    margin: 0;
+  }
+
+  .navigation_formulaire .nav_lien{
+    width: 100%;
+    justify-content: center;
+  }
 }
-

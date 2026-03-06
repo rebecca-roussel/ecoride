@@ -43,13 +43,13 @@ final class ParticiperCovoiturageController extends AbstractController
         SessionUtilisateur $sessionUtilisateur,
         ConnexionPostgresql $connexion,
     ): Response {
-        // 0) Garde-fou simple : id cohérent 
+        // Garde-fou simple : id cohérent 
         if ($id <= 0) {
             $this->addFlash('erreur', 'Covoiturage invalide.');
             return $this->redirectToRoute('resultats');
         }
 
-        // 1) Sécurité : connecté
+        // Sécurité : connecté
         $utilisateur = $sessionUtilisateur->obtenirUtilisateurConnecte();
         if ($utilisateur === null) {
             $this->addFlash('erreur', 'Veuillez vous connecter pour participer.');
@@ -58,12 +58,12 @@ final class ParticiperCovoiturageController extends AbstractController
 
         $idPassager = (int) ($utilisateur['id_utilisateur'] ?? 0);
         if ($idPassager <= 0) {
-            // Cas très rare : session incohérente (on évite d’aller plus loin)
+            // Cas très rare : session incohérente 
             $this->addFlash('erreur', 'Session invalide. Veuillez vous reconnecter.');
             return $this->redirectToRoute('connexion');
         }
 
-        // 2) CSRF (même nom de token que dans Twig)
+        // CSRF 
         $jeton = (string) $requete->request->get('_token', '');
         if (!$this->isCsrfTokenValid('participer_covoiturage_' . $id, $jeton)) {
             throw new RuntimeException('Jeton CSRF invalide.');
@@ -74,7 +74,7 @@ final class ParticiperCovoiturageController extends AbstractController
         try {
             $pdo->beginTransaction();
 
-            // Verrouille le covoiturage : évite les doubles participations simultanées
+            // Verrouille le covoiturage, évite les doubles participations simultanées
             $stmt = $pdo->prepare("
                 SELECT
                     id_covoiturage,

@@ -22,6 +22,10 @@
   color: var(--fond_principal);
 }
 
+.panneau_roles .texte_secondaire{
+  color: rgba(15, 23, 42, 0.65);
+}
+
 .formulaire_roles{
   margin-top: 30px;
   display: flex;
@@ -43,7 +47,15 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  flex: 1;
+  min-width: 0;
 }
+
+.role_infos h3,
+.role_infos .texte_mini{
+  overflow-wrap: anywhere;
+}
+
 .icone{
   display: inline-block;
   width: 32px;
@@ -171,11 +183,13 @@ input:checked + .curseur::before{
     padding: 16px;
     gap: 12px;
     align-items: flex-start;
+    flex-wrap: wrap;
   }
 
   .role_infos{
     gap: 12px;
-    min-width: 0; 
+    min-width: 0;
+    flex: 1 1 220px;
   }
 
   .role_infos *{
@@ -185,6 +199,7 @@ input:checked + .curseur::before{
   .interrupteur{
     flex: 0 0 auto; 
     margin-top: 2px;
+    margin-left: auto;
   }
 
   .bouton_roles{

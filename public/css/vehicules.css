@@ -120,6 +120,7 @@
   font-weight: 700;
   font-size: 16px;
   color: #0F172A;
+  overflow-wrap: anywhere;
 }
 
 .actions{
@@ -189,5 +190,38 @@
   .carte_vehicule{ align-items: flex-start; }
   .grille_infos{
     grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 900px){
+  .page_vehicules{
+    padding: 30px 12px; 
+  }
+
+  .panneau_vehicules{
+    padding: 20px;
+  }
+
+  .carte_vehicule{
+    flex-direction: column; 
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .grille_infos{
+    grid-template-columns: repeat(2, minmax(0, 1fr)); 
+    gap: 10px 12px; 
+    min-width: 0;   
+  }
+
+  .actions{
+    justify-content: flex-end;
+    align-self: flex-end; 
+  }
+}
+
+@media (max-width: 420px){
+  .grille_infos{
+    grid-template-columns: 1fr;
   }
 }

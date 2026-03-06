@@ -207,54 +207,6 @@ final class PersistanceHistoriquePostgresql
         }
     }
 
-    /**
-     * Lister les emails des participants d’un covoiturage (pour courriels chauffeur).
-     *
-     * Règles :
-     * - sécurité : le covoiturage doit appartenir au chauffeur
-     * - on ne prend que les participations actives
-     * - on renvoie des emails uniques
-     *
-     * @return array<int, string>
-     */
-    public function listerEmailsParticipants(int $idUtilisateur, int $idCovoiturage): array
-    {
-        if ($idUtilisateur <= 0 || $idCovoiturage <= 0) {
-            throw new RuntimeException('Paramètres invalides pour la liste des emails participants.');
-        }
-
-        $pdo = $this->connexionPostgresql->obtenirPdo();
-
-        $sql = "
-        SELECT DISTINCT u.email
-        FROM participation p
-        JOIN utilisateur u ON u.id_utilisateur = p.id_utilisateur
-        JOIN covoiturage c ON c.id_covoiturage = p.id_covoiturage
-        WHERE c.id_covoiturage = :id_covoiturage
-          AND c.id_utilisateur = :id_utilisateur
-          AND p.est_annulee = false
-        ORDER BY u.email ASC
-    ";
-
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            'id_covoiturage' => $idCovoiturage,
-            'id_utilisateur' => $idUtilisateur,
-        ]);
-
-        $emails = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
-
-        // Nettoyage simple 
-        $emailsNettoyes = [];
-        foreach ($emails as $email) {
-            $email = trim((string) $email);
-            if ($email !== '') {
-                $emailsNettoyes[] = $email;
-            }
-        }
-
-        return $emailsNettoyes;
-    }
 
 
     public function declarerIncident(int $idUtilisateur, int $idCovoiturage, string $commentaire): void

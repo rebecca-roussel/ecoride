@@ -1,4 +1,5 @@
 parameters:
+    courriel_expediteur: '%env(COURRIEL_EXPEDITEUR)%'
 
 services:
     _defaults:
@@ -15,3 +16,7 @@ services:
         arguments:
             $mongoUri: "%env(MONGO_URI)%"
             $nomBase: "%env(MONGO_DB)%"
+
+    App\Service\EnvoiCourriels:
+        arguments:
+            $courrielExpediteur: '%courriel_expediteur%'

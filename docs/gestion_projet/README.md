@@ -28,6 +28,9 @@ Si un lien doit être ajouté ou modifié, le faire dans `liens_gestion_projet/`
 - `justification_gestion_projet.pdf`  
   Synthèse de gestion de projet : organisation, planning, choix de méthode et kanban.
 
+- `captures_tests/`
+  Captures d'écran de tests de fonctionnalitées d'application
+
 ## Point d’entrée conseillé
 
 1. `justification_gestion_projet.pdf`
@@ -36,3 +39,4 @@ Si un lien doit être ajouté ou modifié, le faire dans `liens_gestion_projet/`
    Les liens vers le user story mapping Miro sont dans `liens_gestion_projet/`.
 4. `liens_gestion_projet/`  
    Liens vers le kanban et vers le user story mapping Miro.
+5.`captures_tests/`

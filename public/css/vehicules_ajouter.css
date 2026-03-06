@@ -20,6 +20,8 @@
      - Enregistrer (bouton principal déjà dans global.css)
 */
 
+/* public/css/vehicules_ajouter.css */
+
 .page_vehicule_ajouter{
   padding: 40px 16px;
   box-sizing: border-box;
@@ -62,8 +64,8 @@
 
 .champ input,
 .champ select{
-  width: 100%;
-  min-height: 44px;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   border-radius: 10px;
   border: 1px solid rgba(15, 23, 42, 0.25);
@@ -71,7 +73,6 @@
   background: #ffffff;
   color: var(--fond_principal);
 }
-
 
 .actions_formulaire{
   display: flex;
@@ -106,5 +107,30 @@
   .panneau_vehicule_ajouter{
     padding: 20px;
     border-radius: 16px;
+  }
+
+  .actions_formulaire{
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .actions_formulaire .bouton_principal{
+    width: 100%;
+    justify-content: center;
+  }
+
+  .lien_annuler{
+    text-align: center;
+  }
+}
+
+@media (max-width: 420px){
+  .page_vehicule_ajouter{
+    padding: 24px 12px;
+  }
+
+  .panneau_vehicule_ajouter{
+    padding: 16px;
   }
 }

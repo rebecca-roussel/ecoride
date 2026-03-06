@@ -29,6 +29,7 @@
 }
 
 /* En-tête */
+
 .entete_historique{
   display: grid;
   gap: 6px;
@@ -97,6 +98,10 @@
   gap: 12px;
 }
 
+.carte_trajet > *{
+  min-width: 0;
+}
+
 .carte_trajet{
   display: grid;
   grid-template-columns: 1fr 260px;
@@ -123,6 +128,11 @@
   flex-wrap: wrap;
 
   font-size: 18px;
+}
+
+.trajet,
+.meta{
+  overflow-wrap: anywhere;
 }
 
 .fleche{
@@ -158,6 +168,7 @@
 }
 
 .carte_actions{
+  min-width: 0;
   display: grid;
   align-content: start;
   gap: 10px;
@@ -168,6 +179,7 @@
 }
 
 /* Libellé */
+
 .libelle_action{
   display: inline-flex;
   align-items: center;
@@ -204,23 +216,24 @@
 }
 
 /* Statuts covoiturage */
+
 .badge_planifie{
-  background: rgba(191,169,122,0.25); /* avertissement doux */
+  background: rgba(191,169,122,0.25); 
   border-color: rgba(191,169,122,0.55);
 }
 
 .badge_en_cours{
-  background: rgba(63,93,74,0.14); /* action principale adoucie */
+  background: rgba(63,93,74,0.14);
   border-color: rgba(63,93,74,0.35);
 }
 
 .badge_termine{
-  background: rgba(107,142,122,0.22); /* succès */
+  background: rgba(107,142,122,0.22); 
   border-color: rgba(107,142,122,0.45);
 }
 
 .badge_annule{
-  background: rgba(155,79,79,0.18); /* erreur douce */
+  background: rgba(155,79,79,0.18); 
   border-color: rgba(155,79,79,0.40);
 }
 
@@ -315,6 +328,7 @@
 }
 
 /* Focus visible */
+
 .bouton_secondaire:focus-visible,
 .bouton_valider:focus-visible,
 .bouton_alerte:focus-visible{
@@ -443,7 +457,22 @@
     grid-template-columns: 1fr;
   }
 
-  .carte_actions{
-    grid-template-columns: 1fr;
+  .actions_formulaire{
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 420px){
+  .page_historique{
+    padding: 28px 12px;
+  }
+
+  .panneau_historique{
+    padding: 16px;
+  }
+
+  .trajet{
+    font-size: 17px;
   }
 }
