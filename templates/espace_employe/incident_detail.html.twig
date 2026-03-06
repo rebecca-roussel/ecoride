@@ -29,6 +29,7 @@
     <header class="entete_espace_employe">
       <h1>Détail d’un signalement</h1>
       <p class="texte_secondaire">Incident ouvert à traiter</p>
+      <p class="texte_secondaire">Covoiturage n° {{ incident.id_covoiturage|default(0) }}</p>
     </header>
 
     {% if incident is not defined or incident is empty %}
@@ -65,6 +66,11 @@
               <div class="meta_ligne">
                 <span class="icone icone_cadran" aria-hidden="true"></span>
                 <span>Départ : {{ incident.date_depart|default('') }}</span>
+              </div>
+
+              <div class="meta_ligne">
+                <span class="icone icone_cadran" aria-hidden="true"></span>
+                <span>Arrivée : {{ incident.date_arrivee|default('') }}</span>
               </div>
 
               <div class="meta_ligne">
