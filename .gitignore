@@ -31,3 +31,6 @@
 # Fichiers de référence générés (bruit)
 config/reference.php
 docs/gestion_projet/routes_et_controleurs.txt
+docs/api/
+.phpdoc/
+home.lnk
