@@ -1,116 +1,61 @@
-# Diagrammes UML de l’application EcoRide
+# Diagrammes UML — EcoRide
 
-Ce dossier regroupe l’ensemble des diagrammes UML réalisés pour le projet EcoRide.
-Ces diagrammes ont été utilisés comme outils de conception afin de structurer
-le fonctionnement de l’application avant l’implémentation technique.
+Ce dossier contient les **diagrammes UML retenus comme livrables finaux** pour le projet EcoRide.
 
-Ils permettent de représenter le système selon différents points de vue :
-fonctionnel, dynamique et structurel.
+Ils servent à représenter le projet sous deux angles complémentaires :
 
-## 1. Diagramme de cas d’utilisation
+- une vue **fonctionnelle globale** avec le diagramme de cas d’utilisation ;
+- une vue **dynamique détaillée** avec le diagramme de séquence du scénario principal.
 
-Le diagramme de cas d’utilisation a été réalisé afin d’obtenir une vision
-fonctionnelle globale de l’application, indépendante de toute considération
-technique ou d’interface.
+Les autres diagrammes UML réalisés pendant la phase de réflexion ou avant la finalisation complète de l’application ont été déplacés dans le dossier `archives_brouillons_uml`. Ils sont conservés comme traces de travail intermédiaire, mais ne font pas partie des livrables finaux présentés comme référence principale.
 
-Il met en évidence les interactions possibles entre les différents profils
-d’utilisateurs et le système, ainsi que les objectifs poursuivis par chacun.
+## Contenu du dossier
 
-Les profils identifiés sont :
+### 1. Diagramme de cas d’utilisation
 
-- le visiteur non connecté,
-- l’utilisateur inscrit,
-- l’employé chargé de la modération,
+Le diagramme de cas d’utilisation présente une vue d’ensemble des grandes fonctionnalités de l’application.
+
+Il permet d’identifier :
+
+- les différents profils d’utilisateurs ;
+- leurs actions principales ;
+- les interactions globales entre les acteurs et le système.
+
+Dans EcoRide, les profils représentés sont :
+
+- le visiteur ;
+- l’utilisateur authentifié ;
+- l’employé ;
 - l’administrateur.
 
-Les cas d’utilisation sont formulés en langage courant et décrivent uniquement
-les actions possibles et leur finalité. La relation `<<include>>` est utilisée
-lorsqu’une action est nécessaire à la réalisation d’une autre, notamment pour
-l’authentification préalable à certaines fonctionnalités.
+Ce diagramme sert surtout à comprendre le périmètre fonctionnel du projet, sans entrer dans les détails techniques.
 
-La relation `<<extend>>` n’a pas été retenue, les comportements représentés
-correspondant ici à des usages obligatoires ou à des droits distincts selon
-le profil de l’utilisateur.
+Livrables fournis :
 
-Ce diagramme constitue le point d’entrée pour la compréhension fonctionnelle
-du projet.
+- un fichier `.drawio` pour la version modifiable ;
+- une image `.jpg` pour la consultation rapide ;
+- un fichier `.pdf` pour l’export propre et l’impression.
 
-## 2. Diagrammes d’activités
+### 2. Diagramme de séquence — scénario principal
 
-Les diagrammes d’activités ont été construits à partir des parcours utilisateurs
-issus du user story mapping, disponible dans le dossier `gestion_projet`.
+Le diagramme de séquence retenu dans ce dossier correspond au **scénario principal** choisi pour représenter le fonctionnement dynamique de l’application.
 
-Ils ont été utilisés comme outils de clarification afin de représenter le
-déroulement complet des actions, les décisions possibles et les éventuels
-retours en arrière.
+Il montre l’enchaînement des échanges entre les acteurs et les composants du système dans un cas d’usage jugé représentatif du projet final.
 
-Ils jouent un rôle de transition entre l’expression des besoins fonctionnels
-et les diagrammes plus détaillés.
+Ce diagramme a été conservé comme livrable final car il reflète l’état abouti de l’application et les choix réellement retenus au moment de la finalisation.
 
-Les conventions UML retenues sont volontairement simples :
+Livrables fournis :
 
-- un point de départ unique,
-- des actions représentées par des rectangles,
-- des décisions représentées par des losanges,
-- des flux clairement identifiés,
-- un point de fin explicite.
+- un fichier `.png` ;
+- un fichier `.pdf` ;
+- un fichier `.svg`.
 
-## Diagrammes de séquence
+## Dossier d’archives
 
-Les diagrammes de séquence modélisent les échanges chronologiques entre les acteurs, l’interface utilisateur et le système pour les principaux scénarios fonctionnels de l’application EcoRide.
+Le dossier `archives_brouillons_uml` contient les diagrammes UML produits en amont, avant stabilisation complète du projet.
 
-Les scénarios couverts incluent notamment l’inscription et la connexion, la recherche de covoiturage, la participation, la publication et l’annulation de trajets, la modération, ainsi que la gestion des espaces utilisateur, employé et administrateur.
+Ces fichiers peuvent servir de traces de réflexion initiale, mais ils ne sont pas considérés comme les livrables finaux de ce dossier.
 
-Les premières versions des diagrammes ont permis d’identifier et de cadrer les grands scénarios fonctionnels. Elles sont conservées à titre de travail intermédiaire.
-Cependant, une version consolidée et finale a été réalisée afin de refléter fidèlement l’état abouti du projet, le schéma de données définitif et les règles métier effectivement retenues.
+## Remarque
 
-Cette version finale regroupe l’ensemble des scénarios principaux dans un diagramme de séquence cohérent et complet, intégrant explicitement :
-
-- les règles métier critiques (gestion des crédits, des places disponibles, des statuts),
-- les cas d’erreur et scénarios alternatifs à l’aide de fragments alt,
-- les comportements optionnels, notamment la journalisation MongoDB, via des fragments opt,
-- les interactions techniques réelles (transactions SQL, envoi de courriels via Symfony Mailer).
-
-La version finale du diagramme de séquence, nommé `diagramme_de_sequence_ecoride` dans ce dossier, est celle faisant foi pour l’évaluation du TP.
-Pour ce diagramme final, les livrables suivants sont fournis :
-
-- un fichier SVG (format vectoriel, lisible à tout niveau de zoom),
-- un fichier PDF destiné à l’évaluation et à l’impression,
-- une image PNG pour une consultation rapide.
-
-## 4. Diagramme de classes
-
-Le diagramme de classes présente la structure statique du projet EcoRide.
-Il décrit les principales entités métier, leurs attributs essentiels
-et les relations qui les lient.
-
-La classe `Utilisateur` constitue le cœur du modèle et regroupe les informations
-communes à toute personne utilisant la plateforme. Les rôles internes
-`Employé` et `Administrateur` sont modélisés par héritage afin de mutualiser
-les propriétés communes tout en ajoutant des responsabilités spécifiques.
-
-Les classes `Voiture`, `Covoiturage`, `Participation` et `Avis`
-structurent les éléments centraux de l’activité.
-Les relations et cardinalités traduisent les règles fonctionnelles définies
-dans le projet.
-
-Les choix techniques d’implémentation associés à ce modèle sont explicités
-dans les espaces dédiés de l’environnement de travail (Notion).
-
-## 5. Vocabulaire fonctionnel
-
-Afin d’assurer la cohérence entre les diagrammes UML, la modélisation des données
-et l’implémentation, un vocabulaire fonctionnel cohérent est utilisé dans
-l’ensemble des diagrammes.
-
-Les termes canoniques retenus sont notamment :
-
-- **Visiteur** : personne consultant le site sans être authentifiée.
-- **Utilisateur** : personne disposant d’un compte et authentifiée.
-- **Chauffeur / Passager** : rôles fonctionnels qu’un utilisateur peut assumer.
-- **Covoiturage** : offre de déplacement publiée sur la plateforme.
-- **Participation** : acte par lequel un utilisateur rejoint un covoiturage.
-- **Avis** : retour laissé à l’issue d’une participation.
-
-Ces diagrammes constituent une base de conception et de cohérence pour les
-étapes suivantes du projet.
+Ce dossier ne regroupe donc pas tous les diagrammes UML réalisés pendant le projet, mais uniquement ceux qui ont été retenus comme supports finaux pour présenter EcoRide.
