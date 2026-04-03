@@ -86,7 +86,7 @@ ecoride/
 │
 ├── docker/                 # Configuration Docker (PHP, Nginx)
 │
-├── docker-compose.yml      # Orchestration des conteneurs
+├── docker-compose.yaml      # Orchestration des conteneurs
 ├── composer.json           # Dépendances PHP
 ├── .env* / .env.docker     # Variables d’environnement (Symfony + Docker)
 └── README.md               # Documentation principale
