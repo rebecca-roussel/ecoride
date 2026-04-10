@@ -1,6 +1,3 @@
-parameters:
-    courriel_expediteur: '%env(COURRIEL_EXPEDITEUR)%'
-
 services:
     _defaults:
         autowire: true
@@ -19,4 +16,4 @@ services:
 
     App\Service\EnvoiCourriels:
         arguments:
-            $courrielExpediteur: '%courriel_expediteur%'
+            $courrielExpediteur: "%env(COURRIEL_EXPEDITEUR)%"
