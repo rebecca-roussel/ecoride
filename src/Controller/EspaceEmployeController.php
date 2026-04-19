@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\JournalEvenements;
 use App\Service\PersistanceEmployePostgresql;
 use App\Service\SessionUtilisateur;
+use Throwable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,7 +28,9 @@ use Symfony\Component\Routing\Attribute\Route;
  * Les lectures et écritures en base de données sont déléguées
  * à `PersistanceEmployePostgresql`.
  *
- * @package App\Controller
+ * La journalisation MongoDB sert ici à conserver une trace
+ * des modérations d'avis réellement effectuées
+ * ainsi que des erreurs techniques éventuelles.
  */
 final class EspaceEmployeController extends AbstractController
 {
@@ -159,10 +163,17 @@ final class EspaceEmployeController extends AbstractController
      *
      * L'écriture en base est ensuite déléguée à la persistance.
      *
+     * Si la modération réussit réellement,
+     * un événement `avis_valide` est enregistré dans MongoDB.
+     *
+     * Si une erreur technique survient,
+     * un événement `avis_erreur` est enregistré.
+     *
      * @param Request $request Requête HTTP contenant l'identifiant et le jeton CSRF.
      * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
      * @param PersistanceEmployePostgresql $persistanceEmploye
      *        Service de persistance PostgreSQL.
+     * @param JournalEvenements $journalEvenements Service de journalisation MongoDB.
      *
      * @return Response Redirection vers l'onglet des avis.
      */
@@ -171,6 +182,7 @@ final class EspaceEmployeController extends AbstractController
         Request $request,
         SessionUtilisateur $sessionUtilisateur,
         PersistanceEmployePostgresql $persistanceEmploye,
+        JournalEvenements $journalEvenements,
     ): Response {
         if (!$sessionUtilisateur->estConnecte() || !$sessionUtilisateur->estEmploye()) {
             throw $this->createAccessDeniedException('Accès réservé employé.');
@@ -196,12 +208,38 @@ final class EspaceEmployeController extends AbstractController
             return $this->redirectToRoute('espace_employe', ['onglet' => 'avis']);
         }
 
-        $ok = $persistanceEmploye->modererAvis($idAvis, 'VALIDE', $idEmploye);
+        try {
+            $ok = $persistanceEmploye->modererAvis($idAvis, 'VALIDE', $idEmploye);
 
-        $this->addFlash(
-            $ok ? 'succes' : 'avertissement',
-            $ok ? 'Avis validé (publié).' : 'Aucun changement : avis déjà traité ou introuvable.'
-        );
+            if ($ok) {
+                $journalEvenements->enregistrer(
+                    'avis_valide',
+                    'avis',
+                    $idAvis,
+                    [
+                        'id_employe' => $idEmploye,
+                    ]
+                );
+            }
+
+            $this->addFlash(
+                $ok ? 'succes' : 'avertissement',
+                $ok ? 'Avis validé (publié).' : 'Aucun changement : avis déjà traité ou introuvable.'
+            );
+        } catch (Throwable $e) {
+            $journalEvenements->enregistrerErreur(
+                'avis_erreur',
+                'avis',
+                $idAvis,
+                $e,
+                [
+                    'id_employe' => $idEmploye,
+                    'action' => 'valider_avis',
+                ]
+            );
+
+            $this->addFlash('erreur', 'Erreur technique : validation impossible.');
+        }
 
         return $this->redirectToRoute('espace_employe', ['onglet' => 'avis']);
     }
@@ -213,10 +251,17 @@ final class EspaceEmployeController extends AbstractController
      * contrôle d'accès, contrôle CSRF,
      * puis délégation de l'écriture SQL à la persistance.
      *
+     * Si le refus est réellement enregistré,
+     * un événement `avis_refuse` est ajouté dans MongoDB.
+     *
+     * Si une erreur technique survient,
+     * un événement `avis_erreur` est enregistré.
+     *
      * @param Request $request Requête HTTP contenant l'identifiant et le jeton CSRF.
      * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
      * @param PersistanceEmployePostgresql $persistanceEmploye
      *        Service de persistance PostgreSQL.
+     * @param JournalEvenements $journalEvenements Service de journalisation MongoDB.
      *
      * @return Response Redirection vers l'onglet des avis.
      */
@@ -225,6 +270,7 @@ final class EspaceEmployeController extends AbstractController
         Request $request,
         SessionUtilisateur $sessionUtilisateur,
         PersistanceEmployePostgresql $persistanceEmploye,
+        JournalEvenements $journalEvenements,
     ): Response {
         if (!$sessionUtilisateur->estConnecte() || !$sessionUtilisateur->estEmploye()) {
             throw $this->createAccessDeniedException('Accès réservé employé.');
@@ -246,12 +292,38 @@ final class EspaceEmployeController extends AbstractController
             return $this->redirectToRoute('espace_employe', ['onglet' => 'avis']);
         }
 
-        $ok = $persistanceEmploye->modererAvis($idAvis, 'REFUSE', $idEmploye);
+        try {
+            $ok = $persistanceEmploye->modererAvis($idAvis, 'REFUSE', $idEmploye);
 
-        $this->addFlash(
-            'avertissement',
-            $ok ? 'Avis refusé (non publié).' : 'Aucun changement : avis déjà traité ou introuvable.'
-        );
+            if ($ok) {
+                $journalEvenements->enregistrer(
+                    'avis_refuse',
+                    'avis',
+                    $idAvis,
+                    [
+                        'id_employe' => $idEmploye,
+                    ]
+                );
+            }
+
+            $this->addFlash(
+                'avertissement',
+                $ok ? 'Avis refusé (non publié).' : 'Aucun changement : avis déjà traité ou introuvable.'
+            );
+        } catch (Throwable $e) {
+            $journalEvenements->enregistrerErreur(
+                'avis_erreur',
+                'avis',
+                $idAvis,
+                $e,
+                [
+                    'id_employe' => $idEmploye,
+                    'action' => 'refuser_avis',
+                ]
+            );
+
+            $this->addFlash('erreur', 'Erreur technique : refus impossible.');
+        }
 
         return $this->redirectToRoute('espace_employe', ['onglet' => 'avis']);
     }
