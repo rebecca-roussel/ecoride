@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\JournalEvenements;
 use App\Service\PersistanceAdministrationPostgresql;
 use App\Service\SessionUtilisateur;
 use Throwable;
@@ -16,17 +17,23 @@ use Symfony\Component\Routing\Attribute\Route;
  * Contrôleur de l'espace administrateur.
  *
  * Cette classe gère les parcours HTTP réservés à l'administrateur :
- * affichage du tableau de bord, création d'un employé,
- * suspension d'un compte et réactivation d'un compte.
+ * affichage du tableau de bord,
+ * création d'un employé,
+ * suspension d'un compte
+ * et réactivation d'un compte.
  *
  * Le contrôleur garde ici ce qui relève du web :
- * lecture de la requête, contrôle d'accès, vérification CSRF,
- * validation simple des champs, messages flash et redirections.
+ * lecture de la requête,
+ * contrôle d'accès,
+ * vérification CSRF,
+ * validation simple des champs,
+ * messages flash
+ * et redirections.
  *
  * Les accès à PostgreSQL sont délégués à `PersistanceAdministrationPostgresql`.
- * Cela évite de mélanger les requêtes SQL avec la logique du parcours HTTP.
  *
- * @package App\Controller
+ * La journalisation MongoDB est utilisée ici
+ * pour tracer une suspension de compte réellement effectuée.
  */
 final class EspaceAdminController extends AbstractController
 {
@@ -38,15 +45,10 @@ final class EspaceAdminController extends AbstractController
      * - les statistiques.
      *
      * Les données affichées sont préparées par la persistance dédiée :
-     * statistiques globales, liste des comptes,
-     * nombre de covoiturages par jour et crédits générés par jour.
-     *
-     * @param Request $request Requête HTTP courante.
-     * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
-     * @param PersistanceAdministrationPostgresql $persistanceAdministration
-     *        Service de lecture PostgreSQL de l'espace administrateur.
-     *
-     * @return Response Réponse HTML rendue par Twig.
+     * statistiques globales,
+     * liste des comptes,
+     * nombre de covoiturages par jour
+     * et crédits générés par jour.
      */
     #[Route('/espace-administrateur', name: 'espace_administrateur', methods: ['GET'])]
     public function index(
@@ -64,15 +66,15 @@ final class EspaceAdminController extends AbstractController
 
         /*
          * L'onglet est transmis en paramètre GET.
-         * On borne volontairement les valeurs acceptées
-         * pour garder un affichage prévisible.
+         * On garde seulement les deux valeurs attendues
+         * pour éviter un état d'affichage incohérent.
          */
         $onglet = (string) $request->query->get('onglet', 'comptes');
         $onglet = $onglet === 'statistiques' ? 'statistiques' : 'comptes';
 
         /*
          * Les lectures SQL sont centralisées dans la persistance.
-         * Le contrôleur récupère ici des données déjà prêtes à exploiter.
+         * Le contrôleur reçoit ici des données déjà prêtes à afficher.
          */
         $stats = $persistanceAdministration->obtenirStats();
         $comptes = $persistanceAdministration->listerComptes(50);
@@ -94,20 +96,14 @@ final class EspaceAdminController extends AbstractController
      * Affiche et traite le formulaire de création d'un employé.
      *
      * En GET, la méthode affiche le formulaire vide.
-     * En POST, elle lit les champs, applique les validations simples,
-     * sécurise le mot de passe puis délègue la création du compte
-     * à la persistance PostgreSQL.
+     * En POST, elle lit les champs,
+     * applique les validations simples,
+     * sécurise le mot de passe
+     * puis délègue la création du compte à PostgreSQL.
      *
      * Le compte créé ici est un compte interne.
      * Il est donc enregistré avec `role_interne = true`
      * puis relié à la table `employe`.
-     *
-     * @param Request $request Requête HTTP courante.
-     * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
-     * @param PersistanceAdministrationPostgresql $persistanceAdministration
-     *        Service de persistance de l'espace administrateur.
-     *
-     * @return Response Réponse HTML rendue par Twig ou redirection.
      */
     #[Route('/espace-administrateur/creer-employe', name: 'espace_administrateur_creer_employe', methods: ['GET', 'POST'])]
     public function creerEmploye(
@@ -120,8 +116,8 @@ final class EspaceAdminController extends AbstractController
         }
 
         /*
-         * Les valeurs sont préparées à l'avance pour pouvoir réafficher
-         * le formulaire en conservant la saisie en cas d'erreur.
+         * Ces valeurs servent à réafficher le formulaire
+         * avec la saisie conservée si une erreur survient.
          */
         $erreurs = [];
         $valeurs = [
@@ -137,7 +133,10 @@ final class EspaceAdminController extends AbstractController
 
             /*
              * Le jeton CSRF protège l'action contre une soumission frauduleuse.
+             *
              * CSRF signifie Cross-Site Request Forgery.
+             * C'est un contrôle qui vérifie
+             * que le formulaire vient bien de l'application.
              */
             $jeton = (string) $request->request->get('_csrf', '');
             if (!$this->isCsrfTokenValid('creer_employe', $jeton)) {
@@ -161,8 +160,9 @@ final class EspaceAdminController extends AbstractController
             }
 
             /*
-             * `password_hash()` produit le hash à enregistrer en base.
-             * Le mot de passe en clair n'est donc jamais stocké tel quel.
+             * `password_hash()` produit le hash sécurisé
+             * qui sera stocké en base.
+             * Le mot de passe en clair n'est donc jamais enregistré.
              */
             $hash = null;
             if (count($erreurs) === 0) {
@@ -202,26 +202,23 @@ final class EspaceAdminController extends AbstractController
     /**
      * Suspend un compte utilisateur depuis l'espace administrateur.
      *
-     * La méthode contrôle l'accès, vérifie le jeton CSRF,
-     * bloque l'auto-suspension au cas où l'administrateur désactive par mégarde son propre compte,
-     * puis délègue la mise à jour à PostgreSQL.
+     * Le contrôleur vérifie ici :
+     * l'accès administrateur,
+     * le jeton CSRF,
+     * l'identifiant du compte ciblé
+     * et l'interdiction de se suspendre soi-même.
      *
-     * La persistance renvoie le pseudo du compte concerné
-     * si l'opération a bien touché une ligne.
-     * Cela permet d'afficher un message plus clair dans l'interface.
+     * La mise à jour réelle en base est déléguée à PostgreSQL.
      *
-     * @param Request $request Requête HTTP contenant l'identifiant du compte et le jeton CSRF.
-     * @param PersistanceAdministrationPostgresql $persistanceAdministration
-     *        Service de persistance de l'espace administrateur.
-     * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
-     *
-     * @return Response Redirection vers l'onglet des comptes.
+     * Quand la suspension touche réellement un compte,
+     * l'événement MongoDB `compte_suspendu` est enregistré.
      */
     #[Route('/espace-administrateur/suspendre-compte', name: 'espace_admin_suspendre_compte', methods: ['POST'])]
     public function suspendreCompte(
         Request $request,
         PersistanceAdministrationPostgresql $persistanceAdministration,
         SessionUtilisateur $sessionUtilisateur,
+        JournalEvenements $journalEvenements,
     ): Response {
         if (!$sessionUtilisateur->estConnecte() || !$sessionUtilisateur->estAdmin()) {
             throw $this->createAccessDeniedException('Accès réservé administrateur.');
@@ -237,21 +234,36 @@ final class EspaceAdminController extends AbstractController
         }
 
         /*
-         * Cette garde évite à l'administrateur de bloquer son propre accès.
+         * Cette garde évite à l'administrateur
+         * de bloquer son propre accès à l'application.
          */
-        $idConnecte = $sessionUtilisateur->idUtilisateur() ?? 0;
-        if ($idConnecte > 0 && $idCible === $idConnecte) {
+        $idAdministrateur = (int) ($sessionUtilisateur->idUtilisateur() ?? 0);
+        if ($idAdministrateur > 0 && $idCible === $idAdministrateur) {
             $this->addFlash('erreur', 'Vous ne pouvez pas suspendre votre propre compte.');
 
             return $this->redirectToRoute('espace_administrateur', ['onglet' => 'comptes']);
         }
 
         try {
+            /*
+             * La persistance renvoie le pseudo du compte suspendu.
+             * Si elle renvoie `null`, aucune ligne n'a été modifiée.
+             */
             $pseudoCible = $persistanceAdministration->suspendreCompteParId($idCible);
 
             if ($pseudoCible === null) {
                 $this->addFlash('erreur', 'Aucun compte trouvé : suspension non effectuée.');
             } else {
+                $journalEvenements->enregistrer(
+                    'compte_suspendu',
+                    'utilisateur',
+                    $idCible,
+                    [
+                        'id_administrateur' => $idAdministrateur,
+                        'pseudo_cible' => $pseudoCible,
+                    ]
+                );
+
                 $libelle = $pseudoCible !== ''
                     ? sprintf('Le compte "%s" a été suspendu.', $pseudoCible)
                     : 'Le compte a été suspendu.';
@@ -269,15 +281,12 @@ final class EspaceAdminController extends AbstractController
      * Réactive un compte utilisateur depuis l'espace administrateur.
      *
      * Le contrôleur garde ici le parcours HTTP :
-     * contrôle d'accès, vérification CSRF, messages d'interface et redirection.
-     * La mise à jour en base est déléguée à la persistance dédiée.
+     * contrôle d'accès,
+     * vérification CSRF,
+     * messages d'interface
+     * et redirection.
      *
-     * @param Request $request Requête HTTP contenant l'identifiant du compte et le jeton CSRF.
-     * @param PersistanceAdministrationPostgresql $persistanceAdministration
-     *        Service de persistance de l'espace administrateur.
-     * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
-     *
-     * @return Response Redirection vers l'onglet des comptes.
+     * La mise à jour réelle en base est déléguée à PostgreSQL.
      */
     #[Route('/espace-administrateur/reactiver-compte', name: 'espace_admin_reactiver_compte', methods: ['POST'])]
     public function reactiverCompte(
