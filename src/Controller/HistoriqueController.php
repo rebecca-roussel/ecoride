@@ -298,46 +298,43 @@ final class HistoriqueController extends AbstractController
         }
 
         try {
-            $persistance->enregistrerSatisfaction($idUtilisateur, $idCovoiturage, $note, $commentaire);
+        /*
+        * Cette action produit trois effets métier distincts :
+        * - la satisfaction est enregistrée ;
+        * - un avis est déposé ;
+        * - la participation liée à ce trajet passe à l'état validé.
+        *
+        * La persistance réalise l'écriture en base.
+        * Le contrôleur trace ensuite les événements MongoDB correspondants.
+        */
+        $persistance->enregistrerSatisfaction($idUtilisateur, $idCovoiturage, $note, $commentaire);
 
-            $this->logSucces(
-                $journalEvenements,
-                'satisfaction_enregistree',
-                $idUtilisateur,
-                'covoiturage',
-                $idCovoiturage
-            );
+        $this->logSucces(
+            $journalEvenements,
+            'satisfaction_enregistree',
+            $idUtilisateur,
+            'covoiturage',
+            $idCovoiturage
+        );
 
-            $this->logSucces(
-                $journalEvenements,
-                'avis_depose',
-                $idUtilisateur,
-                'covoiturage',
-                $idCovoiturage
-            );
+        $this->logSucces(
+            $journalEvenements,
+            'avis_depose',
+            $idUtilisateur,
+            'covoiturage',
+            $idCovoiturage
+        );
 
+        $this->logSucces(
+            $journalEvenements,
+            'participation_validee',
+            $idUtilisateur,
+            'covoiturage',
+            $idCovoiturage
+        );
             $this->addFlash('succes', 'Merci pour votre avis !');
-        } catch (RuntimeException $e) {
-            $this->logRefus(
-                $journalEvenements,
-                'satisfaction_refusee',
-                'regle_metier',
-                $idUtilisateur,
-                'covoiturage',
-                $idCovoiturage,
-                $e->getMessage()
-            );
-            $this->addFlash('erreur', $e->getMessage());
+            } catch (RuntimeException $e) {
 
-            return $this->render('historique/satisfaction.html.twig', [
-                'id_covoiturage' => $idCovoiturage,
-                'ancien' => [
-                    'note' => $note,
-                    'commentaire' => $commentaire,
-                ],
-                'erreurs' => [],
-            ]);
-        } catch (Throwable $e) {
             $this->logErreur(
                 $journalEvenements,
                 'satisfaction_erreur',
