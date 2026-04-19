@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\JournalEvenements;
 use App\Service\PersistanceUtilisateurPostgresql;
 use App\Service\SessionUtilisateur;
 use PDOException;
@@ -15,39 +16,50 @@ use Symfony\Component\Routing\Attribute\Route;
 /**
  * Contrôleur du parcours de connexion utilisateur.
  *
- * Cette classe gère le formulaire de connexion, l'ouverture de session
- * et la redirection selon le profil de l'utilisateur connecté.
+ * Cette classe gère le formulaire de connexion,
+ * l'ouverture de session
+ * et la redirection vers la bonne zone de l'application
+ * selon le profil de l'utilisateur connecté.
  *
- * Le contrôleur garde ici le rôle de Symfony :
- * il lit la requête HTTP, prépare les messages à afficher,
- * appelle les services utiles, puis choisit la réponse à renvoyer.
+ * Le contrôleur garde ici la logique HTTP :
+ * il lit la requête,
+ * récupère les champs du formulaire,
+ * prépare les messages à afficher,
+ * appelle les services utiles
+ * puis décide de la réponse à renvoyer.
  *
- * La lecture des données utilisateur dans PostgreSQL
- * sont déléguées à `PersistanceUtilisateurPostgresql`.
+ * Les données utilisateur sont lues dans PostgreSQL
+ * par `PersistanceUtilisateurPostgresql`.
  *
- * @package App\Controller
+ * La session PHP est pilotée par `SessionUtilisateur`.
+ * C'est ce service qui stocke ensuite les informations
+ * de l'utilisateur authentifié.
+ *
+ * La journalisation MongoDB passe par `JournalEvenements`
+ * pour tracer les connexions réussies
+ * et certaines connexions échouées.
  */
 final class ConnexionController extends AbstractController
 {
     /**
      * Affiche le formulaire de connexion et traite sa soumission.
      *
-     * Cette méthode joue deux rôles selon la méthode HTTP reçue :
+     * Cette méthode gère deux cas :
      * - en GET, elle affiche la page ;
-     * - en POST, elle lit les champs du formulaire, vérifie les identifiants,
-     *   ouvre la session puis redirige selon le profil.
+     * - en POST, elle vérifie les identifiants,
+     *   ouvre la session si tout est correct,
+     *   puis redirige vers la bonne page.
      *
-     * `PersistanceUtilisateurPostgresql` sert ici à récupérer les données minimales
-     * nécessaires à l'authentification.
-     *
-     * `SessionUtilisateur` centralise la gestion de session :
-     * c'est lui qui sait si un utilisateur est déjà connecté,
-     * puis qui stocke les informations après authentification.
+     * Le service de persistance renvoie ici uniquement
+     * les données utiles à l'authentification :
+     * identifiant, pseudo, hash du mot de passe,
+     * statut du compte
+     * et rôles utiles à la redirection.
      *
      * @param Request $request Requête HTTP courante.
-     * @param PersistanceUtilisateurPostgresql $persistanceUtilisateur
-     *        Service de lecture utilisateur dans PostgreSQL.
+     * @param PersistanceUtilisateurPostgresql $persistanceUtilisateur Service de lecture PostgreSQL.
      * @param SessionUtilisateur $sessionUtilisateur Service de gestion de session.
+     * @param JournalEvenements $journalEvenements Service de journalisation MongoDB.
      *
      * @return Response Page Twig ou redirection.
      */
@@ -56,13 +68,13 @@ final class ConnexionController extends AbstractController
         Request $request,
         PersistanceUtilisateurPostgresql $persistanceUtilisateur,
         SessionUtilisateur $sessionUtilisateur,
+        JournalEvenements $journalEvenements,
     ): Response {
         /*
-         * Si une session existe déjà, on évite d'afficher à nouveau
-         * le formulaire de connexion.
+         * Si une session existe déjà,
+         * on ne réaffiche pas le formulaire.
          *
-         * La redirection dépend du profil déjà stocké en session :
-         * administrateur, employé ou utilisateur standard.
+         * La redirection dépend du profil déjà présent en session.
          */
         if ($sessionUtilisateur->estConnecte()) {
             if ($sessionUtilisateur->estAdmin()) {
@@ -77,17 +89,19 @@ final class ConnexionController extends AbstractController
         }
 
         /*
-         * Ces variables servent à l'affichage du formulaire.
-         * Elles permettent de réafficher l'e-mail saisi
-         * et un éventuel message d'erreur si la tentative échoue.
+         * Ces variables servent à réafficher le formulaire.
+         * On garde l'e-mail saisi
+         * et un éventuel message d'erreur.
          */
         $erreur = null;
         $emailSaisi = '';
 
         if ($request->isMethod('POST')) {
             /*
-             * `trim()` supprime les espaces inutiles au début et à la fin.
-             * Cela évite de traiter une saisie remplie uniquement avec des blancs.
+             * `trim()` retire les espaces inutiles
+             * au début et à la fin d'une chaîne.
+             * Cela évite de considérer comme valide
+             * une saisie remplie seulement avec des blancs.
              */
             $emailSaisi = trim((string) $request->request->get('email', ''));
             $motDePasse = (string) $request->request->get('mot_de_passe', '');
@@ -97,67 +111,90 @@ final class ConnexionController extends AbstractController
             } else {
                 try {
                     /*
-                     * La persistance renvoie ici l'utilisateur avec les champs utiles
-                     * au parcours de connexion :
-                     * identifiant, pseudo, hash du mot de passe, statut,
-                     * rôles publics et indicateurs employé / administrateur.
+                     * On charge ici l'utilisateur lié à l'e-mail saisi.
+                     * Si aucun compte ne correspond, la persistance renvoie `null`.
                      */
                     $utilisateur = $persistanceUtilisateur->trouverUtilisateurPourConnexionParEmail($emailSaisi);
 
                     if (!is_array($utilisateur)) {
                         $erreur = 'Identifiants invalides.';
                     } elseif (($utilisateur['statut'] ?? '') !== 'ACTIF') {
+                        /*
+                         * Un compte suspendu existe bien,
+                         * mais il n'a pas le droit d'ouvrir une session.
+                         */
                         $erreur = 'Compte suspendu.';
+
+                        $idUtilisateur = (int) ($utilisateur['id_utilisateur'] ?? 0);
+                        if ($idUtilisateur > 0) {
+                            $this->journaliserConnexionEchouee(
+                                $journalEvenements,
+                                $idUtilisateur,
+                                'compte_suspendu',
+                                $emailSaisi
+                            );
+                        }
                     } else {
                         $hash = (string) ($utilisateur['mot_de_passe_hash'] ?? '');
 
                         /*
                          * `password_verify()` compare le mot de passe saisi
-                         * avec le hash enregistré en base.
-                         * Le mot de passe en clair n'est donc jamais stocké.
+                         * avec le hash stocké en base.
+                         *
+                         * Un hash est une version transformée et sécurisée
+                         * du mot de passe.
+                         * L'application ne stocke donc pas
+                         * le mot de passe en clair.
                          */
                         if ($hash === '' || !password_verify($motDePasse, $hash)) {
                             $erreur = 'Identifiants invalides.';
+
+                            $idUtilisateur = (int) ($utilisateur['id_utilisateur'] ?? 0);
+                            if ($idUtilisateur > 0) {
+                                $this->journaliserConnexionEchouee(
+                                    $journalEvenements,
+                                    $idUtilisateur,
+                                    'mot_de_passe_invalide',
+                                    $emailSaisi
+                                );
+                            }
                         } else {
                             $idUtilisateur = (int) ($utilisateur['id_utilisateur'] ?? 0);
                             $pseudo = (string) ($utilisateur['pseudo'] ?? '');
 
                             /*
-                             * Les rôles chauffeur et passager proviennent directement
-                             * de la table utilisateur.
+                             * Les rôles chauffeur et passager
+                             * viennent directement de la table utilisateur.
                              */
                             $roleChauffeur = (bool) ($utilisateur['role_chauffeur'] ?? false);
                             $rolePassager = (bool) ($utilisateur['role_passager'] ?? false);
 
                             /*
-                             * Les colonnes calculées avec `EXISTS` peuvent revenir
-                             * sous plusieurs formes selon le pilote PDO et le type retourné
-                             * par PostgreSQL : booléen, entier ou chaîne.
+                             * Les indicateurs `est_employe` et `est_administrateur`
+                             * sont calculés dans SQL avec `EXISTS`.
                              *
-                             * Cette normalisation ramène ces valeurs
-                             * à de vrais booléens PHP.
+                             * `EXISTS` est un test SQL qui répond à une question simple :
+                             * est-ce qu'une ligne correspondante existe ?
+                             *
+                             * Selon le pilote PDO et le type de retour PostgreSQL,
+                             * ces valeurs peuvent arriver sous plusieurs formes :
+                             * booléen, entier ou chaîne.
+                             *
+                             * On les normalise donc ici
+                             * pour obtenir de vrais booléens PHP.
                              */
-                            $estEmployeBrut = $utilisateur['est_employe'] ?? false;
-                            $estAdministrateurBrut = $utilisateur['est_administrateur'] ?? false;
-
-                            $estEmploye =
-                                $estEmployeBrut === true
-                                || $estEmployeBrut === 1
-                                || $estEmployeBrut === '1'
-                                || $estEmployeBrut === 't';
-
-                            $estAdministrateur =
-                                $estAdministrateurBrut === true
-                                || $estAdministrateurBrut === 1
-                                || $estAdministrateurBrut === '1'
-                                || $estAdministrateurBrut === 't';
+                            $estEmploye = $this->normaliserBooleenPostgresql($utilisateur['est_employe'] ?? false);
+                            $estAdministrateur = $this->normaliserBooleenPostgresql($utilisateur['est_administrateur'] ?? false);
 
                             if ($idUtilisateur <= 0 || trim($pseudo) === '') {
                                 $erreur = 'Erreur lors de la connexion.';
                             } else {
                                 /*
-                                 * La session devient ici la source de vérité côté application
-                                 * pour savoir qui est connecté et avec quels rôles.
+                                 * La session devient ici la source de vérité
+                                 * côté application.
+                                 * C'est elle qui dira ensuite
+                                 * qui est connecté
+                                 * et avec quels rôles.
                                  */
                                 $sessionUtilisateur->connecter(
                                     $idUtilisateur,
@@ -168,10 +205,22 @@ final class ConnexionController extends AbstractController
                                     $estAdministrateur
                                 );
 
+                                $journalEvenements->enregistrer(
+                                    'connexion_reussie',
+                                    'utilisateur',
+                                    $idUtilisateur,
+                                    [
+                                        'email' => $emailSaisi,
+                                        'est_employe' => $estEmploye,
+                                        'est_administrateur' => $estAdministrateur,
+                                    ]
+                                );
+
                                 /*
-                                 * La destination dépend du profil stocké en session.
-                                 * Un administrateur est prioritaire sur un employé,
-                                 * puis l'utilisateur standard rejoint son tableau de bord.
+                                 * La destination dépend du profil connecté.
+                                 * L'administrateur est prioritaire,
+                                 * puis l'employé,
+                                 * puis l'utilisateur standard.
                                  */
                                 if ($estAdministrateur) {
                                     return $this->redirectToRoute('espace_administrateur');
@@ -187,8 +236,11 @@ final class ConnexionController extends AbstractController
                     }
                 } catch (PDOException) {
                     /*
-                     * En cas d'erreur technique liée à PostgreSQL,
+                     * Si PostgreSQL remonte une erreur technique,
                      * on garde un message neutre côté interface.
+                     *
+                     * Ici, on ne journalise pas `connexion_echouee`,
+                     * car on n'a pas forcément un identifiant utilisateur exploitable.
                      */
                     $erreur = 'Erreur lors de la connexion.';
                 }
@@ -206,8 +258,8 @@ final class ConnexionController extends AbstractController
     /**
      * Ferme la session utilisateur puis renvoie vers l'accueil.
      *
-     * Cette méthode vide les informations stockées en session
-     * pour considérer l'utilisateur comme déconnecté.
+     * Cette méthode vide les informations stockées en session.
+     * L'application considère alors l'utilisateur comme déconnecté.
      *
      * @param SessionUtilisateur $sessionUtilisateur Service de gestion de session.
      *
@@ -219,5 +271,67 @@ final class ConnexionController extends AbstractController
         $sessionUtilisateur->deconnecter();
 
         return $this->redirectToRoute('accueil');
+    }
+
+    /**
+     * Convertit une valeur PostgreSQL en vrai booléen PHP.
+     *
+     * PostgreSQL peut renvoyer un booléen
+     * sous plusieurs formes selon le contexte :
+     * `true`,
+     * `false`,
+     * `1`,
+     * `0`,
+     * `'1'`,
+     * `'0'`,
+     * `'t'`
+     * ou `'f'`.
+     *
+     * Cette méthode uniformise cette lecture
+     * pour éviter des tests ambigus dans le contrôleur.
+     *
+     * @param mixed $valeur Valeur brute renvoyée par PostgreSQL.
+     *
+     * @return bool Booléen PHP normalisé.
+     */
+    private function normaliserBooleenPostgresql(mixed $valeur): bool
+    {
+        return $valeur === true
+            || $valeur === 1
+            || $valeur === '1'
+            || $valeur === 't';
+    }
+
+    /**
+     * Journalise une connexion échouée
+     * lorsqu'un identifiant utilisateur exploitable est connu.
+     *
+     * Cette méthode garde un format stable dans MongoDB :
+     * on enregistre l'événement,
+     * l'utilisateur concerné
+     * et la raison principale de l'échec.
+     *
+     * @param JournalEvenements $journalEvenements Service de journalisation MongoDB.
+     * @param int $idUtilisateur Identifiant utilisateur connu.
+     * @param string $raison Motif principal de l'échec.
+     * @param string $emailSaisi E-mail saisi dans le formulaire.
+     *
+     * @return void
+     */
+    private function journaliserConnexionEchouee(
+        JournalEvenements $journalEvenements,
+        int $idUtilisateur,
+        string $raison,
+        string $emailSaisi
+    ): void {
+        $journalEvenements->enregistrer(
+            'connexion_echouee',
+            'utilisateur',
+            $idUtilisateur,
+            [
+                'raison' => $raison,
+                'email' => $emailSaisi,
+            ]
+        );
     }
 }
