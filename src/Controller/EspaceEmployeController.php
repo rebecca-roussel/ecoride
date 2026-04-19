@@ -4,78 +4,78 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Service\ConnexionPostgresql;
 use App\Service\PersistanceEmployePostgresql;
 use App\Service\SessionUtilisateur;
-use PDO;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * Contrôleur de l'espace employé.
+ *
+ * Cette classe gère les pages et les actions réservées aux employés :
+ * affichage de la liste des avis à modérer, affichage des signalements,
+ * consultation du détail d'un avis, consultation du détail d'un incident,
+ * puis actions de validation, refus ou traitement.
+ *
+ * Le contrôleur garde ici le rôle lié au web :
+ * il vérifie l'accès, lit la requête HTTP, contrôle les jetons CSRF,
+ * prépare les messages flash et choisit la page à afficher ou la redirection.
+ *
+ * Les lectures et écritures en base de données sont déléguées
+ * à `PersistanceEmployePostgresql`.
+ *
+ * @package App\Controller
+ */
 final class EspaceEmployeController extends AbstractController
 {
-    /*
-      PLAN (EspaceEmployeController) :
-
-      1) Branchements / dépendances
-         - garder le contrôleur "simple" : il orchestre, il ne porte pas la logique métier
-         - récupérer une connexion PDO via ConnexionPostgresql (pour les requêtes spécifiques)
-         - utiliser PersistanceEmployePostgresql pour les opérations métier (modération / incidents)
-         - utiliser SessionUtilisateur comme source unique de vérité (connecté + rôle employé)
-
-      2) Affichage de l’espace employé (GET /espace-employe)
-         - page protégée : employé connecté obligatoire
-         - choisir un onglet (avis / signalements) via ?onglet=
-         - récupérer les 2 listes (avis en attente / incidents ouverts)
-         - rendre Twig avec les données
-
-      3) Outils internes (lecture détaillée)
-         - trouver un avis EN_ATTENTE par id pour afficher un détail
-         - trouver un incident INCIDENT non résolu par covoiturage (données + liste passagers)
-         - garde-fous : id > 0, sinon null
-         - conversion "propre" des types pour Twig (int/string)
-
-      4) Actions employé (POST)
-         - CSRF obligatoire
-         - avis : valider / refuser
-         - incident : marquer traité
-         - toujours rebasculer sur le bon onglet + flash utilisateur
-    */
-
     /**
-     * Connexion PDO (accès bas niveau) utilisée par les méthodes "trouver, etc..."
-     * Je la prépare une fois dans le constructeur plutôt
-     * que de la recréer à chaque appel.
+     * Affiche la page principale de l'espace employé.
+     *
+     * Cette page contient deux onglets :
+     * - les avis en attente de modération ;
+     * - les incidents encore ouverts.
+     *
+     * Le paramètre `onglet` transmis dans l'URL permet de choisir
+     * lequel doit être affiché en priorité.
+     *
+     * @param Request $request Requête HTTP courante.
+     * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
+     * @param PersistanceEmployePostgresql $persistanceEmploye
+     *        Service qui lit les données utiles dans PostgreSQL.
+     *
+     * @return Response Réponse HTML rendue par Twig.
      */
-    private PDO $pdo;
-
-    public function __construct(ConnexionPostgresql $connexionPostgresql)
-    {
-
-        $this->pdo = $connexionPostgresql->obtenirPdo();
-    }
-
     #[Route('/espace-employe', name: 'espace_employe', methods: ['GET'])]
     public function index(
         Request $request,
         SessionUtilisateur $sessionUtilisateur,
         PersistanceEmployePostgresql $persistanceEmploye,
     ): Response {
-        // Sécurité : l’espace employé doit être inaccessible hors employé connecté.
+        /*
+         * Cette page est réservée à un employé connecté.
+         * Si la session ne correspond pas à ce profil,
+         * l'utilisateur est renvoyé vers la connexion.
+         */
         if (!$sessionUtilisateur->estConnecte() || !$sessionUtilisateur->estEmploye()) {
             return $this->redirectToRoute('connexion');
         }
 
-        // Onglets : on ne garde que 2 valeurs possibles 
+        /*
+         * On limite volontairement les valeurs possibles pour l'onglet.
+         * Si la valeur reçue n'est pas reconnue, on revient à "avis".
+         */
         $onglet = (string) $request->query->get('onglet', 'avis');
         $onglet = $onglet === 'signalements' ? 'signalements' : 'avis';
 
-        // On charge les listes 
+        /*
+         * Les deux listes sont lues dans PostgreSQL par le service de persistance.
+         * Le contrôleur récupère ici des tableaux déjà prêts à être affichés.
+         */
         $avis = $persistanceEmploye->listerAvisEnAttente(50);
         $signalements = $persistanceEmploye->listerIncidentsOuverts(50);
 
-        // Affichage Twig
         return $this->render('espace_employe/index.html.twig', [
             'utilisateur_pseudo' => $sessionUtilisateur->pseudo(),
             'onglet' => $onglet,
@@ -85,9 +85,15 @@ final class EspaceEmployeController extends AbstractController
     }
 
     /**
-     * Trouver 1 avis EN_ATTENTE par identifiant.
+     * Récupère le détail d'un avis encore en attente.
      *
-     * 
+     * Cette méthode délègue la lecture à la persistance.
+     * Elle sert ensuite aux pages de détail de l'espace employé.
+     *
+     * @param int $idAvis Identifiant de l'avis recherché.
+     * @param PersistanceEmployePostgresql $persistanceEmploye
+     *        Service de lecture PostgreSQL.
+     *
      * @return array{
      *   id_avis:int,
      *   note:int,
@@ -104,66 +110,23 @@ final class EspaceEmployeController extends AbstractController
      *   ville_arrivee:string
      * }|null
      */
-    public function trouverAvisEnAttenteParId(int $idAvis): ?array
-    {
-        // pas de requête si l'id est invalide
-        if ($idAvis <= 0) {
-            return null;
-        }
-
-        $stmt = $this->pdo->prepare("
-            SELECT
-              a.id_avis,
-              a.note,
-              COALESCE(a.commentaire, '') AS commentaire,
-              a.statut_moderation,
-              to_char(a.date_depot, 'YYYY-MM-DD HH24:MI') AS date_depot,
-              u_pa.pseudo AS pseudo_passager,
-              u_pa.email AS email_passager,
-              u_ch.pseudo AS pseudo_chauffeur,
-              u_ch.email AS email_chauffeur,
-              c.id_covoiturage,
-              to_char(c.date_heure_depart, 'YYYY-MM-DD HH24:MI') AS date_depart,
-              c.ville_depart,
-              c.ville_arrivee
-            FROM avis a
-            JOIN participation p ON p.id_participation = a.id_participation
-            JOIN covoiturage c ON c.id_covoiturage = p.id_covoiturage
-            JOIN utilisateur u_pa ON u_pa.id_utilisateur = p.id_utilisateur
-            JOIN utilisateur u_ch ON u_ch.id_utilisateur = c.id_utilisateur
-            WHERE a.id_avis = :id_avis
-              AND a.statut_moderation = 'EN_ATTENTE'
-            LIMIT 1
-        ");
-        $stmt->execute(['id_avis' => $idAvis]);
-
-        /** @var array<string, mixed>|false $ligne */
-        $ligne = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($ligne)) {
-            return null;
-        }
-
-
-        return [
-            'id_avis' => (int) ($ligne['id_avis'] ?? 0),
-            'note' => (int) ($ligne['note'] ?? 0),
-            'commentaire' => (string) ($ligne['commentaire'] ?? ''),
-            'statut_moderation' => (string) ($ligne['statut_moderation'] ?? ''),
-            'date_depot' => (string) ($ligne['date_depot'] ?? ''),
-            'pseudo_passager' => (string) ($ligne['pseudo_passager'] ?? ''),
-            'email_passager' => (string) ($ligne['email_passager'] ?? ''),
-            'pseudo_chauffeur' => (string) ($ligne['pseudo_chauffeur'] ?? ''),
-            'email_chauffeur' => (string) ($ligne['email_chauffeur'] ?? ''),
-            'id_covoiturage' => (int) ($ligne['id_covoiturage'] ?? 0),
-            'date_depart' => (string) ($ligne['date_depart'] ?? ''),
-            'ville_depart' => (string) ($ligne['ville_depart'] ?? ''),
-            'ville_arrivee' => (string) ($ligne['ville_arrivee'] ?? ''),
-        ];
+    public function trouverAvisEnAttenteParId(
+        int $idAvis,
+        PersistanceEmployePostgresql $persistanceEmploye
+    ): ?array {
+        return $persistanceEmploye->trouverAvisEnAttenteParId($idAvis);
     }
 
     /**
-     * Trouver 1 incident ouvert pour un covoiturage.
-     * Retour : infos covoiturage + chauffeur + liste passagers non annulés ou null
+     * Récupère le détail d'un incident encore ouvert.
+     *
+     * La méthode renvoie les informations du covoiturage,
+     * les coordonnées du chauffeur
+     * puis la liste des passagers dont la participation n'est pas annulée.
+     *
+     * @param int $idCovoiturage Identifiant du covoiturage concerné.
+     * @param PersistanceEmployePostgresql $persistanceEmploye
+     *        Service de lecture PostgreSQL.
      *
      * @return array{
      *   id_covoiturage:int,
@@ -171,6 +134,7 @@ final class EspaceEmployeController extends AbstractController
      *   incident_commentaire:string,
      *   statut:string,
      *   date_depart:string,
+     *   date_arrivee:string,
      *   ville_depart:string,
      *   ville_arrivee:string,
      *   pseudo_chauffeur:string,
@@ -178,86 +142,36 @@ final class EspaceEmployeController extends AbstractController
      *   passagers: array<int, array{pseudo:string, email:string}>
      * }|null
      */
-    public function trouverIncidentOuvertParCovoiturage(int $idCovoiturage): ?array
-    {
-        if ($idCovoiturage <= 0) {
-            return null;
-        }
-
-        // Données de base de l’incident 
-        $stmt = $this->pdo->prepare("
-            SELECT
-              c.id_covoiturage,
-              COALESCE(c.incident_commentaire, '') AS incident_commentaire,
-              COALESCE(c.incident_commentaire, 'Incident') AS libelle,
-              c.statut_covoiturage AS statut,
-              to_char(c.date_heure_depart, 'YYYY-MM-DD HH24:MI') AS date_depart,
-              to_char(c.date_heure_arrivee, 'YYYY-MM-DD HH24:MI') AS date_arrivee,
-              c.ville_depart,
-              c.ville_arrivee,
-              u_ch.pseudo AS pseudo_chauffeur,
-              u_ch.email AS email_chauffeur
-            FROM covoiturage c
-            JOIN utilisateur u_ch ON u_ch.id_utilisateur = c.id_utilisateur
-            WHERE c.id_covoiturage = :id
-              AND c.statut_covoiturage = 'INCIDENT'
-              AND c.incident_resolu = false
-            LIMIT 1
-        ");
-        $stmt->execute(['id' => $idCovoiturage]);
-
-        /** @var array<string, mixed>|false $ligne */
-        $ligne = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($ligne)) {
-            return null;
-        }
-
-        // Passagers du covoiturage 
-        $stmt2 = $this->pdo->prepare("
-            SELECT
-              u_pa.pseudo,
-              u_pa.email
-            FROM participation p
-            JOIN utilisateur u_pa ON u_pa.id_utilisateur = p.id_utilisateur
-            WHERE p.id_covoiturage = :id
-              AND p.est_annulee = false
-            ORDER BY p.date_heure_confirmation DESC
-        ");
-        $stmt2->execute(['id' => $idCovoiturage]);
-
-        /** @var array<int, array<string, mixed>> $lignesPassagers */
-        $lignesPassagers = $stmt2->fetchAll(PDO::FETCH_ASSOC);
-
-        $passagers = [];
-        foreach ($lignesPassagers as $lp) {
-            $passagers[] = [
-                'pseudo' => (string) ($lp['pseudo'] ?? ''),
-                'email' => (string) ($lp['email'] ?? ''),
-            ];
-        }
-
-        return [
-            'id_covoiturage' => (int) ($ligne['id_covoiturage'] ?? 0),
-            'libelle' => (string) ($ligne['libelle'] ?? ''),
-            'incident_commentaire' => (string) ($ligne['incident_commentaire'] ?? ''),
-            'statut' => (string) ($ligne['statut'] ?? ''),
-            'date_depart' => (string) ($ligne['date_depart'] ?? ''),
-            'date_arrivee' => (string) ($ligne['date_arrivee'] ?? ''),
-            'ville_depart' => (string) ($ligne['ville_depart'] ?? ''),
-            'ville_arrivee' => (string) ($ligne['ville_arrivee'] ?? ''),
-            'pseudo_chauffeur' => (string) ($ligne['pseudo_chauffeur'] ?? ''),
-            'email_chauffeur' => (string) ($ligne['email_chauffeur'] ?? ''),
-            'passagers' => $passagers,
-        ];
+    public function trouverIncidentOuvertParCovoiturage(
+        int $idCovoiturage,
+        PersistanceEmployePostgresql $persistanceEmploye
+    ): ?array {
+        return $persistanceEmploye->trouverIncidentOuvertParCovoiturage($idCovoiturage);
     }
 
+    /**
+     * Valide un avis en attente de modération.
+     *
+     * Le contrôleur vérifie d'abord :
+     * - que le compte connecté est bien un employé ;
+     * - que l'identifiant d'avis est cohérent ;
+     * - que le jeton CSRF est valide.
+     *
+     * L'écriture en base est ensuite déléguée à la persistance.
+     *
+     * @param Request $request Requête HTTP contenant l'identifiant et le jeton CSRF.
+     * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
+     * @param PersistanceEmployePostgresql $persistanceEmploye
+     *        Service de persistance PostgreSQL.
+     *
+     * @return Response Redirection vers l'onglet des avis.
+     */
     #[Route('/espace-employe/avis/valider', name: 'espace_employe_avis_valider', methods: ['POST'])]
     public function validerAvis(
         Request $request,
         SessionUtilisateur $sessionUtilisateur,
         PersistanceEmployePostgresql $persistanceEmploye,
     ): Response {
-        // Sécurité stricte : une action POST employé ne doit jamais rediriger silencieusement.
         if (!$sessionUtilisateur->estConnecte() || !$sessionUtilisateur->estEmploye()) {
             throw $this->createAccessDeniedException('Accès réservé employé.');
         }
@@ -265,15 +179,20 @@ final class EspaceEmployeController extends AbstractController
         $idAvis = (int) $request->request->get('id_avis', 0);
         $token = (string) $request->request->get('_token', '');
 
-        // CSRF + id 
+        /*
+         * Un jeton CSRF protège l'action contre une soumission frauduleuse.
+         * Il permet de vérifier que le formulaire vient bien de l'application.
+         */
         if ($idAvis <= 0 || !$this->isCsrfTokenValid('avis_valider_' . $idAvis, $token)) {
             $this->addFlash('erreur', 'Action refusée : jeton de sécurité invalide.');
+
             return $this->redirectToRoute('espace_employe', ['onglet' => 'avis']);
         }
 
         $idEmploye = (int) ($sessionUtilisateur->idUtilisateur() ?? 0);
         if ($idEmploye <= 0) {
             $this->addFlash('erreur', 'Impossible d’identifier le compte employé.');
+
             return $this->redirectToRoute('espace_employe', ['onglet' => 'avis']);
         }
 
@@ -287,6 +206,20 @@ final class EspaceEmployeController extends AbstractController
         return $this->redirectToRoute('espace_employe', ['onglet' => 'avis']);
     }
 
+    /**
+     * Refuse un avis en attente de modération.
+     *
+     * Le déroulé reste le même que pour la validation :
+     * contrôle d'accès, contrôle CSRF,
+     * puis délégation de l'écriture SQL à la persistance.
+     *
+     * @param Request $request Requête HTTP contenant l'identifiant et le jeton CSRF.
+     * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
+     * @param PersistanceEmployePostgresql $persistanceEmploye
+     *        Service de persistance PostgreSQL.
+     *
+     * @return Response Redirection vers l'onglet des avis.
+     */
     #[Route('/espace-employe/avis/refuser', name: 'espace_employe_avis_refuser', methods: ['POST'])]
     public function refuserAvis(
         Request $request,
@@ -302,17 +235,18 @@ final class EspaceEmployeController extends AbstractController
 
         if ($idAvis <= 0 || !$this->isCsrfTokenValid('avis_refuser_' . $idAvis, $token)) {
             $this->addFlash('erreur', 'Action refusée : jeton de sécurité invalide.');
+
             return $this->redirectToRoute('espace_employe', ['onglet' => 'avis']);
         }
 
         $idEmploye = (int) ($sessionUtilisateur->idUtilisateur() ?? 0);
         if ($idEmploye <= 0) {
             $this->addFlash('erreur', 'Impossible d’identifier le compte employé.');
+
             return $this->redirectToRoute('espace_employe', ['onglet' => 'avis']);
         }
 
         $ok = $persistanceEmploye->modererAvis($idAvis, 'REFUSE', $idEmploye);
-
 
         $this->addFlash(
             'avertissement',
@@ -322,6 +256,20 @@ final class EspaceEmployeController extends AbstractController
         return $this->redirectToRoute('espace_employe', ['onglet' => 'avis']);
     }
 
+    /**
+     * Marque un incident comme traité.
+     *
+     * L'action ne modifie l'incident que si le covoiturage
+     * est encore en statut `INCIDENT`
+     * et que le signalement n'a pas déjà été traité.
+     *
+     * @param Request $request Requête HTTP contenant l'identifiant et le jeton CSRF.
+     * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
+     * @param PersistanceEmployePostgresql $persistanceEmploye
+     *        Service de persistance PostgreSQL.
+     *
+     * @return Response Redirection vers l'onglet des signalements.
+     */
     #[Route('/espace-employe/incident/traite', name: 'espace_employe_incident_traite', methods: ['POST'])]
     public function marquerIncidentTraite(
         Request $request,
@@ -337,6 +285,7 @@ final class EspaceEmployeController extends AbstractController
 
         if ($idCovoiturage <= 0 || !$this->isCsrfTokenValid('incident_traite_' . $idCovoiturage, $token)) {
             $this->addFlash('erreur', 'Action refusée : jeton de sécurité invalide.');
+
             return $this->redirectToRoute('espace_employe', ['onglet' => 'signalements']);
         }
 
@@ -349,43 +298,74 @@ final class EspaceEmployeController extends AbstractController
 
         return $this->redirectToRoute('espace_employe', ['onglet' => 'signalements']);
     }
+
+    /**
+     * Affiche le détail d'un incident encore ouvert.
+     *
+     * La lecture détaillée est confiée à la persistance,
+     * puis le contrôleur choisit soit l'affichage de la page,
+     * soit le retour vers la liste avec un message.
+     *
+     * @param int $idCovoiturage Identifiant du covoiturage concerné.
+     * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
+     * @param PersistanceEmployePostgresql $persistanceEmploye
+     *        Service de lecture PostgreSQL.
+     *
+     * @return Response Réponse HTML rendue par Twig ou redirection.
+     */
     #[Route('/espace-employe/incident/{idCovoiturage}', name: 'espace_employe_incident_detail', methods: ['GET'])]
     public function incidentDetail(
         int $idCovoiturage,
         SessionUtilisateur $sessionUtilisateur,
+        PersistanceEmployePostgresql $persistanceEmploye,
     ): Response {
-        // Sécurité : employé uniquement
         if (!$sessionUtilisateur->estConnecte() || !$sessionUtilisateur->estEmploye()) {
             return $this->redirectToRoute('connexion');
         }
 
-        // Lecture des données 
-        $incident = $this->trouverIncidentOuvertParCovoiturage($idCovoiturage);
+        $incident = $this->trouverIncidentOuvertParCovoiturage($idCovoiturage, $persistanceEmploye);
 
         if ($incident === null) {
             $this->addFlash('avertissement', 'Incident introuvable ou déjà résolu.');
+
             return $this->redirectToRoute('espace_employe', ['onglet' => 'signalements']);
         }
 
-        // Affichage
         return $this->render('espace_employe/incident_detail.html.twig', [
             'utilisateur_pseudo' => $sessionUtilisateur->pseudo(),
             'incident' => $incident,
         ]);
     }
+
+    /**
+     * Affiche le détail d'un avis encore en attente.
+     *
+     * Le contrôleur délègue la lecture SQL,
+     * puis choisit soit l'affichage de la page,
+     * soit le retour vers la liste des avis.
+     *
+     * @param int $idAvis Identifiant de l'avis.
+     * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
+     * @param PersistanceEmployePostgresql $persistanceEmploye
+     *        Service de lecture PostgreSQL.
+     *
+     * @return Response Réponse HTML rendue par Twig ou redirection.
+     */
     #[Route('/espace-employe/avis/{idAvis}', name: 'espace_employe_avis_detail', methods: ['GET'])]
     public function avisDetail(
         int $idAvis,
         SessionUtilisateur $sessionUtilisateur,
+        PersistanceEmployePostgresql $persistanceEmploye,
     ): Response {
-
         if (!$sessionUtilisateur->estConnecte() || !$sessionUtilisateur->estEmploye()) {
             return $this->redirectToRoute('connexion');
         }
 
-        $avis = $this->trouverAvisEnAttenteParId($idAvis);
+        $avis = $this->trouverAvisEnAttenteParId($idAvis, $persistanceEmploye);
+
         if ($avis === null) {
             $this->addFlash('avertissement', 'Avis introuvable ou déjà modéré.');
+
             return $this->redirectToRoute('espace_employe', ['onglet' => 'avis']);
         }
 
@@ -394,5 +374,4 @@ final class EspaceEmployeController extends AbstractController
             'avis' => $avis,
         ]);
     }
-
 }
