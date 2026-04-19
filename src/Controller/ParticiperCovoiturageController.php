@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\JournalEvenements;
 use App\Service\PersistanceCovoituragePostgresql;
 use App\Service\SessionUtilisateur;
 use RuntimeException;
@@ -28,7 +29,8 @@ use Symfony\Component\Routing\Attribute\Route;
  * et l'écriture dans PostgreSQL sont déléguées
  * à `PersistanceCovoituragePostgresql`.
  *
- * @package App\Controller
+ * La journalisation MongoDB enregistre ici
+ * une participation réellement confirmée.
  */
 final class ParticiperCovoiturageController extends AbstractController
 {
@@ -44,11 +46,15 @@ final class ParticiperCovoiturageController extends AbstractController
      * le contrôleur délègue la participation réelle
      * au service de persistance.
      *
+     * Si la réservation aboutit,
+     * un événement MongoDB `participation_confirmee` est enregistré.
+     *
      * @param int $id Identifiant du covoiturage transmis dans l'URL.
      * @param Request $requete Requête HTTP courante.
      * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
      * @param PersistanceCovoituragePostgresql $persistanceCovoiturage
      *        Service de persistance PostgreSQL des covoiturages.
+     * @param JournalEvenements $journalEvenements Service de journalisation MongoDB.
      *
      * @return Response Redirection vers la page de détail ou vers une autre page du parcours.
      */
@@ -58,6 +64,7 @@ final class ParticiperCovoiturageController extends AbstractController
         Request $requete,
         SessionUtilisateur $sessionUtilisateur,
         PersistanceCovoituragePostgresql $persistanceCovoiturage,
+        JournalEvenements $journalEvenements,
     ): Response {
         /*
          * Clause de garde :
@@ -91,9 +98,11 @@ final class ParticiperCovoiturageController extends AbstractController
         }
 
         /*
-         * Le jeton CSRF (Cross-Site Request Forgery) 
-         * protège l'action contre une soumission frauduleuse.
-         * Il sert à vérifier que le formulaire vient bien de l'application.
+         * Le jeton CSRF protège l'action contre une soumission frauduleuse.
+         *
+         * CSRF signifie Cross-Site Request Forgery.
+         * C'est un mécanisme qui vérifie que le formulaire
+         * provient bien de l'application.
          */
         $jeton = (string) $requete->request->get('_token', '');
         if (!$this->isCsrfTokenValid('participer_covoiturage_' . $id, $jeton)) {
@@ -101,7 +110,31 @@ final class ParticiperCovoiturageController extends AbstractController
         }
 
         try {
+            /*
+             * La persistance applique ici les règles métier :
+             * places disponibles,
+             * statut du trajet,
+             * crédits suffisants,
+             * absence de double participation,
+             * et enregistrement réel en base.
+             */
             $persistanceCovoiturage->participerAuCovoiturage($id, $idPassager);
+
+            /*
+             * Le contrôleur connaît ici l'identifiant du covoiturage
+             * et l'identifiant du passager connecté.
+             *
+             * L'événement est donc rattaché au covoiturage,
+             * avec l'utilisateur stocké dans les données complémentaires.
+             */
+            $journalEvenements->enregistrer(
+                'participation_confirmee',
+                'covoiturage',
+                $id,
+                [
+                    'id_utilisateur' => $idPassager,
+                ]
+            );
 
             $this->addFlash('succes', 'Participation confirmée.');
         } catch (RuntimeException $e) {
