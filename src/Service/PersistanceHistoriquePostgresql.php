@@ -8,6 +8,24 @@ use PDO;
 use RuntimeException;
 use Throwable;
 
+/**
+ * Service de persistance PostgreSQL pour l'historique utilisateur.
+ *
+ * Cette classe centralise les lectures et écritures liées à l'espace historique :
+ * - covoiturages publiés par le chauffeur ;
+ * - participations du passager ;
+ * - annulation de participation ;
+ * - annulation de covoiturage ;
+ * - démarrage et terminaison d'un covoiturage ;
+ * - déclaration d'incident ;
+ * - vérification du droit à déclarer un incident ;
+ * - vérification du droit à déposer un avis ;
+ * - enregistrement d'une satisfaction.
+ *
+ * Le service garde ici les requêtes SQL et les transactions.
+ * Les contrôleurs, eux, restent concentrés sur le parcours HTTP,
+ * les messages flash, la lecture de la requête et les redirections.
+ */
 final class PersistanceHistoriquePostgresql
 {
     public function __construct(private ConnexionPostgresql $connexionPostgresql)
@@ -15,16 +33,36 @@ final class PersistanceHistoriquePostgresql
     }
 
     /**
-     * Lister "Mes covoiturages publiés" 
+     * Liste les covoiturages publiés par l'utilisateur connecté.
+     *
+     * Cette lecture alimente l'onglet "Mes covoiturages publiés".
+     * On récupère les informations utiles à l'affichage du tableau de bord :
+     * ville de départ, ville d'arrivée, date, places, prix, statut
+     * et commentaire d'incident si un incident a été déclaré.
+     *
+     * Le tri reste ici en ordre décroissant sur la date de départ :
+     * les trajets les plus récents ou les plus lointains apparaissent d'abord.
+     *
+     * @param int $idUtilisateur Identifiant de l'utilisateur connecté.
+     *
      * @return array<int, array<string, mixed>>
      */
     public function listerCovoituragesPublies(int $idUtilisateur): array
     {
+        /*
+         * La méthode travaille uniquement avec un identifiant utilisateur valide.
+         * Cela évite de lancer une requête sans cible cohérente.
+         */
         if ($idUtilisateur <= 0) {
             throw new RuntimeException('ID utilisateur invalide.');
         }
 
         $pdo = $this->connexionPostgresql->obtenirPdo();
+
+        /*
+         * On lit uniquement les covoiturages dont l'utilisateur connecté
+         * est le chauffeur propriétaire.
+         */
         $sql = "
             SELECT
               c.id_covoiturage,
@@ -47,16 +85,38 @@ final class PersistanceHistoriquePostgresql
     }
 
     /**
-     * Lister "Mes participations" 
+     * Liste les participations de l'utilisateur connecté.
+     *
+     * Cette lecture alimente l'onglet "Mes participations".
+     * On joint la participation au covoiturage afin d'obtenir le contexte utile :
+     * trajet, date, prix, statut du covoiturage et état de validation.
+     *
+     * Le tri est volontairement fait en ordre croissant sur la date de départ.
+     * Cela permet d'afficher d'abord les trajets les plus proches,
+     * ce qui est plus cohérent pour un passager.
+     *
+     * @param int $idUtilisateur Identifiant de l'utilisateur connecté.
+     *
      * @return array<int, array<string, mixed>>
      */
     public function listerParticipations(int $idUtilisateur): array
     {
+        /*
+         * Comme pour les autres lectures, on refuse un identifiant invalide.
+         */
         if ($idUtilisateur <= 0) {
             throw new RuntimeException('ID utilisateur invalide.');
         }
 
         $pdo = $this->connexionPostgresql->obtenirPdo();
+
+        /*
+         * On récupère les participations de l'utilisateur,
+         * puis les informations du covoiturage lié.
+         *
+         * Correction importante :
+         * le tri passe en ASC pour afficher d'abord les trajets les plus proches.
+         */
         $sql = "
             SELECT
               p.id_participation,
@@ -74,7 +134,7 @@ final class PersistanceHistoriquePostgresql
             FROM participation p
             JOIN covoiturage c ON c.id_covoiturage = p.id_covoiturage
             WHERE p.id_utilisateur = :id_utilisateur
-            ORDER BY c.date_heure_depart DESC
+            ORDER BY c.date_heure_depart ASC
         ";
 
         $stmt = $pdo->prepare($sql);
@@ -84,7 +144,21 @@ final class PersistanceHistoriquePostgresql
     }
 
     /**
-     * Annuler une participation
+     * Annule une participation.
+     *
+     * Cette méthode vérifie d'abord :
+     * - que la participation existe ;
+     * - qu'elle appartient bien à l'utilisateur connecté ;
+     * - qu'elle n'est pas déjà annulée ;
+     * - que le covoiturage reste encore annulable.
+     *
+     * Une transaction est utilisée pour garder l'opération cohérente :
+     * soit tout passe, soit rien n'est appliqué.
+     *
+     * @param int $idUtilisateur Identifiant de l'utilisateur connecté.
+     * @param int $idParticipation Identifiant de la participation à annuler.
+     *
+     * @return void
      */
     public function annulerParticipation(int $idUtilisateur, int $idParticipation): void
     {
@@ -96,6 +170,11 @@ final class PersistanceHistoriquePostgresql
         $pdo->beginTransaction();
 
         try {
+            /*
+             * On relit la participation avec le statut du covoiturage
+             * pour vérifier que l'utilisateur agit bien sur sa propre participation
+             * et que le trajet est encore annulable.
+             */
             $stmt = $pdo->prepare("
                 SELECT p.est_annulee, c.statut_covoiturage
                 FROM participation p
@@ -105,7 +184,10 @@ final class PersistanceHistoriquePostgresql
                 LIMIT 1
             ");
 
-            $stmt->execute(['id_participation' => $idParticipation, 'id_utilisateur' => $idUtilisateur]);
+            $stmt->execute([
+                'id_participation' => $idParticipation,
+                'id_utilisateur' => $idUtilisateur,
+            ]);
 
             $ligne = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$ligne) {
@@ -121,6 +203,11 @@ final class PersistanceHistoriquePostgresql
                 throw new RuntimeException('Annulation refusée : ce trajet n’est plus annulable.');
             }
 
+            /*
+             * On annule la participation.
+             * Le statut de validation est remis à NON_DEMANDEE
+             * car la participation sort du parcours.
+             */
             $stmt = $pdo->prepare("
                 UPDATE participation
                 SET est_annulee = true, statut_validation = 'NON_DEMANDEE', commentaire_validation = NULL
@@ -140,7 +227,21 @@ final class PersistanceHistoriquePostgresql
     }
 
     /**
-     * Annuler un covoiturage
+     * Annule un covoiturage publié par le chauffeur connecté.
+     *
+     * Cette méthode vérifie :
+     * - que le covoiturage existe ;
+     * - qu'il appartient bien à l'utilisateur connecté ;
+     * - qu'il n'est ni déjà annulé, ni terminé, ni en cours.
+     *
+     * Si tout est cohérent :
+     * - le covoiturage passe à ANNULE ;
+     * - les participations actives sont aussi annulées.
+     *
+     * @param int $idUtilisateur Identifiant du chauffeur connecté.
+     * @param int $idCovoiturage Identifiant du covoiturage à annuler.
+     *
+     * @return void
      */
     public function annulerCovoiturage(int $idUtilisateur, int $idCovoiturage): void
     {
@@ -152,6 +253,11 @@ final class PersistanceHistoriquePostgresql
         $pdo->beginTransaction();
 
         try {
+            /*
+             * On relit le covoiturage pour vérifier
+             * qu'il appartient bien au chauffeur connecté
+             * et qu'il reste encore annulable.
+             */
             $stmt = $pdo->prepare("
                 SELECT statut_covoiturage
                 FROM covoiturage
@@ -160,7 +266,10 @@ final class PersistanceHistoriquePostgresql
                 LIMIT 1
             ");
 
-            $stmt->execute(['id_covoiturage' => $idCovoiturage, 'id_utilisateur' => $idUtilisateur]);
+            $stmt->execute([
+                'id_covoiturage' => $idCovoiturage,
+                'id_utilisateur' => $idUtilisateur,
+            ]);
 
             $ligne = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$ligne) {
@@ -168,6 +277,7 @@ final class PersistanceHistoriquePostgresql
             }
 
             $statutCovoiturage = $ligne['statut_covoiturage'];
+
             if ($statutCovoiturage === 'ANNULE') {
                 throw new RuntimeException('Annulation refusée : covoiturage déjà annulé.');
             }
@@ -180,7 +290,9 @@ final class PersistanceHistoriquePostgresql
                 throw new RuntimeException('Annulation refusée : ce covoiturage est déjà en cours.');
             }
 
-            // Annuler le covoiturage et les participations
+            /*
+             * On annule le covoiturage lui-même.
+             */
             $stmt = $pdo->prepare("
                 UPDATE covoiturage
                 SET statut_covoiturage = 'ANNULE'
@@ -192,7 +304,9 @@ final class PersistanceHistoriquePostgresql
                 throw new RuntimeException('Annulation refusée : mise à jour du covoiturage impossible.');
             }
 
-            // Annuler les participations actives
+            /*
+             * On annule ensuite toutes les participations encore actives sur ce trajet.
+             */
             $stmt = $pdo->prepare("
                 UPDATE participation
                 SET est_annulee = true, statut_validation = 'NON_DEMANDEE', commentaire_validation = NULL
@@ -207,19 +321,27 @@ final class PersistanceHistoriquePostgresql
         }
     }
 
-
-
+    /**
+     * Déclare un incident sur un covoiturage.
+     *
+     * Cette action est réservée au chauffeur du trajet.
+     * Le commentaire est obligatoire.
+     * Le covoiturage doit être en cours ou terminé.
+     * Un trajet déjà en INCIDENT ne peut pas recevoir un second incident.
+     *
+     * @param int $idUtilisateur Identifiant du chauffeur connecté.
+     * @param int $idCovoiturage Identifiant du covoiturage concerné.
+     * @param string $commentaire Commentaire décrivant l'incident.
+     *
+     * @return void
+     */
     public function declarerIncident(int $idUtilisateur, int $idCovoiturage, string $commentaire): void
     {
         /*
-          Objectif :
-          - déclarer un incident sur un covoiturage
-          - commentaire obligatoire
-          - chauffeur uniquement 
-          - autorisé si EN_COURS ou TERMINE
-          - interdit si déjà en INCIDENT
-        */
-
+         * Le commentaire est nettoyé avant validation
+         * pour éviter qu'une chaîne remplie uniquement d'espaces
+         * soit acceptée comme contenu réel.
+         */
         $commentaire = trim($commentaire);
 
         if ($idUtilisateur <= 0 || $idCovoiturage <= 0) {
@@ -238,15 +360,19 @@ final class PersistanceHistoriquePostgresql
         $pdo->beginTransaction();
 
         try {
-            // 1) Vérifier existence + propriété + statut
+            /*
+             * On verrouille d'abord le covoiturage concerné.
+             * Cela évite qu'un autre traitement change le statut
+             * pendant qu'on vérifie les règles métier.
+             */
             $stmt = $pdo->prepare("
-            SELECT statut_covoiturage
-            FROM covoiturage
-            WHERE id_covoiturage = :id_covoiturage
-              AND id_utilisateur = :id_utilisateur
-            LIMIT 1
-            FOR UPDATE
-        ");
+                SELECT statut_covoiturage
+                FROM covoiturage
+                WHERE id_covoiturage = :id_covoiturage
+                  AND id_utilisateur = :id_utilisateur
+                LIMIT 1
+                FOR UPDATE
+            ");
             $stmt->execute([
                 'id_covoiturage' => $idCovoiturage,
                 'id_utilisateur' => $idUtilisateur,
@@ -259,28 +385,30 @@ final class PersistanceHistoriquePostgresql
 
             $statutCovoiturage = (string) $ligne['statut_covoiturage'];
 
-            // 2) Déjà en incident 
             if ($statutCovoiturage === 'INCIDENT') {
                 throw new RuntimeException('Incident refusé : un incident est déjà déclaré.');
             }
 
-            // 3) Statut éligible 
             if (!in_array($statutCovoiturage, ['EN_COURS', 'TERMINE'], true)) {
                 throw new RuntimeException(
                     'Incident refusé : ce covoiturage n’est pas éligible (en cours ou terminé uniquement).'
                 );
             }
 
-            // 4) Passage en INCIDENT + commentaire
+            /*
+             * Si toutes les conditions sont respectées,
+             * le covoiturage passe en statut INCIDENT
+             * et le commentaire est stocké.
+             */
             $stmt = $pdo->prepare("
-            UPDATE covoiturage
-            SET statut_covoiturage = 'INCIDENT',
-                incident_commentaire = :incident_commentaire,
-                incident_resolu = false
-            WHERE id_covoiturage = :id_covoiturage
-              AND id_utilisateur = :id_utilisateur
-              AND statut_covoiturage IN ('EN_COURS', 'TERMINE')
-        ");
+                UPDATE covoiturage
+                SET statut_covoiturage = 'INCIDENT',
+                    incident_commentaire = :incident_commentaire,
+                    incident_resolu = false
+                WHERE id_covoiturage = :id_covoiturage
+                  AND id_utilisateur = :id_utilisateur
+                  AND statut_covoiturage IN ('EN_COURS', 'TERMINE')
+            ");
             $stmt->execute([
                 'id_covoiturage' => $idCovoiturage,
                 'id_utilisateur' => $idUtilisateur,
@@ -298,26 +426,39 @@ final class PersistanceHistoriquePostgresql
         }
     }
 
-
+    /**
+     * Démarre un covoiturage.
+     *
+     * Cette action est réservée au chauffeur du trajet.
+     * Le covoiturage doit être encore en statut PLANIFIE.
+     *
+     * @param int $idUtilisateur Identifiant du chauffeur connecté.
+     * @param int $idCovoiturage Identifiant du covoiturage à démarrer.
+     *
+     * @return void
+     */
     public function demarrerCovoiturage(int $idUtilisateur, int $idCovoiturage): void
     {
         if ($idUtilisateur <= 0 || $idCovoiturage <= 0) {
-            throw new RuntimeException('Terminaison impossible : paramètres invalides.');
+            throw new RuntimeException('Démarrage impossible : paramètres invalides.');
         }
-
 
         $pdo = $this->connexionPostgresql->obtenirPdo();
         $pdo->beginTransaction();
 
         try {
-            // Vérification du statut actuel
+            /*
+             * On relit le covoiturage pour vérifier
+             * que le chauffeur agit bien sur son propre trajet
+             * et que le statut actuel permet le démarrage.
+             */
             $stmt = $pdo->prepare("
-            SELECT statut_covoiturage
-            FROM covoiturage
-            WHERE id_covoiturage = :id_covoiturage
-              AND id_utilisateur = :id_utilisateur
-            LIMIT 1
-        ");
+                SELECT statut_covoiturage
+                FROM covoiturage
+                WHERE id_covoiturage = :id_covoiturage
+                  AND id_utilisateur = :id_utilisateur
+                LIMIT 1
+            ");
             $stmt->execute([
                 'id_covoiturage' => $idCovoiturage,
                 'id_utilisateur' => $idUtilisateur,
@@ -333,12 +474,14 @@ final class PersistanceHistoriquePostgresql
                 throw new RuntimeException('Démarrage refusé : ce covoiturage n’est pas planifié.');
             }
 
-            // Mise à jour du statut en EN_COURS
+            /*
+             * Le trajet passe en EN_COURS.
+             */
             $stmt = $pdo->prepare("
-            UPDATE covoiturage
-            SET statut_covoiturage = 'EN_COURS'
-            WHERE id_covoiturage = :id_covoiturage
-        ");
+                UPDATE covoiturage
+                SET statut_covoiturage = 'EN_COURS'
+                WHERE id_covoiturage = :id_covoiturage
+            ");
             $stmt->execute(['id_covoiturage' => $idCovoiturage]);
 
             if ($stmt->rowCount() !== 1) {
@@ -351,11 +494,19 @@ final class PersistanceHistoriquePostgresql
             throw $e;
         }
     }
+
     /**
-     * Terminer un covoiturage
-     * - Chauffeur uniquement
-     * - EN_COURS à TERMINE
-     * - Passe les participations actives en EN_ATTENTE pour avis et validation
+     * Termine un covoiturage.
+     *
+     * Cette action est réservée au chauffeur.
+     * Le trajet doit être en cours.
+     * Une fois terminé, les participations actives passent en EN_ATTENTE
+     * pour permettre ensuite la validation et le dépôt d'un avis.
+     *
+     * @param int $idUtilisateur Identifiant du chauffeur connecté.
+     * @param int $idCovoiturage Identifiant du covoiturage à terminer.
+     *
+     * @return void
      */
     public function terminerCovoiturage(int $idUtilisateur, int $idCovoiturage): void
     {
@@ -367,15 +518,18 @@ final class PersistanceHistoriquePostgresql
         $pdo->beginTransaction();
 
         try {
-            // 1) Vérifier existence + propriété + statut 
+            /*
+             * On verrouille le covoiturage concerné
+             * pour stabiliser l'état lu pendant la transaction.
+             */
             $stmt = $pdo->prepare("
-            SELECT statut_covoiturage
-            FROM covoiturage
-            WHERE id_covoiturage = :id_covoiturage
-              AND id_utilisateur = :id_utilisateur
-            LIMIT 1
-            FOR UPDATE
-        ");
+                SELECT statut_covoiturage
+                FROM covoiturage
+                WHERE id_covoiturage = :id_covoiturage
+                  AND id_utilisateur = :id_utilisateur
+                LIMIT 1
+                FOR UPDATE
+            ");
             $stmt->execute([
                 'id_covoiturage' => $idCovoiturage,
                 'id_utilisateur' => $idUtilisateur,
@@ -390,14 +544,16 @@ final class PersistanceHistoriquePostgresql
                 throw new RuntimeException('Terminaison refusée : ce covoiturage n’est pas en cours.');
             }
 
-            // 2) Passer le covoiturage à TERMINE
+            /*
+             * Le covoiturage passe à TERMINE.
+             */
             $stmt = $pdo->prepare("
-            UPDATE covoiturage
-            SET statut_covoiturage = 'TERMINE'
-            WHERE id_covoiturage = :id_covoiturage
-              AND id_utilisateur = :id_utilisateur
-              AND statut_covoiturage = 'EN_COURS'
-        ");
+                UPDATE covoiturage
+                SET statut_covoiturage = 'TERMINE'
+                WHERE id_covoiturage = :id_covoiturage
+                  AND id_utilisateur = :id_utilisateur
+                  AND statut_covoiturage = 'EN_COURS'
+            ");
             $stmt->execute([
                 'id_covoiturage' => $idCovoiturage,
                 'id_utilisateur' => $idUtilisateur,
@@ -407,15 +563,18 @@ final class PersistanceHistoriquePostgresql
                 throw new RuntimeException('Terminaison refusée : mise à jour du statut impossible.');
             }
 
-            // 3) Demander la validation côté passagers sur participation active
+            /*
+             * Les participations actives passent en EN_ATTENTE.
+             * Cela ouvre ensuite le parcours de validation côté passager.
+             */
             $stmt = $pdo->prepare("
-            UPDATE participation
-            SET statut_validation = 'EN_ATTENTE',
-                commentaire_validation = NULL
-            WHERE id_covoiturage = :id_covoiturage
-              AND est_annulee = false
-              AND statut_validation = 'NON_DEMANDEE'
-        ");
+                UPDATE participation
+                SET statut_validation = 'EN_ATTENTE',
+                    commentaire_validation = NULL
+                WHERE id_covoiturage = :id_covoiturage
+                  AND est_annulee = false
+                  AND statut_validation = 'NON_DEMANDEE'
+            ");
             $stmt->execute(['id_covoiturage' => $idCovoiturage]);
 
             $pdo->commit();
@@ -426,10 +585,17 @@ final class PersistanceHistoriquePostgresql
     }
 
     /**
-     * Vérifier si l'utilisateur peut déclarer un incident sur ce covoiturage.
-     * - il doit être le chauffeur donc est propriétaire du covoiturage.
+     * Vérifie si l'utilisateur peut déclarer un incident.
+     *
+     * Conditions :
+     * - identifiants valides ;
+     * - l'utilisateur doit être le chauffeur du covoiturage ;
      * - le covoiturage doit être en cours ou terminé.
-     * - éviter les ids invalides.
+     *
+     * @param int $idUtilisateur Identifiant du chauffeur connecté.
+     * @param int $idCovoiturage Identifiant du covoiturage ciblé.
+     *
+     * @return bool
      */
     public function peutDeclarerIncident(int $idUtilisateur, int $idCovoiturage): bool
     {
@@ -439,6 +605,10 @@ final class PersistanceHistoriquePostgresql
 
         $pdo = $this->connexionPostgresql->obtenirPdo();
 
+        /*
+         * On teste simplement l'existence d'une ligne correspondante.
+         * Aucun chargement complet n'est nécessaire ici.
+         */
         $stmt = $pdo->prepare("
             SELECT 1
             FROM covoiturage c
@@ -457,12 +627,19 @@ final class PersistanceHistoriquePostgresql
     }
 
     /**
-     * Vérifier si l'utilisateur peut donner un avis sur ce covoiturage.
-     * - l'utilisateur doit avoir une participation sur ce covoiturage
-     * - participation non annulée
-     * - covoiturage terminé
-     * - validation en attente
-     * - aucun avis déjà déposé pour cette participation
+     * Vérifie si l'utilisateur peut donner un avis sur un covoiturage.
+     *
+     * Conditions :
+     * - l'utilisateur doit avoir une participation sur ce trajet ;
+     * - la participation ne doit pas être annulée ;
+     * - le covoiturage doit être terminé ;
+     * - la validation doit être en attente ;
+     * - aucun avis ne doit déjà exister pour cette participation.
+     *
+     * @param int $idUtilisateur Identifiant du passager connecté.
+     * @param int $idCovoiturage Identifiant du covoiturage ciblé.
+     *
+     * @return bool
      */
     public function peutDonnerAvis(int $idUtilisateur, int $idCovoiturage): bool
     {
@@ -472,6 +649,10 @@ final class PersistanceHistoriquePostgresql
 
         $pdo = $this->connexionPostgresql->obtenirPdo();
 
+        /*
+         * Comme pour peutDeclarerIncident(),
+         * un simple SELECT 1 suffit pour répondre oui ou non.
+         */
         $stmt = $pdo->prepare("
             SELECT 1
             FROM participation p
@@ -494,9 +675,34 @@ final class PersistanceHistoriquePostgresql
         return (bool) $stmt->fetchColumn();
     }
 
+    /**
+     * Enregistre la satisfaction du passager et crée un avis.
+     *
+     * Cette méthode vérifie d'abord :
+     * - les paramètres ;
+     * - la note ;
+     * - la longueur du commentaire ;
+     * - le droit réel du passager à déposer un avis sur ce trajet.
+     *
+     * Si tout est valide :
+     * - un avis est créé avec modération EN_ATTENTE ;
+     * - la participation passe en validation OK.
+     *
+     * La transaction garantit que ces deux étapes restent cohérentes.
+     *
+     * @param int $idUtilisateur Identifiant du passager connecté.
+     * @param int $idCovoiturage Identifiant du covoiturage concerné.
+     * @param int $note Note donnée par le passager.
+     * @param string $commentaire Commentaire laissé par le passager.
+     *
+     * @return void
+     */
     public function enregistrerSatisfaction(int $idUtilisateur, int $idCovoiturage, int $note, string $commentaire): void
     {
-
+        /*
+         * Le commentaire est nettoyé avant validation,
+         * comme pour la déclaration d'incident.
+         */
         $commentaire = trim($commentaire);
 
         if ($idUtilisateur <= 0 || $idCovoiturage <= 0) {
@@ -516,21 +722,22 @@ final class PersistanceHistoriquePostgresql
 
         try {
             /*
-              1) Vérifier le droit + verrouiller la participation 
-                 - uniquement si : covoiturage terminé + participation en attente et non annulée
-            */
+             * On relit et on verrouille la participation concernée.
+             * Cela garantit que le droit à déposer un avis reste stable
+             * pendant le traitement.
+             */
             $stmt = $pdo->prepare("
-            SELECT p.id_participation
-            FROM participation p
-            JOIN covoiturage c ON c.id_covoiturage = p.id_covoiturage
-            WHERE p.id_utilisateur = :id_utilisateur
-              AND p.id_covoiturage = :id_covoiturage
-              AND p.est_annulee = false
-              AND c.statut_covoiturage = 'TERMINE'
-              AND p.statut_validation = 'EN_ATTENTE'
-            FOR UPDATE
-            LIMIT 1
-        ");
+                SELECT p.id_participation
+                FROM participation p
+                JOIN covoiturage c ON c.id_covoiturage = p.id_covoiturage
+                WHERE p.id_utilisateur = :id_utilisateur
+                  AND p.id_covoiturage = :id_covoiturage
+                  AND p.est_annulee = false
+                  AND c.statut_covoiturage = 'TERMINE'
+                  AND p.statut_validation = 'EN_ATTENTE'
+                FOR UPDATE
+                LIMIT 1
+            ");
 
             $stmt->execute([
                 'id_utilisateur' => $idUtilisateur,
@@ -543,15 +750,15 @@ final class PersistanceHistoriquePostgresql
             }
 
             /*
-              2) Sécurité supplémentaire = un avis par participation 
-                 - on revérifie explicitement 
-            */
+             * On refait une vérification explicite :
+             * une participation ne doit jamais recevoir plusieurs avis.
+             */
             $stmt = $pdo->prepare("
-            SELECT 1
-            FROM avis
-            WHERE id_participation = :id_participation
-            LIMIT 1
-        ");
+                SELECT 1
+                FROM avis
+                WHERE id_participation = :id_participation
+                LIMIT 1
+            ");
             $stmt->execute(['id_participation' => $idParticipation]);
 
             if ($stmt->fetchColumn()) {
@@ -559,12 +766,13 @@ final class PersistanceHistoriquePostgresql
             }
 
             /*
-              3) Créer l'avis et modération en attente
-            */
+             * Création de l'avis.
+             * Le statut de modération démarre en EN_ATTENTE.
+             */
             $stmt = $pdo->prepare("
-            INSERT INTO avis (note, commentaire, date_depot, statut_moderation, id_participation, id_employe_moderateur)
-            VALUES (:note, :commentaire, NOW(), 'EN_ATTENTE', :id_participation, NULL)
-        ");
+                INSERT INTO avis (note, commentaire, date_depot, statut_moderation, id_participation, id_employe_moderateur)
+                VALUES (:note, :commentaire, NOW(), 'EN_ATTENTE', :id_participation, NULL)
+            ");
 
             $stmt->execute([
                 'note' => $note,
@@ -573,14 +781,14 @@ final class PersistanceHistoriquePostgresql
             ]);
 
             /*
-              4) Marquer la participation comme validée 
-            */
+             * Une fois l'avis créé, la participation passe en validation OK.
+             */
             $stmt = $pdo->prepare("
-            UPDATE participation
-            SET statut_validation = 'OK',
-                commentaire_validation = NULL
-            WHERE id_participation = :id_participation
-        ");
+                UPDATE participation
+                SET statut_validation = 'OK',
+                    commentaire_validation = NULL
+                WHERE id_participation = :id_participation
+            ");
             $stmt->execute(['id_participation' => $idParticipation]);
 
             if ($stmt->rowCount() !== 1) {
@@ -591,9 +799,11 @@ final class PersistanceHistoriquePostgresql
         } catch (Throwable $e) {
             $pdo->rollBack();
 
-            /* 1 avis maximum par participation.
-            - Si on essaie d’enregistrer un avis alors qu’il existe déjà, la bdd renvoie une erreur.
-            - on transforme cette erreur technique en message compréhensible pour l’utilisateur */
+            /*
+             * Sécurité complémentaire :
+             * si la base détecte tout de même un doublon sur l'avis,
+             * on transforme l'erreur technique en message compréhensible.
+             */
             $message = $e->getMessage();
             if (
                 stripos($message, 'uq_avis_participation') !== false
