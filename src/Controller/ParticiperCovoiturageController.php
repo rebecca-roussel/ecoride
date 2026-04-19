@@ -4,180 +4,110 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Service\ConnexionPostgresql;
+use App\Service\PersistanceCovoituragePostgresql;
 use App\Service\SessionUtilisateur;
-use PDO;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * Contrôleur du parcours de participation à un covoiturage.
+ *
+ * Cette classe gère l'action déclenchée quand un utilisateur
+ * souhaite réserver une place sur un covoiturage.
+ *
+ * Le contrôleur garde ici ce qui relève du web :
+ * lecture de l'identifiant transmis dans l'URL,
+ * contrôle de la session,
+ * vérification du jeton CSRF,
+ * messages flash et redirections.
+ *
+ * La vérification des règles de réservation
+ * et l'écriture dans PostgreSQL sont déléguées
+ * à `PersistanceCovoituragePostgresql`.
+ *
+ * @package App\Controller
+ */
 final class ParticiperCovoiturageController extends AbstractController
 {
-    /*
-      PLAN (ParticiperCovoiturageController) :
-
-      1) Sécurité
-         - utilisateur connecté obligatoire
-         - requête POST + jeton CSRF
-
-      2) Règles métier minimales
-         - covoiturage PLANIFIE
-         - nb_places_dispo > 0
-         - le chauffeur ne peut pas participer à son propre trajet
-         - pas de double participation 
-         - crédits passager suffisants
-
-      3) Transaction SQL 
-         - verrouiller la ligne covoiturage (FOR UPDATE)
-         - verrouiller la ligne utilisateur (FOR UPDATE)
-         - insérer participation
-         - laisser la BDD gérer places + débit (via déclencheur)
-    */
-
+    /**
+     * Traite la demande de participation à un covoiturage.
+     *
+     * Cette méthode s'exécute en POST.
+     * Elle vérifie d'abord que l'identifiant du covoiturage est cohérent,
+     * que l'utilisateur est bien connecté,
+     * puis que le jeton CSRF du formulaire est valide.
+     *
+     * Une fois ces contrôles passés,
+     * le contrôleur délègue la participation réelle
+     * au service de persistance.
+     *
+     * @param int $id Identifiant du covoiturage transmis dans l'URL.
+     * @param Request $requete Requête HTTP courante.
+     * @param SessionUtilisateur $sessionUtilisateur Service de session utilisateur.
+     * @param PersistanceCovoituragePostgresql $persistanceCovoiturage
+     *        Service de persistance PostgreSQL des covoiturages.
+     *
+     * @return Response Redirection vers la page de détail ou vers une autre page du parcours.
+     */
     #[Route('/participer/{id}', name: 'participer_covoiturage', methods: ['POST'])]
     public function participer(
         int $id,
         Request $requete,
         SessionUtilisateur $sessionUtilisateur,
-        ConnexionPostgresql $connexion,
+        PersistanceCovoituragePostgresql $persistanceCovoiturage,
     ): Response {
-        // Garde-fou simple : id cohérent 
+        /*
+         * Clause de garde :
+         * l'identifiant du covoiturage doit être un entier positif.
+         */
         if ($id <= 0) {
             $this->addFlash('erreur', 'Covoiturage invalide.');
+
             return $this->redirectToRoute('resultats');
         }
 
-        // Sécurité : connecté
+        /*
+         * La réservation d'une place est réservée à un utilisateur connecté.
+         */
         $utilisateur = $sessionUtilisateur->obtenirUtilisateurConnecte();
         if ($utilisateur === null) {
             $this->addFlash('erreur', 'Veuillez vous connecter pour participer.');
+
             return $this->redirectToRoute('connexion');
         }
 
+        /*
+         * L'identifiant du passager est relu depuis la session.
+         * Si cette valeur manque, la session est considérée incohérente.
+         */
         $idPassager = (int) ($utilisateur['id_utilisateur'] ?? 0);
         if ($idPassager <= 0) {
-            // Cas très rare : session incohérente 
             $this->addFlash('erreur', 'Session invalide. Veuillez vous reconnecter.');
+
             return $this->redirectToRoute('connexion');
         }
 
-        // CSRF 
+        /*
+         * Le jeton CSRF (Cross-Site Request Forgery) 
+         * protège l'action contre une soumission frauduleuse.
+         * Il sert à vérifier que le formulaire vient bien de l'application.
+         */
         $jeton = (string) $requete->request->get('_token', '');
         if (!$this->isCsrfTokenValid('participer_covoiturage_' . $id, $jeton)) {
             throw new RuntimeException('Jeton CSRF invalide.');
         }
 
-        $pdo = $connexion->obtenirPdo();
-
         try {
-            $pdo->beginTransaction();
-
-            // Verrouille le covoiturage, évite les doubles participations simultanées
-            $stmt = $pdo->prepare("
-                SELECT
-                    id_covoiturage,
-                    id_utilisateur AS id_chauffeur,
-                    nb_places_dispo,
-                    prix_credits,
-                    statut_covoiturage
-                FROM covoiturage
-                WHERE id_covoiturage = :id
-                FOR UPDATE
-            ");
-            $stmt->execute(['id' => $id]);
-            $covoit = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$covoit) {
-                $pdo->rollBack();
-                $this->addFlash('erreur', 'Covoiturage introuvable.');
-                return $this->redirectToRoute('resultats');
-            }
-
-            // Covoiturage réservable : uniquement PLANIFIE
-            if (($covoit['statut_covoiturage'] ?? '') !== 'PLANIFIE') {
-                $pdo->rollBack();
-                $this->addFlash('erreur', 'Ce covoiturage n’est pas réservable.');
-                return $this->redirectToRoute('details', ['id' => $id]);
-            }
-
-            // Chauffeur ≠ passager
-            $idChauffeur = (int) ($covoit['id_chauffeur'] ?? 0);
-            if ($idChauffeur === $idPassager) {
-                $pdo->rollBack();
-                $this->addFlash('erreur', 'Vous ne pouvez pas participer à votre propre covoiturage.');
-                return $this->redirectToRoute('details', ['id' => $id]);
-            }
-
-            // Places disponibles 
-            $places = (int) ($covoit['nb_places_dispo'] ?? 0);
-            if ($places <= 0) {
-                $pdo->rollBack();
-                $this->addFlash('erreur', 'Ce covoiturage est complet.');
-                return $this->redirectToRoute('details', ['id' => $id]);
-            }
-
-            // Prix cohérent
-            $prix = (int) ($covoit['prix_credits'] ?? 0);
-            if ($prix <= 0) {
-                // Normalement impossible grâce à la contrainte BDD, mais garde-fou
-                $pdo->rollBack();
-                $this->addFlash('erreur', 'Prix invalide.');
-                return $this->redirectToRoute('details', ['id' => $id]);
-            }
-
-            // Vérifier crédits passager 
-            $stmt = $pdo->prepare("
-                SELECT credits
-                FROM utilisateur
-                WHERE id_utilisateur = :id_passager
-                FOR UPDATE
-            ");
-            $stmt->execute(['id_passager' => $idPassager]);
-            $creditsPassager = (int) $stmt->fetchColumn();
-
-            if ($creditsPassager < $prix) {
-                $pdo->rollBack();
-                $this->addFlash('erreur', 'Crédits insuffisants pour participer à ce covoiturage.');
-                return $this->redirectToRoute('details', ['id' => $id]);
-            }
-
-            // Insére la participation
-            $stmt = $pdo->prepare("
-                INSERT INTO participation (
-                    date_heure_confirmation,
-                    credits_utilises,
-                    est_annulee,
-                    id_utilisateur,
-                    id_covoiturage
-                )
-                VALUES (NOW(), :credits_utilises, false, :id_utilisateur, :id_covoiturage)
-            ");
-            $stmt->execute([
-                'credits_utilises' => $prix,
-                'id_utilisateur' => $idPassager,
-                'id_covoiturage' => $id,
-            ]);
-
-
-            $pdo->commit();
+            $persistanceCovoiturage->participerAuCovoiturage($id, $idPassager);
 
             $this->addFlash('succes', 'Participation confirmée.');
-            return $this->redirectToRoute('details', ['id' => $id]);
-        } catch (\PDOException $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-
-
-            if ($e->getCode() === '23505') {
-                $this->addFlash('erreur', 'Vous participez déjà à ce covoiturage.');
-                return $this->redirectToRoute('details', ['id' => $id]);
-            }
-
-            $this->addFlash('erreur', 'Erreur lors de la participation.');
-            return $this->redirectToRoute('details', ['id' => $id]);
+        } catch (RuntimeException $e) {
+            $this->addFlash('erreur', $e->getMessage());
         }
+
+        return $this->redirectToRoute('details', ['id' => $id]);
     }
 }
