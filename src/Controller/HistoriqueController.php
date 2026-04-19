@@ -4,74 +4,47 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\EnvoiCourriels;
 use App\Service\JournalEvenements;
+use App\Service\PersistanceCovoituragePostgresql;
 use App\Service\PersistanceHistoriquePostgresql;
 use App\Service\SessionUtilisateur;
 use RuntimeException;
-use Throwable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
-use App\Service\EnvoiCourriels;
-use App\Service\PersistanceCovoituragePostgresql;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
-
+use Symfony\Component\Routing\Attribute\Route;
+use Throwable;
 
 final class HistoriqueController extends AbstractController
 {
-    /*
-      PLAN (HistoriqueController) :
-
-      1) Afficher l’historique
-         - page protégée : utilisateur connecté obligatoire
-         - 2 onglets :
-           a) mes covoiturages publiés
-           b) mes participations
-
-      2) Pages dérivées (GET)
-         a) Formulaire incident (chauffeur) : covoiturage EN_COURS ou TERMINE
-         b) Formulaire satisfaction (passager) : covoiturage TERMINE + validation EN_ATTENTE
-
-      3) Actions (POST)
-         - CSRF obligatoire
-         - fail fast : session -> csrf -> id > 0 -> (autres paramètres)
-         - la persistance applique les règles métier (propriétaire, statut, déjà annulé…)
-
-         a) Annuler participation
-         b) Annuler covoiturage
-         c) Démarrer covoiturage
-         d) Terminer covoiturage
-         e) Déclarer incident (commentaire obligatoire)
-         f) Enregistrer satisfaction (note + commentaire)
-
-      4) Journal MongoDB
-         - tracer ouverture de page
-         - tracer succès
-         - tracer refus (csrf, id invalide, règle métier)
-         - tracer erreurs techniques
-    */
-
-    /* AFFICHAGE PRINCIPAL*/
-
+    /**
+     * Affiche l'interface principale de l'historique utilisateur.
+     *
+     * Cette page fonctionne avec deux onglets :
+     * les covoiturages publiés par l'utilisateur
+     * et les participations auxquelles il a pris part.
+     *
+     * L'onglet demandé est lu dans l'URL.
+     * Une seule liste est chargée à la fois pour éviter
+     * des lectures inutiles en base de données.
+     */
     #[Route('/historique', name: 'historique', methods: ['GET'])]
     public function index(
         Request $requete,
         SessionUtilisateur $sessionUtilisateur,
-        PersistanceHistoriquePostgresql $persistance,
-        JournalEvenements $journalEvenements
+        PersistanceHistoriquePostgresql $persistance
     ): Response {
         $utilisateur = $sessionUtilisateur->exigerUtilisateurConnecte();
         $idUtilisateur = (int) $utilisateur['id_utilisateur'];
 
-        // Onglet actif, uniquement 2 valeurs acceptées
         $onglet = (string) $requete->query->get('onglet', 'covoiturages');
         if (!in_array($onglet, ['covoiturages', 'participations'], true)) {
             $onglet = 'covoiturages';
         }
 
-        // Charger uniquement l'onglet demandé 
         $covoituragesPublies = [];
         $participations = [];
 
@@ -81,12 +54,6 @@ final class HistoriqueController extends AbstractController
             $participations = $persistance->listerParticipations($idUtilisateur);
         }
 
-        // Journal : ouverture de page
-        $journalEvenements->enregistrer('page_ouverte', 'utilisateur', $idUtilisateur, [
-            'page' => 'historique',
-            'onglet' => $onglet,
-        ]);
-
         return $this->render('historique/index.html.twig', [
             'onglet' => $onglet,
             'covoiturages_publies' => $covoituragesPublies,
@@ -94,8 +61,16 @@ final class HistoriqueController extends AbstractController
         ]);
     }
 
-    /* PAGES DÉRIVÉES */
-
+    /**
+     * Affiche le formulaire de déclaration d'incident.
+     *
+     * Cette page est réservée au chauffeur concerné.
+     * Le contrôleur vérifie ici l'accès au parcours,
+     * puis laisse Twig afficher le formulaire.
+     *
+     * Si l'accès est refusé, l'événement retenu dans MongoDB
+     * est `incident_refuse`.
+     */
     #[Route('/historique/incident/{id}', name: 'incident_formulaire', methods: ['GET'])]
     public function afficherFormulaireIncident(
         int $id,
@@ -106,30 +81,48 @@ final class HistoriqueController extends AbstractController
         $utilisateur = $sessionUtilisateur->exigerUtilisateurConnecte();
         $idUtilisateur = (int) $utilisateur['id_utilisateur'];
 
-        // Si route invalide
         if ($id <= 0) {
             $this->addFlash('erreur', 'Trajet invalide.');
-            $this->logRefus($journalEvenements, 'incident_formulaire_refuse', 'id_invalide', $idUtilisateur, 'covoiturage', $id);
+            $this->logRefus(
+                $journalEvenements,
+                'incident_refuse',
+                'id_invalide',
+                $idUtilisateur,
+                'covoiturage',
+                $id
+            );
+
             return $this->redirectToRoute('historique', ['onglet' => 'covoiturages']);
         }
 
-        // Sécurité : uniquement le chauffeur autorisé + statut cohérent 
         if (!$persistance->peutDeclarerIncident($idUtilisateur, $id)) {
-            $this->addFlash('erreur', "Accès refusé ou trajet non éligible à un incident.");
-            $this->logRefus($journalEvenements, 'incident_formulaire_refuse', 'acces_interdit', $idUtilisateur, 'covoiturage', $id);
+            $this->addFlash('erreur', 'Accès refusé ou trajet non éligible à un incident.');
+            $this->logRefus(
+                $journalEvenements,
+                'incident_refuse',
+                'acces_interdit',
+                $idUtilisateur,
+                'covoiturage',
+                $id
+            );
+
             return $this->redirectToRoute('historique', ['onglet' => 'covoiturages']);
         }
-
-        $journalEvenements->enregistrer('page_ouverte', 'utilisateur', $idUtilisateur, [
-            'page' => 'incident_formulaire',
-            'id_covoiturage' => $id,
-        ]);
 
         return $this->render('historique/incident.html.twig', [
             'id_covoiturage' => $id,
         ]);
     }
 
+    /**
+     * Affiche le formulaire de satisfaction.
+     *
+     * Cette page est réservée au passager concerné
+     * lorsque le trajet permet encore ce dépôt.
+     *
+     * Si l'accès est refusé, l'événement retenu dans MongoDB
+     * est `satisfaction_refusee`.
+     */
     #[Route('/historique/satisfaction/{id}', name: 'satisfaction_formulaire', methods: ['GET'])]
     public function afficherFormulaireSatisfaction(
         int $id,
@@ -142,21 +135,31 @@ final class HistoriqueController extends AbstractController
 
         if ($id <= 0) {
             $this->addFlash('erreur', 'Trajet invalide.');
-            $this->logRefus($journalEvenements, 'satisfaction_formulaire_refuse', 'id_invalide', $idUtilisateur, 'covoiturage', $id);
+            $this->logRefus(
+                $journalEvenements,
+                'satisfaction_refusee',
+                'id_invalide',
+                $idUtilisateur,
+                'covoiturage',
+                $id
+            );
+
             return $this->redirectToRoute('historique', ['onglet' => 'participations']);
         }
 
-        // Sécurité : uniquement le passager autorisé + statut cohérent + avis pas encore soumis
         if (!$persistance->peutDonnerAvis($idUtilisateur, $id)) {
-            $this->addFlash('erreur', "Accès refusé ou avis déjà donné.");
-            $this->logRefus($journalEvenements, 'satisfaction_formulaire_refuse', 'acces_interdit', $idUtilisateur, 'covoiturage', $id);
+            $this->addFlash('erreur', 'Accès refusé ou avis déjà donné.');
+            $this->logRefus(
+                $journalEvenements,
+                'satisfaction_refusee',
+                'acces_interdit',
+                $idUtilisateur,
+                'covoiturage',
+                $id
+            );
+
             return $this->redirectToRoute('historique', ['onglet' => 'participations']);
         }
-
-        $journalEvenements->enregistrer('page_ouverte', 'utilisateur', $idUtilisateur, [
-            'page' => 'satisfaction_formulaire',
-            'id_covoiturage' => $id,
-        ]);
 
         return $this->render('historique/satisfaction.html.twig', [
             'id_covoiturage' => $id,
@@ -165,8 +168,18 @@ final class HistoriqueController extends AbstractController
         ]);
     }
 
-    /* ACTIONS PASSAGER */
-
+    /**
+     * Annule une participation.
+     *
+     * Cette action suit un flux simple :
+     * contrôle du jeton CSRF,
+     * lecture de l'identifiant,
+     * appel à PostgreSQL,
+     * message flash
+     * puis redirection.
+     *
+     * En cas de succès, l'événement retenu est `participation_annulee`.
+     */
     #[Route('/historique/annuler-participation', name: 'annuler_participation', methods: ['POST'])]
     public function annulerParticipation(
         Request $requete,
@@ -183,6 +196,7 @@ final class HistoriqueController extends AbstractController
             'participation',
             'id_participation',
             'annulerParticipation',
+            'participation_annulee',
             'Participation annulée.',
             'participations'
         );
@@ -190,6 +204,23 @@ final class HistoriqueController extends AbstractController
         return $resultat['reponse'];
     }
 
+    /**
+     * Enregistre la satisfaction d'un passager.
+     *
+     * Le formulaire demande une note et un commentaire.
+     * Une fois validé, le contrôleur délègue l'écriture à PostgreSQL.
+     *
+     * Ce parcours produit plusieurs informations métier utiles :
+     * le parcours de satisfaction a abouti
+     * et un avis a réellement été créé.
+     *
+     * Les événements retenus sont donc :
+     * - `satisfaction_enregistree`
+     * - `avis_depose`
+     *
+     * Les refus restent journalisés sous `satisfaction_refusee`
+     * et les erreurs techniques sous `satisfaction_erreur`.
+     */
     #[Route('/historique/enregistrer-satisfaction', name: 'enregistrer_satisfaction', methods: ['POST'])]
     public function enregistrerSatisfaction(
         Request $requete,
@@ -200,10 +231,17 @@ final class HistoriqueController extends AbstractController
         $utilisateur = $sessionUtilisateur->exigerUtilisateurConnecte();
         $idUtilisateur = (int) $utilisateur['id_utilisateur'];
 
-        // Sécurité : CSRF
         if (!$this->isCsrfTokenValid('enregistrer_satisfaction', (string) $requete->request->get('_token'))) {
-            $this->logRefus($journalEvenements, 'satisfaction_refusee', 'csrf_invalide', $idUtilisateur, 'covoiturage', 0);
+            $this->logRefus(
+                $journalEvenements,
+                'satisfaction_refusee',
+                'csrf_invalide',
+                $idUtilisateur,
+                'covoiturage',
+                0
+            );
             $this->addFlash('erreur', 'Jeton CSRF invalide.');
+
             return $this->redirectToRoute('historique', ['onglet' => 'participations']);
         }
 
@@ -211,21 +249,30 @@ final class HistoriqueController extends AbstractController
         $note = (int) $requete->request->get('note', 0);
         $commentaire = trim((string) $requete->request->get('commentaire', ''));
 
-        // Validation côté contrôleur
         $erreurs = [];
+
         if ($idCovoiturage <= 0) {
             $erreurs['id_covoiturage'] = 'Trajet invalide.';
         }
+
         if ($note < 1 || $note > 5) {
             $erreurs['note'] = 'La note doit être comprise entre 1 et 5.';
         }
+
         if ($commentaire !== '' && mb_strlen($commentaire) > 1000) {
             $erreurs['commentaire'] = 'Commentaire trop long (1000 caractères maximum).';
         }
 
-        // Si erreur réaffiche le formulaire avec les valeurs saisies
         if (!empty($erreurs)) {
-            $this->logRefus($journalEvenements, 'satisfaction_refusee', 'parametres_invalides', $idUtilisateur, 'covoiturage', $idCovoiturage);
+            $this->logRefus(
+                $journalEvenements,
+                'satisfaction_refusee',
+                'parametres_invalides',
+                $idUtilisateur,
+                'covoiturage',
+                $idCovoiturage
+            );
+
             return $this->render('historique/satisfaction.html.twig', [
                 'id_covoiturage' => $idCovoiturage,
                 'ancien' => [
@@ -236,23 +283,51 @@ final class HistoriqueController extends AbstractController
             ]);
         }
 
-        // Sécurité: revalide que l'utilisateur peut bien donner son avis au moment opportun
         if (!$persistance->peutDonnerAvis($idUtilisateur, $idCovoiturage)) {
-            $this->addFlash('erreur', "Accès refusé ou avis déjà donné.");
-            $this->logRefus($journalEvenements, 'satisfaction_refusee', 'acces_interdit', $idUtilisateur, 'covoiturage', $idCovoiturage);
+            $this->addFlash('erreur', 'Accès refusé ou avis déjà donné.');
+            $this->logRefus(
+                $journalEvenements,
+                'satisfaction_refusee',
+                'acces_interdit',
+                $idUtilisateur,
+                'covoiturage',
+                $idCovoiturage
+            );
+
             return $this->redirectToRoute('historique', ['onglet' => 'participations']);
         }
 
         try {
-            // La persistance fera les vérifications 
             $persistance->enregistrerSatisfaction($idUtilisateur, $idCovoiturage, $note, $commentaire);
 
-            $this->logSucces($journalEvenements, 'satisfaction_enregistree', $idUtilisateur, 'covoiturage', $idCovoiturage);
+            $this->logSucces(
+                $journalEvenements,
+                'satisfaction_enregistree',
+                $idUtilisateur,
+                'covoiturage',
+                $idCovoiturage
+            );
+
+            $this->logSucces(
+                $journalEvenements,
+                'avis_depose',
+                $idUtilisateur,
+                'covoiturage',
+                $idCovoiturage
+            );
+
             $this->addFlash('succes', 'Merci pour votre avis !');
         } catch (RuntimeException $e) {
-            $this->logRefus($journalEvenements, 'satisfaction_refusee', 'regle_metier', $idUtilisateur, 'covoiturage', $idCovoiturage, $e->getMessage());
+            $this->logRefus(
+                $journalEvenements,
+                'satisfaction_refusee',
+                'regle_metier',
+                $idUtilisateur,
+                'covoiturage',
+                $idCovoiturage,
+                $e->getMessage()
+            );
             $this->addFlash('erreur', $e->getMessage());
-
 
             return $this->render('historique/satisfaction.html.twig', [
                 'id_covoiturage' => $idCovoiturage,
@@ -263,149 +338,166 @@ final class HistoriqueController extends AbstractController
                 'erreurs' => [],
             ]);
         } catch (Throwable $e) {
-            $this->logErreur($journalEvenements, 'satisfaction_erreur', $idUtilisateur, $e, 'enregistrer_satisfaction', 'covoiturage', $idCovoiturage);
+            $this->logErreur(
+                $journalEvenements,
+                'satisfaction_erreur',
+                $idUtilisateur,
+                $e,
+                'enregistrer_satisfaction',
+                'covoiturage',
+                $idCovoiturage
+            );
             $this->addFlash('erreur', 'Erreur technique : enregistrement impossible.');
         }
 
         return $this->redirectToRoute('historique', ['onglet' => 'participations']);
     }
 
-   #[Route('/historique/annuler-covoiturage', name: 'annuler_covoiturage', methods: ['POST'])]
-public function annulerCovoiturage(
-    Request $requete,
-    SessionUtilisateur $sessionUtilisateur,
-    PersistanceHistoriquePostgresql $persistanceHistorique,
-    PersistanceCovoituragePostgresql $persistanceCovoiturage,
-    EnvoiCourriels $envoiCourriels,
-    JournalEvenements $journalEvenements
-): RedirectResponse {
-    $utilisateur = $sessionUtilisateur->exigerUtilisateurConnecte();
-    $idUtilisateur = (int) $utilisateur['id_utilisateur'];
+    /**
+     * Annule un covoiturage publié par l'utilisateur connecté.
+     *
+     * Si l'action réussit, l'événement retenu est `covoiturage_annule`.
+     * Les courriels sont envoyés après l'annulation
+     * et restent secondaires par rapport à l'action principale.
+     */
+    #[Route('/historique/annuler-covoiturage', name: 'annuler_covoiturage', methods: ['POST'])]
+    public function annulerCovoiturage(
+        Request $requete,
+        SessionUtilisateur $sessionUtilisateur,
+        PersistanceHistoriquePostgresql $persistanceHistorique,
+        PersistanceCovoituragePostgresql $persistanceCovoiturage,
+        EnvoiCourriels $envoiCourriels,
+        JournalEvenements $journalEvenements
+    ): RedirectResponse {
+        $idCovoiturage = (int) $requete->request->get('id_covoiturage', 0);
+        $jeton = (string) $requete->request->get('_token');
 
-    $idCovoiturage = (int) $requete->request->get('id_covoiturage', 0);
-    $jeton = (string) $requete->request->get('_token');
+        /*
+         * Les participants et le résumé du covoiturage sont lus avant l'annulation.
+         * Après l'annulation, les participations actives peuvent avoir changé.
+         */
+        $participants = [];
+        $covoiturage = null;
 
-    // Récupérer AVANT l’annulation (sinon les participations passent en est_annulee = true)
-    $participants = [];
-    $covoiturage = null;
-
-    // On évite des requêtes si CSRF/id invalides
-    if ($idCovoiturage > 0 && $this->isCsrfTokenValid('annuler_covoiturage', $jeton)) {
-        $participants = $persistanceCovoiturage->listerParticipantsPourCourriel($idCovoiturage);
-        $covoiturage = $persistanceCovoiturage->obtenirResumeCovoituragePourCourriel($idCovoiturage);
-    }
-
-    // Annuler via le helper (CSRF + id + service + logs)
-    $resultat = $this->executerActionSimple(
-        $requete,
-        $sessionUtilisateur,
-        $persistanceHistorique,
-        $journalEvenements,
-        'annuler_covoiturage',
-        'covoiturage',
-        'id_covoiturage',
-        'annulerCovoiturage',
-        'Covoiturage annulé.',
-        'covoiturages'
-    );
-
-    // Courriel uniquement si l’annulation a réussi
-    if ($resultat['succes'] === true && $covoiturage !== null) {
-        try {
-            $envoiCourriels->envoyerAnnulationCovoiturage($participants, $covoiturage);
-        } catch (TransportExceptionInterface $e) {
-            // Ne jamais bloquer l’action si le serveur de courriel est indisponible
-            $this->logErreur(
-                $journalEvenements,
-                'courriel_annulation_envoi_erreur',
-                $idUtilisateur,
-                $e,
-                'annuler_covoiturage',
-                'covoiturage',
-                $idCovoiturage
-            );
+        if ($idCovoiturage > 0 && $this->isCsrfTokenValid('annuler_covoiturage', $jeton)) {
+            $participants = $persistanceCovoiturage->listerParticipantsPourCourriel($idCovoiturage);
+            $covoiturage = $persistanceCovoiturage->obtenirResumeCovoituragePourCourriel($idCovoiturage);
         }
-    }
 
-    return $resultat['reponse'];
-}
+        $resultat = $this->executerActionSimple(
+            $requete,
+            $sessionUtilisateur,
+            $persistanceHistorique,
+            $journalEvenements,
+            'annuler_covoiturage',
+            'covoiturage',
+            'id_covoiturage',
+            'annulerCovoiturage',
+            'covoiturage_annule',
+            'Covoiturage annulé.',
+            'covoiturages'
+        );
 
-#[Route('/historique/terminer-covoiturage', name: 'terminer_covoiturage', methods: ['POST'])]
-public function terminerCovoiturage(
-    Request $requete,
-    SessionUtilisateur $sessionUtilisateur,
-    PersistanceHistoriquePostgresql $persistanceHistorique,
-    PersistanceCovoituragePostgresql $persistanceCovoiturage,
-    EnvoiCourriels $envoiCourriels,
-    JournalEvenements $journalEvenements
-): RedirectResponse {
-    $utilisateur = $sessionUtilisateur->exigerUtilisateurConnecte();
-    $idUtilisateur = (int) $utilisateur['id_utilisateur'];
-
-    $idCovoiturage = (int) $requete->request->get('id_covoiturage', 0);
-
-    // Terminer via le helper (CSRF + id + service + logs)
-    $resultat = $this->executerActionSimple(
-        $requete,
-        $sessionUtilisateur,
-        $persistanceHistorique,
-        $journalEvenements,
-        'terminer_covoiturage',
-        'covoiturage',
-        'id_covoiturage',
-        'terminerCovoiturage',
-        'Covoiturage terminé.',
-        'covoiturages'
-    );
-
-    // Courriel uniquement si succès
-    if ($resultat['succes'] === true) {
-        $participants = $persistanceCovoiturage->listerParticipantsPourCourriel($idCovoiturage);
-        $covoiturage = $persistanceCovoiturage->obtenirResumeCovoituragePourCourriel($idCovoiturage);
-
-        if ($covoiturage !== null) {
+        if ($resultat['succes'] === true && $covoiturage !== null) {
             try {
-                $envoiCourriels->envoyerDemandeValidationTrajet($participants, $covoiturage);
-            } catch (TransportExceptionInterface $e) {
-                $this->logErreur(
-                    $journalEvenements,
-                    'courriel_terminaison_envoi_erreur',
-                    $idUtilisateur,
-                    $e,
-                    'terminer_covoiturage',
-                    'covoiturage',
-                    $idCovoiturage
-                );
+                $envoiCourriels->envoyerAnnulationCovoiturage($participants, $covoiturage);
+            } catch (TransportExceptionInterface) {
+                /*
+                 * Le courriel reste un traitement complémentaire.
+                 * L'annulation du trajet reste valide même si l'envoi échoue.
+                 */
             }
         }
+
+        return $resultat['reponse'];
     }
 
-    return $resultat['reponse'];
-}
+    /**
+     * Termine un covoiturage publié par l'utilisateur connecté.
+     *
+     * Si l'action réussit, l'événement retenu est `covoiturage_termine`.
+     * Le courriel de demande de validation est envoyé ensuite.
+     */
+    #[Route('/historique/terminer-covoiturage', name: 'terminer_covoiturage', methods: ['POST'])]
+    public function terminerCovoiturage(
+        Request $requete,
+        SessionUtilisateur $sessionUtilisateur,
+        PersistanceHistoriquePostgresql $persistanceHistorique,
+        PersistanceCovoituragePostgresql $persistanceCovoiturage,
+        EnvoiCourriels $envoiCourriels,
+        JournalEvenements $journalEvenements
+    ): RedirectResponse {
+        $idCovoiturage = (int) $requete->request->get('id_covoiturage', 0);
 
-#[Route('/historique/demarrer-covoiturage', name: 'demarrer_covoiturage', methods: ['POST'])]
-public function demarrerCovoiturage(
-    Request $requete,
-    SessionUtilisateur $sessionUtilisateur,
-    PersistanceHistoriquePostgresql $persistanceHistorique,
-    JournalEvenements $journalEvenements
-): RedirectResponse {
-    $resultat = $this->executerActionSimple(
-        $requete,
-        $sessionUtilisateur,
-        $persistanceHistorique,
-        $journalEvenements,
-        'demarrer_covoiturage',
-        'covoiturage',
-        'id_covoiturage',
-        'demarrerCovoiturage',
-        'Covoiturage démarré.',
-        'covoiturages'
-    );
+        $resultat = $this->executerActionSimple(
+            $requete,
+            $sessionUtilisateur,
+            $persistanceHistorique,
+            $journalEvenements,
+            'terminer_covoiturage',
+            'covoiturage',
+            'id_covoiturage',
+            'terminerCovoiturage',
+            'covoiturage_termine',
+            'Covoiturage terminé.',
+            'covoiturages'
+        );
 
-    return $resultat['reponse'];
-}
+        if ($resultat['succes'] === true) {
+            $participants = $persistanceCovoiturage->listerParticipantsPourCourriel($idCovoiturage);
+            $covoiturage = $persistanceCovoiturage->obtenirResumeCovoituragePourCourriel($idCovoiturage);
 
+            if ($covoiturage !== null) {
+                try {
+                    $envoiCourriels->envoyerDemandeValidationTrajet($participants, $covoiturage);
+                } catch (TransportExceptionInterface) {
+                    /*
+                     * Le trajet reste terminé même si le courriel échoue.
+                     */
+                }
+            }
+        }
+
+        return $resultat['reponse'];
+    }
+
+    /**
+     * Démarre un covoiturage publié par l'utilisateur connecté.
+     *
+     * Si l'action réussit, l'événement retenu est `covoiturage_demarre`.
+     */
+    #[Route('/historique/demarrer-covoiturage', name: 'demarrer_covoiturage', methods: ['POST'])]
+    public function demarrerCovoiturage(
+        Request $requete,
+        SessionUtilisateur $sessionUtilisateur,
+        PersistanceHistoriquePostgresql $persistanceHistorique,
+        JournalEvenements $journalEvenements
+    ): RedirectResponse {
+        $resultat = $this->executerActionSimple(
+            $requete,
+            $sessionUtilisateur,
+            $persistanceHistorique,
+            $journalEvenements,
+            'demarrer_covoiturage',
+            'covoiturage',
+            'id_covoiturage',
+            'demarrerCovoiturage',
+            'covoiturage_demarre',
+            'Covoiturage démarré.',
+            'covoiturages'
+        );
+
+        return $resultat['reponse'];
+    }
+
+    /**
+     * Déclare un incident sur un covoiturage.
+     *
+     * Trois événements peuvent être retenus ici :
+     * `incident_declare`,
+     * `incident_refuse`
+     * et `incident_erreur`.
+     */
     #[Route('/historique/declarer-incident', name: 'declarer_incident', methods: ['POST'])]
     public function declarerIncident(
         Request $requete,
@@ -417,8 +509,16 @@ public function demarrerCovoiturage(
         $idUtilisateur = (int) $utilisateur['id_utilisateur'];
 
         if (!$this->isCsrfTokenValid('declarer_incident', (string) $requete->request->get('_token'))) {
-            $this->logRefus($journalEvenements, 'incident_refuse', 'csrf_invalide', $idUtilisateur, 'covoiturage', 0);
+            $this->logRefus(
+                $journalEvenements,
+                'incident_refuse',
+                'csrf_invalide',
+                $idUtilisateur,
+                'covoiturage',
+                0
+            );
             $this->addFlash('erreur', 'Jeton CSRF invalide.');
+
             return $this->redirectToRoute('historique', ['onglet' => 'covoiturages']);
         }
 
@@ -426,30 +526,72 @@ public function demarrerCovoiturage(
         $commentaire = trim((string) $requete->request->get('incident_commentaire', ''));
 
         if ($idCovoiturage <= 0 || $commentaire === '') {
-            $this->logRefus($journalEvenements, 'incident_refuse', 'parametres_invalides', $idUtilisateur, 'covoiturage', $idCovoiturage);
+            $this->logRefus(
+                $journalEvenements,
+                'incident_refuse',
+                'parametres_invalides',
+                $idUtilisateur,
+                'covoiturage',
+                $idCovoiturage
+            );
             $this->addFlash('erreur', 'Covoiturage ou commentaire invalide.');
+
             return $this->redirectToRoute('historique', ['onglet' => 'covoiturages']);
         }
 
         try {
             $persistance->declarerIncident($idUtilisateur, $idCovoiturage, $commentaire);
-            $this->logSucces($journalEvenements, 'incident_declare', $idUtilisateur, 'covoiturage', $idCovoiturage);
+
+            $this->logSucces(
+                $journalEvenements,
+                'incident_declare',
+                $idUtilisateur,
+                'covoiturage',
+                $idCovoiturage
+            );
+
             $this->addFlash('succes', 'Incident déclaré.');
         } catch (RuntimeException $e) {
-            $this->logRefus($journalEvenements, 'incident_refuse', 'regle_metier', $idUtilisateur, 'covoiturage', $idCovoiturage, $e->getMessage());
+            $this->logRefus(
+                $journalEvenements,
+                'incident_refuse',
+                'regle_metier',
+                $idUtilisateur,
+                'covoiturage',
+                $idCovoiturage,
+                $e->getMessage()
+            );
             $this->addFlash('erreur', $e->getMessage());
         } catch (Throwable $e) {
-            $this->logErreur($journalEvenements, 'incident_erreur', $idUtilisateur, $e, 'declarer_incident', 'covoiturage', $idCovoiturage);
+            $this->logErreur(
+                $journalEvenements,
+                'incident_erreur',
+                $idUtilisateur,
+                $e,
+                'declarer_incident',
+                'covoiturage',
+                $idCovoiturage
+            );
             $this->addFlash('erreur', 'Erreur technique : impossible de déclarer un incident.');
         }
 
         return $this->redirectToRoute('historique', ['onglet' => 'covoiturages']);
     }
-    /*
-     HELPER pour les actions "id + csrf + service"
-     - renvoie aussi si l'action a réussi
-   */
 
+    /**
+     * Exécute une action simple fondée sur un identifiant reçu en POST.
+     *
+     * Ce helper sert aux actions qui ont le même enchaînement :
+     * vérification du jeton CSRF,
+     * lecture de l'identifiant,
+     * appel d'une méthode de persistance,
+     * message flash
+     * et redirection.
+     *
+     * Dans ce helper, seule la réussite est journalisée.
+     * Les refus et erreurs de ces actions ne font pas partie
+     * des événements retenus dans ce fichier.
+     */
     private function executerActionSimple(
         Request $requete,
         SessionUtilisateur $sessionUtilisateur,
@@ -459,6 +601,7 @@ public function demarrerCovoiturage(
         string $entiteJournal,
         string $cleIdPost,
         string $methodeService,
+        string $evenementSucces,
         string $messageSucces,
         string $ongletRetour
     ): array {
@@ -466,7 +609,6 @@ public function demarrerCovoiturage(
         $idUtilisateur = (int) $utilisateur['id_utilisateur'];
 
         if (!$this->isCsrfTokenValid($cleCsrf, (string) $requete->request->get('_token'))) {
-            $this->logRefus($journalEvenements, $methodeService . '_refuse', 'csrf_invalide', $idUtilisateur, $entiteJournal, 0);
             $this->addFlash('erreur', 'Jeton CSRF invalide.');
 
             return [
@@ -478,7 +620,6 @@ public function demarrerCovoiturage(
 
         $idEntite = (int) $requete->request->get($cleIdPost, 0);
         if ($idEntite <= 0) {
-            $this->logRefus($journalEvenements, $methodeService . '_refuse', 'id_invalide', $idUtilisateur, $entiteJournal, $idEntite);
             $this->addFlash('erreur', 'Identifiant invalide.');
 
             return [
@@ -491,7 +632,7 @@ public function demarrerCovoiturage(
         try {
             $persistance->$methodeService($idUtilisateur, $idEntite);
 
-            $this->logSucces($journalEvenements, $methodeService . '_succes', $idUtilisateur, $entiteJournal, $idEntite);
+            $this->logSucces($journalEvenements, $evenementSucces, $idUtilisateur, $entiteJournal, $idEntite);
             $this->addFlash('succes', $messageSucces);
 
             return [
@@ -500,10 +641,8 @@ public function demarrerCovoiturage(
                 'reponse' => $this->redirectToRoute('historique', ['onglet' => $ongletRetour]),
             ];
         } catch (RuntimeException $e) {
-            $this->logRefus($journalEvenements, $methodeService . '_refuse', 'regle_metier', $idUtilisateur, $entiteJournal, $idEntite, $e->getMessage());
             $this->addFlash('erreur', $e->getMessage());
-        } catch (Throwable $e) {
-            $this->logErreur($journalEvenements, $methodeService . '_erreur', $idUtilisateur, $e, $methodeService, $entiteJournal, $idEntite);
+        } catch (Throwable) {
             $this->addFlash('erreur', 'Erreur technique : action impossible.');
         }
 
@@ -514,8 +653,21 @@ public function demarrerCovoiturage(
         ];
     }
 
-    /* JOURNAL */
-
+    /**
+     * Journalise un refus dans MongoDB.
+     *
+     * `JournalEvenements` refuse les enregistrements
+     * si `id_entite` vaut 0 ou moins.
+     *
+     * Quand l'identifiant métier visé existe,
+     * il devient l'entité principale du document.
+     * Quand cet identifiant n'est pas exploitable,
+     * l'utilisateur connecté devient l'entité principale
+     * et la cible initiale est déplacée dans les données complémentaires.
+     *
+     * Cela permet de garder une trace exploitable
+     * même quand l'action échoue avant d'avoir un identifiant valide.
+     */
     private function logRefus(
         JournalEvenements $journal,
         string $action,
@@ -525,13 +677,30 @@ public function demarrerCovoiturage(
         int $idEntite,
         string $message = ''
     ): void {
-        $journal->enregistrer($action, $entite, $idEntite, [
-            'id_utilisateur' => $idUtilisateur,
+        if ($idEntite > 0) {
+            $journal->enregistrer($action, $entite, $idEntite, [
+                'id_utilisateur' => $idUtilisateur,
+                'raison' => $raison,
+                'message' => $message,
+            ]);
+
+            return;
+        }
+
+        $journal->enregistrer($action, 'utilisateur', $idUtilisateur, [
             'raison' => $raison,
             'message' => $message,
+            'entite_cible' => $entite,
+            'id_entite_cible' => $idEntite,
         ]);
     }
 
+    /**
+     * Journalise un succès dans MongoDB.
+     *
+     * Le document garde l'entité principale concernée
+     * ainsi que l'utilisateur connecté.
+     */
     private function logSucces(
         JournalEvenements $journal,
         string $action,
@@ -544,6 +713,15 @@ public function demarrerCovoiturage(
         ]);
     }
 
+    /**
+     * Journalise une erreur technique dans MongoDB.
+     *
+     * Comme pour les refus, si l'identifiant métier n'est pas exploitable,
+     * l'utilisateur connecté devient l'entité principale du document.
+     *
+     * L'exception est transmise à `enregistrerErreur()`
+     * pour conserver les informations techniques utiles au diagnostic.
+     */
     private function logErreur(
         JournalEvenements $journal,
         string $action,
@@ -553,9 +731,19 @@ public function demarrerCovoiturage(
         string $entite,
         int $idEntite
     ): void {
-        $journal->enregistrerErreur($action, $entite, $idEntite, $e, [
-            'id_utilisateur' => $idUtilisateur,
+        if ($idEntite > 0) {
+            $journal->enregistrerErreur($action, $entite, $idEntite, $e, [
+                'id_utilisateur' => $idUtilisateur,
+                'action' => $contexteAction,
+            ]);
+
+            return;
+        }
+
+        $journal->enregistrerErreur($action, 'utilisateur', $idUtilisateur, $e, [
             'action' => $contexteAction,
+            'entite_cible' => $entite,
+            'id_entite_cible' => $idEntite,
         ]);
     }
 }
