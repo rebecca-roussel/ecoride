@@ -1,0 +1,13 @@
+{# templates/fragments/messages_flash.html.twig #}
+{% for type, messages in app.flashes %}
+	{% for message in messages %}
+		<div
+			class="message_flash message_flash_{{ type }}"
+			role="{{ type == 'erreur' ? 'alert' : 'status' }}"
+			aria-live="polite"
+			data-message-flash
+		>
+			{{ message }}
+		</div>
+	{% endfor %}
+{% endfor %}

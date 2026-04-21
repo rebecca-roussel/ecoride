@@ -1,70 +1,70 @@
 {# templates/roles/index.html.twig #}
-{#
-  PLAN (structure page Gérer mes rôles) :
+{# Plan du fichier :
 
-  1) Héritage de base.html.twig
-     - entête public ou utilisateur selon ton système
-     - global.css + accueil.css déjà chargés
+  1. Hériter de base.html.twig
+     - le socle commun fournit l'en-tête, le pied de page
+       et l'affichage global des messages flash
 
-  2) Zone centrale
-     - panneau beige centré
-     - titre + sous-titre
-     - affichage des messages flash (succès / erreur)
+  2. Charger la feuille CSS propre à la page des rôles
+     - elle complète le style commun défini dans global.css
 
-  3) Formulaire
-     - 2 interrupteurs (passager / chauffeur)
-     - protection CSRF
-     - bouton principal "Enregistrer mes rôles"
+  3. Afficher le panneau principal
+     - titre
+     - sous-titre
+     - formulaire de gestion des rôles
 
-  4) Règle importante
-     - au moins un rôle doit rester actif
-     - validation faite côté serveur 
+  4. Afficher les deux rôles modifiables
+     - passager
+     - chauffeur
+
+  5. Protéger l'envoi du formulaire avec un jeton CSRF
+     - la mise à jour des rôles passe par un POST
+
+  Point important :
+  - les messages flash ne sont plus affichés dans ce template
+  - ils sont gérés globalement dans base.html.twig
+  - en revanche, le fichier roles.js reste chargé,
+    car il concerne le comportement propre à cette page
 #}
 
 {% extends 'base.html.twig' %}
-	{% block title %}
+
+{% block title %}
 Gérer mes rôles
 {% endblock %}
 
-	{% block stylesheets %}
+{% block stylesheets %}
 	{{ parent() }}
-<link rel="stylesheet" href="{{ asset('css/roles.css') }}"> {% endblock %}
+	<link rel="stylesheet" href="{{ asset('css/roles.css') }}">
+{% endblock %}
 
 {% block body %}
-
 	<main class="page_roles">
-
 		<section class="panneau_roles">
 
+			{# En-tête de la page :
+			   on présente simplement l'action attendue de l'utilisateur. #}
 			<h1>Gérer mes rôles</h1>
 			<p class="texte_secondaire">
 				Choisissez votre rôle sur la plateforme EcoRide
 			</p>
 
-			{# FLASH MESSAGES #}
-
-			{% for message in app.flashes('succes') %}
-				<div class="message_succes">
-					{{ message }}
-				</div>
-			{% endfor %}
-
-			{% for message in app.flashes('erreur') %}
-				<div class="message_erreur">
-					{{ message }}
-				</div>
-			{% endfor %}
-
-			{# FORMULAIRE #}
-
+			{# Formulaire principal :
+			   il permet d'activer ou désactiver les rôles disponibles
+			   pour le compte connecté. #}
 			<form method="post" class="formulaire_roles">
 
+				{# Jeton CSRF :
+				   il protège l'envoi du formulaire. #}
 				<input
-				type="hidden" name="_csrf_token" value="{{ csrf_token('gerer_roles') }}">
+					type="hidden"
+					name="_csrf_token"
+					value="{{ csrf_token('gerer_roles') }}"
+				>
 
-				{# ROLE PASSAGER #}
+				{# Carte rôle passager :
+				   ce rôle permet de rechercher et réserver des covoiturages. #}
 				<div class="carte_role">
-
 					<div class="role_infos">
 						<div class="icone_role" aria-hidden="true">
 							<span class="icone icone_avatar"></span>
@@ -79,15 +79,14 @@ Gérer mes rôles
 					</div>
 
 					<label class="interrupteur">
-						<input type="checkbox" name="role_passager" {% if role_passager %} checked {% endif %}>
+						<input type="checkbox" name="role_passager" {% if role_passager %}checked{% endif %}>
 						<span class="curseur"></span>
 					</label>
-
 				</div>
 
-				{# ROLE CHAUFFEUR #}
+				{# Carte rôle chauffeur :
+				   ce rôle permet de publier des trajets et proposer des places. #}
 				<div class="carte_role">
-
 					<div class="role_infos">
 						<div class="icone_role" aria-hidden="true">
 							<span class="icone icone_covoit"></span>
@@ -102,13 +101,13 @@ Gérer mes rôles
 					</div>
 
 					<label class="interrupteur">
-						<input type="checkbox" name="role_chauffeur" {% if role_chauffeur %} checked {% endif %}>
+						<input type="checkbox" name="role_chauffeur" {% if role_chauffeur %}checked{% endif %}>
 						<span class="curseur"></span>
 					</label>
-
 				</div>
 
-
+				{# Action de validation :
+				   le bouton envoie les choix actuels au contrôleur. #}
 				<button type="submit" class="bouton_principal bouton_roles">
 					Enregistrer
 				</button>
@@ -116,9 +115,7 @@ Gérer mes rôles
 			</form>
 
 		</section>
-
 	</main>
-
 {% endblock %}
 
 {% block javascripts %}

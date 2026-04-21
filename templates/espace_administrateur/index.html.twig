@@ -1,48 +1,68 @@
 {# templates/espace_administrateur/index.html.twig #}
-{# PLAN (Espace administrateur) :
-  1) En-tête : titre + sous-titre
-  2) Tuiles : chiffres clés (stats)
-  3) Onglets : comptes / statistiques (sans JS, via ?onglet=...)
-  4) Bloc Comptes : tableau + actions
-  5) Bloc Statistiques : 2 zones graphiques (placeholders pour l’instant)
+{# Plan du fichier :
+
+  1. Hériter de base.html.twig
+     - le socle commun fournit l'en-tête, le pied de page
+       et l'affichage global des messages flash
+
+  2. Charger la feuille CSS de l'espace administrateur
+     - elle complète le style commun défini dans global.css
+
+  3. Prévoir une valeur par défaut pour l'onglet
+     - si le contrôleur n'envoie rien,
+       l'affichage revient sur l'onglet "comptes"
+
+  4. Afficher la structure générale de l'espace administrateur
+     - titre
+     - sous-titre
+     - tuiles de synthèse
+     - navigation par onglets
+
+  5. Afficher l'onglet actif
+     - soit la gestion des comptes
+     - soit la zone des statistiques
+
+  6. Prévoir les actions d'administration
+     - créer un compte employé
+     - suspendre un compte
+     - réactiver un compte
+
+  Point important :
+  - les messages flash ne sont plus affichés dans ce template
+  - ils sont gérés globalement dans base.html.twig
 #}
 
 {% extends 'base.html.twig' %}
-	{% block title %}
+
+{% block title %}
 Espace administrateur - EcoRide
 {% endblock %}
 
-	{% block stylesheets %}
+{% block stylesheets %}
 	{{ parent() }}
-<link rel="stylesheet" href="{{ asset('css/espace_administrateur.css') }}"> {% endblock %}
+	<link rel="stylesheet" href="{{ asset('css/espace_administrateur.css') }}">
+{% endblock %}
 
-{# Sécurité Twig si le contrôleur oublie d’envoyer onglet #}
+{# Sécurité Twig :
+   si le contrôleur oublie d'envoyer la variable onglet,
+   on revient par défaut sur la vue des comptes. #}
 {% set onglet = onglet|default('comptes') %}
-
 
 {% block body %}
 	<main class="page_espace_admin">
 		<section class="panneau_espace_admin">
 
+			{# En-tête de page :
+			   il présente le rôle de cet espace avant les onglets
+			   et les blocs de gestion. #}
 			<header class="entete_espace_admin">
 				<h1 class="titre_espace_admin">Espace administrateur</h1>
 				<p class="texte_secondaire">Vision globale et gestion de la plateforme EcoRide</p>
 			</header>
 
-			{# Messages de confirmation / erreur (après redirection POST) #}
-			{% for message in app.flashes('succes') %}
-				<div class="message_flash message_succes" role="status">{{ message }}</div>
-			{% endfor %}
-
-			{% for message in app.flashes('avertissement') %}
-				<div class="message_flash message_avertissement" role="status">{{ message }}</div>
-			{% endfor %}
-
-			{% for message in app.flashes('erreur') %}
-				<div class="message_flash message_erreur" role="alert">{{ message }}</div>
-			{% endfor %}
-
-			{# Tuiles chiffres #}
+			{# Tuiles de synthèse :
+			   on récupère d'abord l'objet stats avec une valeur vide par défaut
+			   pour éviter les erreurs Twig si une donnée manque. #}
 			{% set stats = stats|default({}) %}
 
 			<div class="tuiles_admin">
@@ -79,16 +99,31 @@ Espace administrateur - EcoRide
 				</div>
 			</div>
 
+			{# Navigation par onglets :
+			   l'onglet actif dépend de la variable envoyée par le contrôleur. #}
 			<nav class="onglets_admin" aria-label="Navigation espace administrateur">
-				<a class="onglet_admin {{ onglet == 'comptes' ? 'onglet_actif' : '' }}" href="{{ path('espace_administrateur', { onglet: 'comptes' }) }}" {{ onglet == 'comptes' ? 'aria-current="page"' : '' }}>Comptes</a>
+				<a
+					class="onglet_admin {{ onglet == 'comptes' ? 'onglet_actif' : '' }}"
+					href="{{ path('espace_administrateur', { onglet: 'comptes' }) }}"
+					{{ onglet == 'comptes' ? 'aria-current="page"' : '' }}
+				>
+					Comptes
+				</a>
 
-				<a class="onglet_admin {{ onglet == 'statistiques' ? 'onglet_actif' : '' }}" href="{{ path('espace_administrateur', { onglet: 'statistiques' }) }}" {{ onglet == 'statistiques' ? 'aria-current="page"' : '' }}>Statistiques</a>
+				<a
+					class="onglet_admin {{ onglet == 'statistiques' ? 'onglet_actif' : '' }}"
+					href="{{ path('espace_administrateur', { onglet: 'statistiques' }) }}"
+					{{ onglet == 'statistiques' ? 'aria-current="page"' : '' }}
+				>
+					Statistiques
+				</a>
 			</nav>
 
-			<hr
-			class="separateur_admin">
+			<hr class="separateur_admin">
 
-			{# ONGLET COMPTES #}
+			{# ONGLET COMPTES :
+			   cet écran sert à visualiser les comptes
+			   et à déclencher les actions d'administration. #}
 			{% if onglet == 'comptes' %}
 				<section id="comptes" class="bloc_admin">
 					<div class="ligne_titre_admin">
@@ -115,6 +150,8 @@ Espace administrateur - EcoRide
 							</div>
 						{% else %}
 							{% for compte in comptes %}
+								{# On prépare les valeurs avec des défauts
+								   pour éviter tout plantage si une clé manque. #}
 								{% set id_utilisateur = compte.id_utilisateur|default(0) %}
 								{% set pseudo = compte.pseudo|default('') %}
 								{% set role = compte.role|default('UTILISATEUR') %}
@@ -143,12 +180,21 @@ Espace administrateur - EcoRide
 									</span>
 
 									<span class="col_actions">
+										{# Cas 1 :
+										   identifiant absent ou invalide,
+										   aucune action fiable n'est possible. #}
 										{% if id_utilisateur <= 0 %}
 											<button class="bouton_action" type="button" disabled>Indisponible</button>
 
+										{# Cas 2 :
+										   l'administrateur regarde sa propre ligne,
+										   donc l'action est désactivée pour éviter une auto-modification. #}
 										{% elseif est_mon_compte %}
 											<button class="bouton_action" type="button" disabled>Votre compte</button>
 
+										{# Cas 3 :
+										   le compte est suspendu,
+										   on propose sa réactivation. #}
 										{% elseif statut == 'SUSPENDU' %}
 											<form method="post" action="{{ path('espace_admin_reactiver_compte') }}">
 												<input type="hidden" name="id_utilisateur" value="{{ id_utilisateur }}">
@@ -156,6 +202,9 @@ Espace administrateur - EcoRide
 												<button class="bouton_action bouton_reactiver" type="submit">Réactiver</button>
 											</form>
 
+										{# Cas 4 :
+										   le compte est actif,
+										   on propose sa suspension. #}
 										{% else %}
 											<form method="post" action="{{ path('espace_admin_suspendre_compte') }}">
 												<input type="hidden" name="id_utilisateur" value="{{ id_utilisateur }}">
@@ -171,19 +220,23 @@ Espace administrateur - EcoRide
 				</section>
 			{% endif %}
 
-			{# ONGLET STATISTIQUES #}
+			{# ONGLET STATISTIQUES :
+			   cette zone affiche des graphiques simples construits côté Twig
+			   à partir des séries envoyées par le contrôleur. #}
 			{% if onglet == 'statistiques' %}
 				<section id="statistiques" class="bloc_admin">
 					<h2 class="titre_bloc_admin">Statistiques de la plateforme</h2>
 
-					<div
-						class="grille_stats_admin">
-						{# 1) Covoiturages par jour #}
+					<div class="grille_stats_admin">
+
+						{# 1. Répartition des covoiturages par jour #}
 						<div class="carte_stats_admin">
 							<h3 class="titre_carte_stats">Répartition des covoiturages par jour</h3>
 
 							{% set serie = covoiturages_par_jour|default([]) %}
 
+							{# On calcule une valeur maximale
+							   pour dimensionner les barres du graphique. #}
 							{% set max_nb = 1 %}
 							{% for point in serie %}
 								{% set max_nb = max(max_nb, point.nb|default(0)) %}
@@ -196,16 +249,17 @@ Espace administrateur - EcoRide
 									{% for point in serie %}
 										{% set valeur = point.nb|default(0) %}
 										{% set hauteur = (valeur / max_nb * 100)|round(0, 'floor') %}
+
 										<div class="barre_item" title="{{ point.jour }} : {{ valeur }}">
 											<div class="barre" style="height: {{ hauteur }}%"></div>
-											<div class="barre_legende">{{ point.jour|slice(8,2) }}</div>
+											<div class="barre_legende">{{ point.jour|slice(8, 2) }}</div>
 										</div>
 									{% endfor %}
 								</div>
 							{% endif %}
 						</div>
 
-						{# 2) Crédits par jour #}
+						{# 2. Répartition des crédits par jour #}
 						<div class="carte_stats_admin">
 							<h3 class="titre_carte_stats">Répartition des crédits par jour</h3>
 
@@ -222,18 +276,19 @@ Espace administrateur - EcoRide
 									{% for point in serie2 %}
 										{% set valeur = point.credits|default(0) %}
 										{% set hauteur = (valeur / max_credits * 100)|round(0, 'floor') %}
+
 										<div class="barre_item" title="{{ point.jour }} : {{ valeur }} crédits">
 											<div class="barre barre_credits" style="height: {{ hauteur }}%"></div>
-											<div class="barre_legende">{{ point.jour|slice(8,2) }}</div>
+											<div class="barre_legende">{{ point.jour|slice(8, 2) }}</div>
 										</div>
 									{% endfor %}
 								</div>
 							{% endif %}
 						</div>
+
 					</div>
 				</section>
 			{% endif %}
-
 
 		</section>
 	</main>
