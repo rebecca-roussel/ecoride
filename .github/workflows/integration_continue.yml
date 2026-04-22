@@ -47,3 +47,6 @@ jobs:
 
       - name: Vérifier la syntaxe PHP
         run: find src -type f -name "*.php" -print0 | xargs -0 -n1 php -l
+
+      - name: Exécuter les tests PHPUnit
+        run: ./vendor/bin/simple-phpunit tests
