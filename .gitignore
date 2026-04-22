@@ -22,3 +22,7 @@ docs/api/
 # Fichiers de référence générés
 config/reference.php
 docs/gestion_projet/routes_et_controleurs.txt
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
