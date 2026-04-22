@@ -9,30 +9,30 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 /**
  * Vérifie le bon chargement de la page d'accueil.
  *
- * Pourquoi ce test :
- * on veut commencer par un contrôle simple et utile. L'objectif ici n'est pas
- * encore de tester tout le contenu de la page, mais de vérifier que le point
- * d'entrée principal du site répond correctement.
- *
  * Démarche retenue :
- * on simule une requête HTTP GET vers l'accueil, puis on vérifie que la réponse
- * renvoyée par l'application est un succès.
+ * on commence par un test simple et utile, sans chercher à tout contrôler
+ * d'un coup. L'objectif ici est de vérifier que le point d'entrée principal
+ * du site répond correctement.
+ *
+ * Ce que ce test valide :
+ * - la route d'accueil existe ;
+ * - le contrôleur répond ;
+ * - le rendu de la page ne plante pas.
  */
 final class AccueilTest extends WebTestCase
 {
     /**
      * Vérifie que la page d'accueil répond correctement.
      *
-     * Ce test simule l'ouverture de la page d'accueil dans un navigateur.
-     * Si l'application renvoie une réponse HTTP réussie, cela signifie que
-     * la route existe, que le contrôleur répond et que le rendu de la page
-     * ne plante pas au chargement.
+     * On simule une requête HTTP GET vers l'URL "/".
+     * Si la réponse est un succès, cela confirme que l'accueil
+     * de l'application se charge correctement.
      */
     public function testLaPageAccueilRepondCorrectement(): void
     {
         $client = static::createClient();
         $client->request('GET', '/');
 
-        $this->assertResponseIsSuccessful();
+        self::assertResponseIsSuccessful();
     }
 }
