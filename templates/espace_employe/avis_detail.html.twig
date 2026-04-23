@@ -1,10 +1,37 @@
 {# templates/espace_employe/avis_detail.html.twig #}
-{# PLAN (avis_detail) :
-  1) Héritage + css espace_employe.css
-  2) Panneau beige centré
-  3) 1 carte unique : même structure que la liste (pour réutiliser le CSS)
-  4) Commentaire affiché dans la zone gauche (sans nouvelles classes risquées)
-  5) Actions à droite : retour + valider + refuser (POST + CSRF)
+{# Plan du fichier :
+
+  1. Hériter de base.html.twig
+     - le socle commun fournit l'en-tête, le pied de page
+       et l'affichage global des messages flash
+
+  2. Charger la feuille CSS de l'espace employé
+     - on réutilise le même style que pour la liste
+       afin de garder une continuité visuelle
+
+  3. Forcer l'en-tête utilisateur
+     - cette page appartient à un espace connecté
+
+  4. Afficher le détail d'un avis
+     - note
+     - passager
+     - chauffeur
+     - trajet
+     - dates
+     - commentaire
+
+  5. Prévoir deux cas
+     - avis trouvé : affichage complet
+     - avis absent : message simple + retour
+
+  6. Prévoir les actions de modération
+     - retour vers la liste
+     - valider l'avis via un formulaire POST + CSRF
+     - refuser l'avis via un formulaire POST + CSRF
+
+  Point important :
+  - les messages flash ne sont plus affichés dans ce template
+  - ils sont gérés globalement dans base.html.twig
 #}
 
 {% extends 'base.html.twig' %}
@@ -24,11 +51,16 @@
 <main class="page_espace_employe page_espace_employe_detail">
   <section class="panneau_espace_employe">
 
+    {# En-tête de la page détail :
+       on rappelle ici que l'employé est dans une action de modération. #}
     <header class="entete_espace_employe">
       <h1>Détail d’un avis</h1>
       <p class="texte_secondaire">Décider de la modération</p>
     </header>
 
+    {# Garde-fou :
+       si le contrôleur n'envoie aucun avis exploitable,
+       on affiche un message simple avec un lien de retour. #}
     {% if avis is not defined or avis is empty %}
       <p class="etat_vide">Avis introuvable.</p>
 
@@ -42,11 +74,17 @@
         <article class="carte_item">
           <div class="carte_gauche">
 
+            {# Ligne de titre :
+               on conserve la même logique visuelle que dans la liste
+               avec le badge d'attente et la note donnée. #}
             <div class="ligne_titre">
               <span class="badge badge_attente">En attente</span>
               <strong class="note">{{ avis.note|default(0) }}/5</strong>
             </div>
 
+            {# Bloc méta :
+               il regroupe toutes les informations utiles
+               pour comprendre l'avis avant de le modérer. #}
             <div class="meta">
               <div class="meta_ligne">
                 <span class="icone icone_avatar" aria-hidden="true"></span>
@@ -81,6 +119,9 @@
                 <span>Dépôt : {{ avis.date_depot|default('') }}</span>
               </div>
 
+              {# Commentaire :
+                 on nettoie le texte avec trim
+                 pour éviter de considérer une chaîne vide comme un vrai contenu. #}
               {% set commentaire = avis.commentaire|default('')|trim %}
               <div class="meta_ligne">
                 <span class="icone icone_oeil" aria-hidden="true"></span>
@@ -93,6 +134,11 @@
             </div>
           </div>
 
+          {# Colonne d'actions :
+             - retour vers la liste des avis
+             - validation de l'avis
+             - refus de l'avis
+             Chaque action POST est protégée par un jeton CSRF. #}
           <div class="carte_actions">
             <a class="bouton_action bouton_secondaire"
                href="{{ path('espace_employe', { onglet: 'avis' }) }}">

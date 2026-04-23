@@ -1,267 +1,241 @@
 # EcoRide
 
-Plateforme de covoiturage écoresponsable développée dans le cadre de l'Évaluation Certificative Finale (ECF).
+**Plateforme de covoiturage écoresponsable** — Titre Professionnel Développeur Web et Web Mobile (RNCP TP-01280)
 
-## Fonctionnalités principales
+EcoRide connecte conducteurs et passagers autour d'un objectif commun : réduire l'impact environnemental des déplacements en voiture. Les trajets réalisés avec un véhicule électrique sont identifiés comme écologiques et mis en avant dans les résultats de recherche.
 
-* Inscription / connexion utilisateur
-* Gestion des rôles (chauffeur / passager)
-* Publication de covoiturages
-* Recherche avec filtres avancés
-* Système de crédits internes
-* Gestion des participations
-* Système d’avis modéré
-* Journalisation des événements (MongoDB)
+---
 
-## Pré-requis
+## Points forts de l'architecture
 
-Avant de lancer l’application, les éléments suivants doivent être installés sur la machine :
+### Persistance polyglotte (SQL + NoSQL)
 
-* Windows avec WSL2 activé (Ubuntu utilisé pour le développement)
+L'application repose sur deux bases de données aux rôles strictement distincts.
 
-* Docker Desktop (avec intégration WSL2 activée)
+**PostgreSQL 16** gère l'ensemble des données métier structurées : utilisateurs, véhicules, covoiturages, participations, avis, commissions. L'intégrité métier est garantie au niveau de la base via des **triggers et fonctions SQL** qui prennent en charge automatiquement le débit des crédits, le calcul des commissions, la mise à jour des places disponibles et le verrouillage des prix après validation d'une participation. Ces règles s'appliquent indépendamment de la couche applicative.
 
-* Git
+**MongoDB 7** est utilisé exclusivement comme **journal opérationnel d'événements** (*Audit Trail*). Il ne stocke aucune donnée métier et n'alimente pas les statistiques de l'application. Son rôle est d'enregistrer une trace chronologique et exploitable des événements significatifs (connexions, participations, incidents, modérations, suspensions) pour permettre une reconstitution rapide de toute situation sensible.
 
-* Un navigateur web
-
-L’application repose sur les technologies suivantes, exécutées dans des conteneurs Docker :
-
-* PHP 8.x
-
-* Symfony
-
-* PostgreSQL
-
-* MongoDB
-
-* Nginx
-
-* MailHog
-
-Symfony et ses dépendances sont installés via Composer dans le conteneur PHP.
-Aucune installation globale de Symfony sur la machine hôte n’est requise.
-
-## Architecture
-
-L’application repose sur :
-
-* Symfony (architecture MVC)
-* PostgreSQL pour les données relationnelles
-* MongoDB pour la journalisation
-* Docker pour l’isolation des services
-* Nginx comme serveur web
-
-## Structure du projet
-
-L’organisation du projet suit une architecture Symfony classique, adaptée à un environnement Dockerisé.
+### Sécurité
 
 ```text
-ecoride/
-│
-├── src/                    # Code source Symfony
-│   ├── Controller/         # Contrôleurs (routes et requêtes HTTP)
-│   ├── Service/            # Services métier (persistance, journalisation, logique applicative)
-│   └── Command/            # Commandes console Symfony
-│
-├── public/                 # Point d’entrée web (index.php)
-│   ├── css/                # Feuilles de style
-│   ├── js/                 # Scripts JavaScript
-│   ├── images/             # Images statiques
-│   ├── photos/             # Photos de profil (uploads utilisateurs)
-│   ├── icones/             # Pictogrammes SVG
-│   └── polices/            # Polices (auto-hébergement)
-│
-├── templates/              # Vues Twig (interface utilisateur)
-│
-├── config/                 # Configuration Symfony
-│
-├── docs/                   # Documentation du projet
-│   ├── gestion_projet/     # Organisation, suivi, livrables (Kanban, User Story mapping, Cahier des charges...)
-│   ├── interface/          # Maquettes et éléments d’interface
-│   ├── modelisation_donnees/ # Modélisation (MCD/MLD)
-│   ├── ressources/         # Ressources utiles (routes, test email)
-│   ├── sql/                # Scripts SQL (schéma, données de démonstration, vérifications)
-│   └── uml/                # Exports UML destinés à la documentation
-│
-├── docker/                 # Configuration Docker (PHP, Nginx)
-│
-├── docker-compose.yml      # Orchestration des conteneurs
-├── composer.json           # Dépendances PHP
-├── .env* / .env.docker     # Variables d’environnement (Symfony + Docker)
-└── README.md               # Documentation principale
+| Domaine | Mesure appliquée |
+|---|---|
+| Mots de passe | Hachage BCrypt |
+| Réinitialisation | Jeton `random_bytes` haché en SHA-256, stocké en base, usage unique |
+| Infrastructure | Code source monté en `read-only` dans le conteneur Nginx |
+| Formulaires | Protection CSRF (Symfony Security) |
+| En-têtes HTTP | `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` |
+| Secrets | `.env.local` exclu du dépôt via `.gitignore` |
+| Droits réseau | PostgreSQL non exposé sur la machine hôte ; MongoDB publié uniquement en local sur `127.0.0.1:27017` |
 ```
 
-### Organisation technique
+---
 
-* **Controllers** : gèrent les routes et orchestrent les appels aux services.
-* **Services** : contiennent la logique métier et l’accès aux bases de données.
-* **Templates Twig** : assurent le rendu des pages.
-* **PostgreSQL** : stocke les données relationnelles (utilisateurs, covoiturages, participations, avis, commissions).
-* **MongoDB** : enregistre les événements applicatifs (journalisation).
-* **Docker** : isole chaque service dans un conteneur dédié.
+## Prérequis
+
+- Windows avec WSL2 activé (distribution Ubuntu recommandée) — ou Linux / macOS
+- Docker Desktop avec intégration WSL2 activée
+- Git
+- Un navigateur web
+
+Aucune installation locale de PHP, Symfony ou Composer n'est requise. Tous les services s'exécutent dans des conteneurs Docker.
+
+---
 
 ## Installation
 
 ### 1. Cloner le dépôt
 
 ```bash
-git clone <https://github.com/rebecca-roussel/ecoride.git>
+git clone https://github.com/rebecca-roussel/ecoride.git
 cd ecoride
 ```
 
-### 2. Lancer les conteneurs Docker
+### 2. Construire et démarrer les conteneurs
 
 ```bash
 docker compose up -d --build
 ```
 
-### 3. Vérifier que les services sont actifs
+Cette commande démarre cinq services : Nginx, PHP-FPM, PostgreSQL, MongoDB et MailHog.
+
+### 3. Installer les dépendances PHP
 
 ```bash
-docker compose ps
+docker compose exec php composer install
 ```
 
-## Configuration (.env)
+### 4. Initialiser la base de données PostgreSQL
 
-Les variables d’environnement sont définies dans :
-
-* .env
-
-* .env.docker
-
-Elles configurent notamment :
-
-* la connexion PostgreSQL
-
-* la connexion MongoDB
-
-* la configuration SMTP (MailHog en local)
-
-* les paramètres Symfony
-
-Pour un usage local, aucune modification n’est nécessaire.
-
-## Base de données (PostgreSQL)
-
-### 1. Création du schéma
+Créer le schéma relationnel (tables, triggers, fonctions, contraintes) :
 
 ```bash
 docker compose exec -T postgresql psql -U ecoride -d ecoride -f docs/sql/01_schema.sql
 ```
 
-### 2. Insertion des données de démonstration
+Charger les données de démonstration :
 
 ```bash
 docker compose exec -T postgresql psql -U ecoride -d ecoride -f docs/sql/02_donnees_demo.sql
 ```
 
-Ce script insère :
+### 5. Vider le cache Symfony
 
-* les utilisateurs
+```bash
+docker compose exec php php bin/console cache:clear
+```
 
-* les rôles administrateur et employé
+---
 
-* les véhicules
+## Accès à l'application
 
-* les covoiturages
+```text
+| Service | URL |
+|---|---|
+| Application | http://localhost:8080 |
+| MailHog (emails de test) | http://localhost:8025 |
+```
 
-* les participations
+---
 
-* les avis
+## Comptes de démonstration
 
-* les commissions plateforme
+Mot de passe commun à tous les comptes : **`Ecoride2026!`**
 
-## Base de données NoSQL (MongoDB)
+```text
+| Rôle | Email |
+|---|---|
+| Administrateur | jose@ecoride.fr |
+| Employé | sophie@ecoride.fr |
+| Employé | thomas@ecoride.fr |
+| Utilisateur (chauffeur/passager) | muriel@ecoride.fr |
+| Utilisateur (chauffeur/passager) | benjamin@ecoride.fr |
+| Utilisateur (chauffeur/passager) | raoul@ecoride.fr |
+| Utilisateur (passager) | nina@ecoride.fr |
+| Utilisateur (passager) | luc@ecoride.fr |
+| Utilisateur (passager) | emma@ecoride.fr |
+```
 
-MongoDB est utilisé pour le journal des événements (traçabilité).
+---
 
-Les événements enregistrés concernent notamment :
+## Vérification de l'environnement
 
-* ouverture de pages
+Contrôler l'état des conteneurs :
 
-* recherches effectuées
+```bash
+docker compose ps
+```
 
-* publications de covoiturages
+Vérifier les extensions PHP actives :
 
-* créations de participations
+```bash
+docker compose exec -T php php -m | grep -E 'pdo_pgsql|intl|zip|mongodb'
+```
 
-* annulations
+Contrôler la cohérence du conteneur de services Symfony :
 
-* modérations
+```bash
+docker compose exec php php bin/console lint:container
+```
 
-Aucune action manuelle n’est nécessaire : la base est utilisée automatiquement par l’application.
+Vérifier la validité du fichier `composer.json` :
 
-## Lancer l'application en local
+```bash
+docker compose exec php composer validate
+```
 
-Une fois les conteneurs actifs, l’application est accessible à l’adresse :
+Contrôler la réponse HTTP et les en-têtes de sécurité :
 
-* <http://localhost:8080>
+```bash
+curl -I http://localhost:8080
+```
 
-Interface MailHog (simulation des emails) :
+Résultat attendu : `HTTP/1.1 200 OK` avec présence de `X-Frame-Options`, `X-Content-Type-Options` et `Referrer-Policy`.
 
-* <http://localhost:8025>
+---
 
-## Tests / comptes de démo
+## Architecture des conteneurs
 
-Mot de passe commun à tous les comptes :
+```text
+Navigateur
+    │
+    ▼
+ Nginx :8080          (point d'entrée HTTP — code source en read-only)
+    │
+    ▼
+ PHP-FPM               (Symfony 7 — PHP 8.3)
+    │
+    ├──▶ PostgreSQL     (données métier — triggers et fonctions SQL)
+    ├──▶ MongoDB        (journal opérationnel d'événements)
+    └──▶ MailHog :8025  (simulation SMTP — développement uniquement)
+```
 
-* Ecoride2026!
+Tous les services communiquent via le réseau interne de Docker Compose. PostgreSQL n'est pas exposé sur la machine hôte. MongoDB est publié uniquement en local sur `127.0.0.1:27017`, ce qui permet son utilisation avec MongoDB Compass depuis le poste de développement.
 
-### Administrateur
+---
 
-* <jose@ecoride.fr>
+## Structure du projet
 
-### Employés
+```text
+ecoride/
+├── src/
+│   ├── Controller/         # Routes et orchestration des requêtes HTTP
+│   ├── Service/            # Logique métier et accès aux données
+│   └── Command/            # Commandes console Symfony
+├── templates/              # Vues Twig
+├── public/                 # Point d'entrée web (index.php) — exposé par Nginx
+│   ├── css/
+│   ├── js/
+│   ├── images/
+│   └── polices/            # Polices auto-hébergées
+├── config/                 # Configuration Symfony et services
+├── docs/
+│   ├── sql/                # Scripts SQL (schéma + données de démonstration)
+│   ├── modelisation_donnees/
+│   ├── interface/          # Maquettes
+│   └── gestion_projet/
+├── docker/
+│   ├── nginx/default.conf
+│   └── php/Dockerfile
+├── docker-compose.yml
+├── composer.json
+└── .env                    # Variables d'environnement (valeurs de développement)
+```
 
-* <sophie@ecoride.fr>
-
-* <thomas@ecoride.fr>
-
-### Chauffeurs / Passagers
-
-* <muriel@ecoride.fr>
-
-* <benjamin@ecoride.fr>
-
-* <raoul@ecoride.fr>
-
-* <nina@ecoride.fr>
-
-* <luc@ecoride.fr>
-
-* <emma@ecoride.fr>
+---
 
 ## Dépannage
 
-* Les conteneurs ne démarrent pas :
+**Les conteneurs ne démarrent pas :**
 
 ```bash
 docker compose down -v
 docker compose up -d --build
 ```
 
-* Problème de base de données :
+**Erreur de connexion à la base de données :**
 
 ```bash
 docker compose exec -T postgresql psql -U ecoride -d ecoride -f docs/sql/01_schema.sql
 docker compose exec -T postgresql psql -U ecoride -d ecoride -f docs/sql/02_donnees_demo.sql
 ```
 
-* Cache Symfony :
+**Cache Symfony à vider :**
 
 ```bash
-docker compose exec -T php php bin/console cache:clear
+docker compose exec php php bin/console cache:clear
 ```
 
-## Documentation
+**Vérifier les variables d'environnement PostgreSQL :**
 
-* Modélisation des données : /docs/modelisation_donnees
-* Scripts SQL : /docs/sql
-* Diagrammes UML : /uml
-* Maquettes interface : /docs/interface
+```bash
+docker compose exec postgresql printenv | grep '^POSTGRES_'
+```
+
+---
 
 ## Auteur
 
-Rebecca Roussel  
-Projet réalisé dans le cadre du RNCP Développeur Web et Web Mobile – 2026
+Rebecca Roussel
+Projet réalisé dans le cadre du titre professionnel DWWM — Studi, promotion Juin / Juillet 2026.

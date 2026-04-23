@@ -1,12 +1,31 @@
 {# templates/historique/incident.html.twig #}
-{# 
-  PLAN (Déclaration d'incident) :
+{# Plan du fichier :
 
-  1) Page protégée (chauffeur uniquement)
-  2) Panneau beige centré
-  3) Message explicatif
-  4) Formulaire : commentaire obligatoire
-  5) Bouton principal + bouton retour
+  1. Hériter de base.html.twig
+     - le socle commun fournit l'en-tête, le pied de page
+       et l'affichage global des messages flash
+
+  2. Forcer l'en-tête utilisateur
+     - cette page appartient à l'espace connecté
+     - elle concerne un chauffeur qui déclare un incident
+
+  3. Charger la feuille CSS de l'historique
+     - elle apporte le style propre à cette page et à cet espace
+
+  4. Afficher le panneau principal
+     - titre
+     - message explicatif
+     - formulaire de déclaration
+
+  5. Envoyer un formulaire POST protégé par CSRF
+     - identifiant du covoiturage concerné
+     - commentaire obligatoire
+     - bouton de validation
+     - lien de retour vers l'historique
+
+  Point important :
+  - ce template ne gère plus localement les messages flash
+  - ils sont affichés globalement par base.html.twig
 #}
 
 {% extends 'base.html.twig' %}
@@ -19,14 +38,9 @@ Déclarer un incident
   {% include 'fragments/entete_utilisateur.html.twig' %}
 {% endblock %}
 
-
 {% block stylesheets %}
-{{ parent() }}
-<link rel="stylesheet" href="{{ asset('css/historique.css') }}">
-{% endblock %}
-
-{% block entete %}
-{% include 'fragments/entete_utilisateur.html.twig' %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('css/historique.css') }}">
 {% endblock %}
 
 {% block body %}
@@ -34,21 +48,37 @@ Déclarer un incident
 
   <section class="panneau_historique">
 
+    {# En-tête de page :
+       on annonce clairement l'action en cours
+       avant l'affichage du formulaire. #}
     <h1>Déclarer un incident</h1>
 
+    {# Texte d'explication :
+       il précise l'effet de l'action sur le trajet,
+       pour éviter une validation trop rapide sans compréhension. #}
     <p class="texte_secondaire">
       Cette action signale un problème survenu pendant le covoiturage.
       Le statut du trajet passera en <strong>INCIDENT</strong>.
     </p>
 
+    {# Formulaire principal :
+       - method POST : envoi de la déclaration au serveur
+       - action : route de traitement de l'incident
+       - le commentaire est obligatoire #}
     <form method="post" action="{{ path('declarer_incident') }}">
 
+      {# Données cachées :
+         - id_covoiturage : rattache la déclaration au bon trajet
+         - _token : protège l'envoi contre une soumission forgée #}
       <input type="hidden" name="id_covoiturage" value="{{ id_covoiturage }}">
       <input type="hidden" name="_token" value="{{ csrf_token('declarer_incident') }}">
 
       <div class="champ_formulaire">
         <label for="incident_commentaire">Décrivez le problème rencontré :</label>
 
+        {# Zone de saisie :
+           le conducteur doit décrire l'incident
+           avec un commentaire obligatoire. #}
         <textarea
           id="incident_commentaire"
           name="incident_commentaire"
@@ -58,12 +88,19 @@ Déclarer un incident
       </div>
 
       <div class="actions_formulaire">
+        {# Validation :
+           envoie réellement la déclaration d'incident. #}
         <button type="submit" class="bouton_principal">
           Déclarer l'incident
         </button>
 
-        <a href="{{ path('historique', { onglet: 'covoiturages' }) }}"
-           class="bouton_secondaire">
+        {# Retour :
+           permet de revenir à l'onglet des covoiturages
+           sans soumettre le formulaire. #}
+        <a
+          href="{{ path('historique', { onglet: 'covoiturages' }) }}"
+          class="bouton_secondaire"
+        >
           Annuler
         </a>
       </div>

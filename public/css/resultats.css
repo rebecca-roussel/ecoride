@@ -1,4 +1,4 @@
-/* public/css/resultats.css */ 
+/* public/css/resultats.css */  
 /*
   A FAIRE (mise en forme resultats.css) :
 
@@ -121,9 +121,9 @@
 
 .carte_covoiturage{
   display: grid;
-  grid-template-columns: 1fr auto;
-  column-gap: 24px;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: center;
 
   background: var(--texte_secondaire);
   border-radius: 12px;
@@ -136,10 +136,11 @@
 
 
 .bloc_chauffeur{
-display: flex;
-align-items: flex-start;
-gap: 16px;
-min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 
@@ -222,16 +223,24 @@ min-width: 0;
 /* BOUTON “VOIR DETAILS” */
 
 .zone_bouton_details{
-  align-self: end;
+  position: relative;
+  z-index: 2;
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  padding-bottom: 6px;
-  min-width: auto;
+  align-self: center;
+  min-width: 160px;
 }
 
 .bouton_details{
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
-  margin-top: 10px;
+  white-space: nowrap;
+  pointer-events: auto;
   max-width: 100%;
 }
 
@@ -255,11 +264,13 @@ min-width: 0;
   .carte_covoiturage{
     grid-template-columns: 1fr;
     row-gap: 16px;
+    align-items: start;
   }
 
   .zone_bouton_details{
-    min-width: auto;
+    min-width: 0;
     justify-content: flex-start;
+    align-self: start;
   }
 }
 

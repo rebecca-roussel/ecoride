@@ -1,12 +1,17 @@
 {
+    "name": "rebecca-roussel/ecoride",
+    "description": "Plateforme web de covoiturage écoresponsable développée avec Symfony",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": ">=8.2",
+        "php": "8.3.*",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "ext-mongodb": "*",
+        "ext-pdo": "*",
+        "ext-pdo_pgsql": "*",
         "mongodb/mongodb": "^2.1",
         "symfony/asset": "7.4.*",
         "symfony/console": "7.4.*",
@@ -72,5 +77,12 @@
             "allow-contrib": false,
             "require": "7.4.*"
         }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.5",
+        "symfony/browser-kit": "7.4.*",
+        "symfony/css-selector": "7.4.*",
+        "symfony/stopwatch": "7.4.*",
+        "symfony/web-profiler-bundle": "7.4.*"
     }
 }

@@ -4,63 +4,67 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use DateTimeImmutable;
 use PDO;
 use PDOException;
 use RuntimeException;
 
+/**
+ * Service de persistance PostgreSQL pour les voitures.
+ *
+ * Cette classe regroupe les requêtes SQL liées aux voitures utilisateur :
+ * lecture des voitures actives,
+ * lecture d'une voiture précise,
+ * ajout d'une voiture,
+ * modification d'une voiture
+ * et désactivation d'une voiture.
+ *
+ * Une persistance sert de point d'accès à la base de données.
+ * Son rôle est de préparer les requêtes SQL,
+ * de les exécuter,
+ * puis de renvoyer des résultats exploitables
+ * par le reste de l'application.
+ *
+ */
 final class PersistanceVoiturePostgresql
 {
-    /*
-      PLAN (PersistanceVoiturePostgresql) :
-
-      1) Lister les voitures actives d’un utilisateur
-         - une seule méthode source de vérité
-         - sert à “Gérer mes véhicules” et à “Publier un covoiturage”
-
-      2) Trouver une voiture (sécurité : id + utilisateur)
-         - pour afficher et modifier un véhicule
-
-      3) Ajouter une voiture
-         - insertion + id retourné
-         - erreurs BDD converties en message simple
-
-      4) Modifier une voiture
-         - vérifier unicité immatriculation (sauf lui-même)
-         - mise à jour seulement si appartient à l’utilisateur
-
-      5) Désactiver une voiture (suppression logique)
-         - est_active passe à false + date_desactivation
-         - vérifier appartenance + état actif
-
-      6) Aide d’affichage
-         - calculer l’ancienneté en années
-    */
-
-    public function __construct(
-        private ConnexionPostgresql $connexionPostgresql,
-        private JournalEvenements $journalEvenements
-    ) {
-    }
-
-    /* Normaliser une immatriculation */
-    private function normaliserImmatriculation(string $immatriculation): string
+    /**
+     * Initialise le service avec la connexion PostgreSQL.
+     *
+     * @param ConnexionPostgresql $connexionPostgresql
+     *        Service qui fournit l'objet PDO.
+     */
+    public function __construct(private ConnexionPostgresql $connexionPostgresql)
     {
-        $immatriculation = strtoupper(trim($immatriculation));
-
-        return $immatriculation;
     }
 
     /**
+     * Normalise une immatriculation.
+     *
+     * La valeur est nettoyée puis convertie en majuscules
+     * pour garder un format cohérent avant l'enregistrement en base.
+     *
+     * @param string $immatriculation Immatriculation brute.
+     *
+     * @return string Immatriculation normalisée.
+     */
+    private function normaliserImmatriculation(string $immatriculation): string
+    {
+        return strtoupper(trim($immatriculation));
+    }
+
+    /**
+     * Liste les voitures actives d'un utilisateur.
+     *
+     * Une voiture active est une voiture dont `est_active = true`.
+     * Cette lecture sert notamment à l'affichage de l'espace véhicule
+     * et à la publication d'un covoiturage.
+     *
+     * @param int $idUtilisateur Identifiant de l'utilisateur propriétaire.
+     *
      * @return array<int, array<string, mixed>>
      */
     public function listerVoituresActives(int $idUtilisateur): array
     {
-        /*
-          - récupérer uniquement les voitures actives de l’utilisateur
-          - utile pour publier un covoiturage
-        */
-
         if ($idUtilisateur <= 0) {
             return [];
         }
@@ -91,25 +95,35 @@ final class PersistanceVoiturePostgresql
     }
 
     /**
+     * Alias de compatibilité pour la lecture des voitures actives.
+     *
+     * Le projet utilise encore le mot "vehicule" dans certains endroits.
+     * Cette méthode garde donc une signature compatible
+     * tout en appelant la vraie méthode de lecture.
+     *
+     * @param int $idUtilisateur Identifiant de l'utilisateur.
+     *
      * @return array<int, array<string, mixed>>
      */
     public function listerVehiculesActifsParUtilisateur(int $idUtilisateur): array
     {
-        /* Compatibilité */
-
         return $this->listerVoituresActives($idUtilisateur);
     }
 
     /**
+     * Recherche une voiture précise appartenant à un utilisateur donné.
+     *
+     * La double condition sur l'identifiant de la voiture
+     * et l'identifiant de l'utilisateur évite
+     * qu'un compte accède à la voiture d'un autre.
+     *
+     * @param int $idVoiture Identifiant de la voiture.
+     * @param int $idUtilisateur Identifiant du propriétaire attendu.
+     *
      * @return array<string, mixed>|null
      */
     public function trouverVehiculeParIdEtUtilisateur(int $idVoiture, int $idUtilisateur): ?array
     {
-        /*
-          - récupérer une voiture en étant sûre qu’elle appartient bien à l’utilisateur
-          - éviter qu’un utilisateur accède à la voiture d’un autre
-        */
-
         if ($idVoiture <= 0 || $idUtilisateur <= 0) {
             return null;
         }
@@ -143,6 +157,23 @@ final class PersistanceVoiturePostgresql
         return $vehicule !== false ? $vehicule : null;
     }
 
+    /**
+     * Ajoute une voiture pour un utilisateur donné.
+     *
+     * L'immatriculation est normalisée avant l'insertion.
+     * En cas d'erreur PostgreSQL, la méthode renvoie
+     * un message métier compréhensible par le contrôleur.
+     *
+     * @param int $idUtilisateur Identifiant du propriétaire.
+     * @param string $immatriculation Immatriculation saisie.
+     * @param string $dateYmd Date de première mise en circulation au format `Y-m-d`.
+     * @param string $marque Marque de la voiture.
+     * @param string $couleur Couleur de la voiture.
+     * @param string $energie Énergie de la voiture.
+     * @param int $nbPlaces Nombre de places.
+     *
+     * @return int Identifiant PostgreSQL de la voiture créée.
+     */
     public function ajouterVehicule(
         int $idUtilisateur,
         string $immatriculation,
@@ -152,12 +183,6 @@ final class PersistanceVoiturePostgresql
         string $energie,
         int $nbPlaces
     ): int {
-
-        /*
-          - créer un voiture lié à l’utilisateur
-          - laisser la BDD validée le format 
-        */
-
         if ($idUtilisateur <= 0) {
             throw new RuntimeException('Ajout impossible : utilisateur invalide.');
         }
@@ -201,27 +226,37 @@ final class PersistanceVoiturePostgresql
                 'id_utilisateur' => $idUtilisateur,
             ]);
 
-            return (int) $stmt->fetchColumn();
-        } catch (PDOException $e) {
-            /*
-              Journal evenement:
-              - on garde la trace technique côté MongoDB
-              - mais on renvoie un message simple à l’utilisateur
-            */
-            $this->journalEvenements->enregistrerErreur(
-                'vehicule_ajout_erreur',
-                'utilisateur',
-                $idUtilisateur,
-                $e,
-                [
-                    'immatriculation' => $immatriculation,
-                ]
-            );
+            $idVoiture = $stmt->fetchColumn();
+            if ($idVoiture === false) {
+                throw new RuntimeException('Ajout impossible : aucun identifiant de voiture retourné.');
+            }
 
+            return (int) $idVoiture;
+        } catch (PDOException) {
             throw new RuntimeException('Ajout impossible : immatriculation déjà utilisée ou données invalides.');
         }
     }
 
+    /**
+     * Modifie une voiture existante appartenant à l'utilisateur.
+     *
+     * La méthode vérifie d'abord qu'aucune autre voiture
+     * n'utilise déjà la même immatriculation.
+     * Elle applique ensuite la mise à jour
+     * uniquement si la voiture appartient bien à l'utilisateur
+     * et qu'elle est encore active.
+     *
+     * @param int $idVoiture Identifiant de la voiture.
+     * @param int $idUtilisateur Identifiant du propriétaire.
+     * @param string $immatriculation Nouvelle immatriculation.
+     * @param string $dateYmd Nouvelle date de première mise en circulation.
+     * @param string $marque Nouvelle marque.
+     * @param string $couleur Nouvelle couleur.
+     * @param string $energie Nouvelle énergie.
+     * @param int $nbPlaces Nouveau nombre de places.
+     *
+     * @return void
+     */
     public function modifierVehicule(
         int $idVoiture,
         int $idUtilisateur,
@@ -232,11 +267,6 @@ final class PersistanceVoiturePostgresql
         string $energie,
         int $nbPlaces
     ): void {
-        /*
-          - mise à jour d’une voiture
-          - uniquement si la voiture appartient à l’utilisateur
-        */
-
         if ($idVoiture <= 0 || $idUtilisateur <= 0) {
             throw new RuntimeException('Modification impossible : paramètres invalides.');
         }
@@ -244,7 +274,6 @@ final class PersistanceVoiturePostgresql
         $immatriculation = $this->normaliserImmatriculation($immatriculation);
 
         $pdo = $this->connexionPostgresql->obtenirPdo();
-
 
         $sqlVerif = "
             SELECT 1
@@ -294,33 +323,53 @@ final class PersistanceVoiturePostgresql
         }
     }
 
+    /**
+     * Désactive une voiture au lieu de la supprimer physiquement.
+     *
+     * Ici, on fait une suppression logique :
+     * la voiture reste enregistrée dans PostgreSQL,
+     * mais elle passe en inactive et reçoit une date de désactivation.
+     *
+     * Ce choix est important pour garder un historique cohérent.
+     * En effet, une voiture peut déjà être liée à un ou plusieurs covoiturages
+     * par la clé étrangère `id_voiture`.
+     *
+     * Une clé étrangère est un lien entre deux tables.
+     * Présentement, elle relie un covoiturage à la voiture utilisée pour ce trajet.
+     *
+     * Si on supprimait réellement la voiture,
+     * on risquerait soit de casser ce lien,
+     * soit de perdre une partie de l'historique utile autour des covoiturages déjà créés.
+     *
+     * La désactivation permet donc deux choses :
+     * - empêcher toute réutilisation future de cette voiture ;
+     * - conserver les données déjà liées aux anciens covoiturages.
+     *
+     * @param int $idVoiture Identifiant de la voiture.
+     * @param int $idUtilisateur Identifiant du propriétaire.
+     *
+     * @return void
+     */
     public function desactiverVehicule(int $idVoiture, int $idUtilisateur): void
     {
-
-
         if ($idVoiture <= 0 || $idUtilisateur <= 0) {
-            $this->journalEvenements->enregistrer(
-                'vehicule_suppression_refusee',
-                'utilisateur',
-                max(0, $idUtilisateur),
-                [
-                    'raison' => 'parametres_invalides',
-                    'id_voiture' => $idVoiture,
-                ]
-            );
-
             throw new RuntimeException('Suppression impossible : paramètres invalides.');
         }
 
         $pdo = $this->connexionPostgresql->obtenirPdo();
 
+        /*
+        * On ne supprime pas la ligne de la table `voiture`.
+        * On marque simplement la voiture comme inactive
+        * et on conserve la date de désactivation.
+        */
         $sql = "
             UPDATE voiture
             SET est_active = false,
                 date_desactivation = NOW()
             WHERE id_voiture = :id_voiture
-              AND id_utilisateur = :id_utilisateur
-              AND est_active = true
+            AND id_utilisateur = :id_utilisateur
+            AND est_active = true
         ";
 
         $stmt = $pdo->prepare($sql);
@@ -330,62 +379,7 @@ final class PersistanceVoiturePostgresql
         ]);
 
         if ($stmt->rowCount() === 0) {
-            $this->journalEvenements->enregistrer(
-                'vehicule_suppression_refusee',
-                'voiture',
-                $idVoiture,
-                [
-                    'raison' => 'introuvable_ou_non_autorise',
-                    'id_utilisateur' => $idUtilisateur,
-                ]
-            );
-
             throw new RuntimeException('Suppression impossible : véhicule introuvable ou non autorisé.');
         }
-
-        $this->journalEvenements->enregistrer(
-            'vehicule_desactive',
-            'voiture',
-            $idVoiture,
-            [
-                'id_utilisateur' => $idUtilisateur,
-            ]
-        );
-    }
-
-    public function calculerAncienneteEnAnnees(string $dateYmd, ?int $idUtilisateur = null): int
-    {
-        /*
-          - calcul simple pour l’affichage
-          - si date invalide on renvoie 0 
-        */
-
-        $date = DateTimeImmutable::createFromFormat('Y-m-d', $dateYmd);
-        $erreurs = DateTimeImmutable::getLastErrors();
-
-        $parsingKo = !$date instanceof DateTimeImmutable
-            || ($erreurs !== false && ($erreurs['warning_count'] > 0 || $erreurs['error_count'] > 0));
-
-        if ($parsingKo) {
-            if ($idUtilisateur !== null) {
-                $this->journalEvenements->enregistrer(
-                    'vehicule_date_invalide',
-                    'utilisateur',
-                    $idUtilisateur,
-                    [
-                        'date_recue' => $dateYmd,
-                        'raison' => 'format_attendu_yyyy_mm_dd',
-                    ]
-                );
-            }
-
-            return 0;
-        }
-
-        $aujourdhui = new DateTimeImmutable('today');
-        $diff = $date->diff($aujourdhui);
-
-        return max(0, (int) $diff->y);
     }
 }
-

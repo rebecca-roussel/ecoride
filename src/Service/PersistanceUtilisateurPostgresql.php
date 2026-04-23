@@ -8,47 +8,80 @@ use PDO;
 use PDOException;
 use RuntimeException;
 
+/**
+ * Service de persistance PostgreSQL pour les utilisateurs.
+ *
+ * Cette classe regroupe les requêtes SQL liées à la table `utilisateur`
+ * et aux informations directement nécessaires au parcours utilisateur.
+ *
+ * Son rôle reste centré sur la base relationnelle :
+ * préparer les requêtes, exécuter les lectures et écritures,
+ * puis renvoyer des données déjà exploitables par les contrôleurs.
+ *
+ * Le SQL est concentré ici pour éviter de le disperser dans les contrôleurs.
+ * Cela garde une séparation plus claire entre :
+ * le parcours HTTP, la session, et les accès à PostgreSQL.
+ *
+ * @package App\Service
+ */
 final class PersistanceUtilisateurPostgresql
 {
-    /*
-      PLAN (PersistanceUtilisateurPostgresql) :
-
-      1) Rôle de ce service
-         - pont entre Symfony et PostgreSQL
-         - requêtes SQL liées aux utilisateurs
-
-      2) Principes
-         - j’utilise PDO et des requêtes préparées (sécurité injection SQL)
-         - je nettoie les entrées (trim) pour éviter les surprises
-         - je m’appuie sur les contraintes de la BDD 
-
-      3) Ce que je gère ici
-         - inscription et création d’un utilisateur 
-         - vérification pseudo/email déjà utilisés
-         - récupération d’un utilisateur par email pour la connexion
-         - conversion photo_path -> URL affichable
-         - données pour tableau de bord
-         - données pour la page profil
-         - mise à jour de la photo de profil
-    */
-
-    /*
-      Valeurs fixes
-      - crédits de départ : 20 (commission plateforme ecoRide)
-      - photo par défaut : avatar.svg
-    */
+    /**
+     * Nombre de crédits attribués au moment de l'inscription.
+     *
+     * Cette valeur fixe évite de répéter le nombre dans plusieurs méthodes.
+     *
+     * @var int
+     */
     private const CREDITS_DEPART = 20;
+
+    /**
+     * URL de la photo de profil par défaut.
+     *
+     * Cette valeur est utilisée si aucun chemin photo n'est disponible.
+     *
+     * @var string
+     */
     private const URL_PHOTO_DEFAUT = '/icones/avatar.svg';
 
+    /**
+     * Initialise le service avec la connexion PostgreSQL.
+     *
+     * `ConnexionPostgresql` fournit l'objet PDO utilisé ensuite
+     * pour exécuter les requêtes SQL.
+     *
+     * @param ConnexionPostgresql $connexionPostgresql Service de connexion à PostgreSQL.
+     */
     public function __construct(private ConnexionPostgresql $connexionPostgresql)
     {
     }
 
     /**
-     * Crée un utilisateur et retourne son id.
-     * - je valide les bases côté PHP (champ obligatoire + au moins un rôle)
-     * - puis j’insère
-     * - si la base refuse (UNIQUE), je transforme en message compréhensible
+     * Crée un utilisateur puis retourne son identifiant.
+     *
+     * Cette méthode prépare les données minimales nécessaires à l'inscription :
+     * pseudo, email, hash du mot de passe, rôles publics et photo éventuelle.
+     *
+     * Les contrôles simples utiles avant insertion sont faits ici :
+     * pseudo obligatoire, email obligatoire,
+     * et au moins un rôle public actif.
+     *
+     * L'instruction `RETURNING id_utilisateur` permet à PostgreSQL
+     * de renvoyer immédiatement l'identifiant généré
+     * sans lancer une seconde requête.
+     *
+     * @param string $pseudo Pseudo saisi lors de l'inscription.
+     * @param string $email E-mail saisi lors de l'inscription.
+     * @param string $motDePasseHash Mot de passe déjà haché avant l'appel.
+     * @param bool $roleChauffeur Indique si le rôle chauffeur a été choisi.
+     * @param bool $rolePassager Indique si le rôle passager a été choisi.
+     * @param string|null $photoPath Chemin relatif de la photo, ou null.
+     *
+     * @return int Identifiant PostgreSQL de l'utilisateur créé.
+     *
+     * @throws RuntimeException Si les données minimales sont invalides
+     *                          ou si le pseudo / l'e-mail sont déjà utilisés.
+     * @throws PDOException Si PostgreSQL renvoie une erreur technique non gérée ici.
      */
     public function creerUtilisateur(
         string $pseudo,
@@ -58,16 +91,17 @@ final class PersistanceUtilisateurPostgresql
         bool $rolePassager,
         ?string $photoPath = null,
     ): int {
-        // Nettoyage : je ne veux pas enregistrer "toto"
+        /*
+         * `trim()` retire les espaces autour des chaînes.
+         * Cela évite d'enregistrer des valeurs remplies seulement en apparence.
+         */
         $pseudoNettoye = trim($pseudo);
         $emailNettoye = trim($email);
 
-        // Sécurité : champs obligatoires
         if ($pseudoNettoye === '' || $emailNettoye === '') {
             throw new RuntimeException('Pseudo et email sont obligatoires.');
         }
 
-        // Sécurité : un utilisateur doit avoir au moins un rôle
         if (!$roleChauffeur && !$rolePassager) {
             throw new RuntimeException('Il faut choisir au moins un rôle : chauffeur ou passager.');
         }
@@ -75,12 +109,13 @@ final class PersistanceUtilisateurPostgresql
         $pdo = $this->connexionPostgresql->obtenirPdo();
 
         /*
-          Insertion
-          - credits : on force à 20 au départ
-          - role_interne : false (un utilisateur normal n’est pas un employé/admin)
-          - statut : ACTIF au départ
-          - photo_path : peut être null (photo optionnelle)
-        */
+         * Le compte utilisateur est créé ici comme compte public :
+         * - crédits de départ ;
+         * - rôles chauffeur / passager ;
+         * - role_interne à false ;
+         * - statut initial ACTIF ;
+         * - photo optionnelle.
+         */
         $sql = "
             INSERT INTO utilisateur (
                 pseudo, email, mot_de_passe_hash,
@@ -100,8 +135,12 @@ final class PersistanceUtilisateurPostgresql
         try {
             $requete = $pdo->prepare($sql);
 
-            // IMPORTANT : PostgreSQL n’accepte pas "" pour un booléen.
-            // On force donc le typage pour éviter que PDO envoie une chaîne vide.
+            /*
+             * `bindValue()` permet de lier chaque valeur au bon paramètre SQL
+             * avec le type attendu par PDO.
+             *
+             * Le typage booléen est important pour les colonnes de rôles.
+             */
             $requete->bindValue('pseudo', $pseudoNettoye, PDO::PARAM_STR);
             $requete->bindValue('email', $emailNettoye, PDO::PARAM_STR);
             $requete->bindValue('mot_de_passe_hash', $motDePasseHash, PDO::PARAM_STR);
@@ -117,16 +156,17 @@ final class PersistanceUtilisateurPostgresql
 
             $requete->execute();
         } catch (PDOException $exception) {
-            // PostgreSQL : violation de contrainte UNIQUE (pseudo/email) = code 23505
+            /*
+             * Le code PostgreSQL `23505` correspond à une contrainte UNIQUE violée.
+             * Ici, cela signifie qu'un pseudo ou un e-mail existe déjà.
+             */
             if ($exception->getCode() === '23505') {
                 throw new RuntimeException('Pseudo ou email déjà utilisé.', 0, $exception);
             }
 
-            // Sinon je relance l’exception (problème “technique”)
             throw $exception;
         }
 
-        // RETURNING id_utilisateur : je récupère l'id créé
         $id = $requete->fetchColumn();
 
         if ($id === false) {
@@ -136,11 +176,17 @@ final class PersistanceUtilisateurPostgresql
         return (int) $id;
     }
 
-    /*
-      Vérifie si un pseudo existe déjà
-      - je renvoie true si je trouve au moins une ligne
-      - LIMIT 1 : inutile d’aller plus loin
-    */
+    /**
+     * Vérifie si un pseudo existe déjà.
+     *
+     * La requête utilise `SELECT 1` et `LIMIT 1`
+     * car on veut seulement savoir si une ligne existe,
+     * pas charger un enregistrement complet.
+     *
+     * @param string $pseudo Pseudo à vérifier.
+     *
+     * @return bool True si le pseudo existe déjà, false sinon.
+     */
     public function pseudoExisteDeja(string $pseudo): bool
     {
         $pdo = $this->connexionPostgresql->obtenirPdo();
@@ -156,10 +202,16 @@ final class PersistanceUtilisateurPostgresql
         return $requete->fetchColumn() !== false;
     }
 
-    /*
-      Vérifie si un email existe déjà
-      - même logique que pseudoExisteDeja
-    */
+    /**
+     * Vérifie si un e-mail existe déjà.
+     *
+     * Le principe est le même que pour le pseudo :
+     * on cherche seulement l'existence d'une ligne.
+     *
+     * @param string $email E-mail à vérifier.
+     *
+     * @return bool True si l'e-mail existe déjà, false sinon.
+     */
     public function emailExisteDeja(string $email): bool
     {
         $pdo = $this->connexionPostgresql->obtenirPdo();
@@ -175,11 +227,17 @@ final class PersistanceUtilisateurPostgresql
         return $requete->fetchColumn() !== false;
     }
 
-    /*
-      Trouve un utilisateur par email
-      - utile pour la connexion
-      - je récupère mot_de_passe_hash pour vérifier password_verify() côté contrôleur
-    */
+    /**
+     * Recherche un utilisateur par son e-mail.
+     *
+     * Cette lecture sert à récupérer les données générales d'un utilisateur
+     * sans les indicateurs calculés employé / administrateur.
+     *
+     * @param string $email E-mail recherché.
+     *
+     * @return array<string, mixed>|null
+     *         Tableau associatif si l'utilisateur existe, null sinon.
+     */
     public function trouverParEmail(string $email): ?array
     {
         $pdo = $this->connexionPostgresql->obtenirPdo();
@@ -208,7 +266,73 @@ final class PersistanceUtilisateurPostgresql
         return $ligne === false ? null : $ligne;
     }
 
-    /* Transforme un chemin stocké en BDD en URL affichable dans le navigateur */
+    /**
+     * Recherche un utilisateur avec les données utiles au parcours de connexion.
+     *
+     * Cette méthode renvoie :
+     * - l'identifiant ;
+     * - le pseudo ;
+     * - le hash du mot de passe ;
+     * - le statut ;
+     * - les rôles chauffeur et passager ;
+     * - un indicateur `est_employe` ;
+     * - un indicateur `est_administrateur`.
+     *
+     * Les deux indicateurs sont calculés avec `EXISTS`.
+     * `EXISTS` permet de répondre à une question simple :
+     * est-ce qu'une ligne correspondante existe dans la table ciblée ?
+     *
+     * Cette méthode prépare donc exactement les données attendues
+     * par le parcours de connexion sans laisser de SQL dans le contrôleur.
+     *
+     * @param string $email Adresse e-mail utilisée pour la connexion.
+     *
+     * @return array<string, mixed>|null
+     *         Tableau associatif si un utilisateur correspond, null sinon.
+     */
+    public function trouverUtilisateurPourConnexionParEmail(string $email): ?array
+    {
+        $pdo = $this->connexionPostgresql->obtenirPdo();
+
+        $requete = $pdo->prepare('
+            SELECT
+                u.id_utilisateur,
+                u.pseudo,
+                u.mot_de_passe_hash,
+                u.statut,
+                u.role_chauffeur,
+                u.role_passager,
+                EXISTS (
+                    SELECT 1
+                    FROM employe e
+                    WHERE e.id_utilisateur = u.id_utilisateur
+                ) AS est_employe,
+                EXISTS (
+                    SELECT 1
+                    FROM administrateur a
+                    WHERE a.id_utilisateur = u.id_utilisateur
+                ) AS est_administrateur
+            FROM utilisateur u
+            WHERE u.email = :email
+            LIMIT 1
+        ');
+
+        $requete->execute(['email' => trim($email)]);
+
+        $ligne = $requete->fetch(PDO::FETCH_ASSOC);
+
+        return $ligne === false ? null : $ligne;
+    }
+
+    /**
+     * Transforme un chemin stocké en base en URL affichable.
+     *
+     * Si aucun chemin n'existe, la photo par défaut est renvoyée.
+     *
+     * @param string|null $photoPath Chemin stocké en base.
+     *
+     * @return string URL utilisable dans l'interface.
+     */
     public function urlPhotoProfil(?string $photoPath): string
     {
         if (null === $photoPath) {
@@ -220,15 +344,20 @@ final class PersistanceUtilisateurPostgresql
             return self::URL_PHOTO_DEFAUT;
         }
 
-        // Je garantis un chemin web qui commence par "/"
         return '/' . ltrim($photoPathNettoye, '/');
     }
 
-    /*
-      Données minimales pour le tableau de bord
-      - je force role_chauffeur et role_passager en int (0 ou 1) pour simplifier le Twig
-      - je garde photo_path pour afficher la photo
-    */
+    /**
+     * Récupère les données minimales utiles au tableau de bord.
+     *
+     * Les rôles chauffeur et passager sont convertis en entier dans SQL
+     * pour simplifier leur usage côté Twig.
+     *
+     * @param int $idUtilisateur Identifiant de l'utilisateur.
+     *
+     * @return array<string, mixed>|null
+     *         Tableau associatif si l'utilisateur existe, null sinon.
+     */
     public function obtenirDonneesTableauDeBord(int $idUtilisateur): ?array
     {
         $pdo = $this->connexionPostgresql->obtenirPdo();
@@ -254,10 +383,16 @@ final class PersistanceUtilisateurPostgresql
         return $ligne === false ? null : $ligne;
     }
 
-    /*
-      Données pour la page Gérer mon profil
-      - on récupère : pseudo, email, statut, photo
-    */
+    /**
+     * Récupère les données utiles à la page profil.
+     *
+     * Cette lecture se limite aux champs nécessaires à l'affichage du profil.
+     *
+     * @param int $idUtilisateur Identifiant de l'utilisateur.
+     *
+     * @return array<string, mixed>|null
+     *         Tableau associatif si l'utilisateur existe, null sinon.
+     */
     public function obtenirDonneesProfil(int $idUtilisateur): ?array
     {
         $pdo = $this->connexionPostgresql->obtenirPdo();
@@ -282,7 +417,17 @@ final class PersistanceUtilisateurPostgresql
         return $ligne === false ? null : $ligne;
     }
 
-    /* Met à jour la photo de profil */
+    /**
+     * Met à jour le chemin de la photo de profil.
+     *
+     * Cette méthode écrit seulement le chemin en base.
+     * Le fichier image lui-même est géré ailleurs.
+     *
+     * @param int $idUtilisateur Identifiant de l'utilisateur.
+     * @param string $photoPath Nouveau chemin photo.
+     *
+     * @return void
+     */
     public function mettreAJourPhotoProfil(int $idUtilisateur, string $photoPath): void
     {
         $pdo = $this->connexionPostgresql->obtenirPdo();
@@ -300,13 +445,22 @@ final class PersistanceUtilisateurPostgresql
         ]);
     }
 
-    /*
-      Met à jour les rôles chauffeur et passager d’un utilisateur
-      - page "Gérer mes rôles" : l’utilisateur choisit ses rôles, puis on enregistre en BDD.
-      - l’utilisateur ne doit pas pouvoir décocher les deux rôles en même temps
-      - je bloque côté PHP avec un message clair
-      - et la BDD a aussi sa contrainte (ck_utilisateur_au_moins_un_role) en sécurité
-    */
+    /**
+     * Met à jour les rôles chauffeur et passager d'un utilisateur.
+     *
+     * La règle métier impose de garder au moins un rôle public actif.
+     * Cette règle est vérifiée ici côté PHP
+     * puis protégée aussi par la base de données.
+     *
+     * @param int $idUtilisateur Identifiant de l'utilisateur concerné.
+     * @param bool $roleChauffeur Nouvelle valeur du rôle chauffeur.
+     * @param bool $rolePassager Nouvelle valeur du rôle passager.
+     *
+     * @return void
+     *
+     * @throws RuntimeException Si les deux rôles sont désactivés.
+     * @throws PDOException Si PostgreSQL renvoie une erreur technique non gérée ici.
+     */
     public function mettreAJourRoles(int $idUtilisateur, bool $roleChauffeur, bool $rolePassager): void
     {
         if (!$roleChauffeur && !$rolePassager) {
@@ -320,19 +474,25 @@ final class PersistanceUtilisateurPostgresql
             SET role_passager = :role_passager,
             role_chauffeur = :role_chauffeur
             WHERE id_utilisateur = :id_utilisateur
-            ";
+        ";
 
         try {
             $requete = $pdo->prepare($sql);
 
-            // Important : Force le type boolean côté PDO 
-            $requete->bindValue('role_passager', $rolePassager, \PDO::PARAM_BOOL);
-            $requete->bindValue('role_chauffeur', $roleChauffeur, \PDO::PARAM_BOOL);
-            $requete->bindValue('id_utilisateur', $idUtilisateur, \PDO::PARAM_INT);
+            /*
+             * Le typage booléen est explicitement forcé ici
+             * pour que PostgreSQL reçoive bien les bonnes valeurs.
+             */
+            $requete->bindValue('role_passager', $rolePassager, PDO::PARAM_BOOL);
+            $requete->bindValue('role_chauffeur', $roleChauffeur, PDO::PARAM_BOOL);
+            $requete->bindValue('id_utilisateur', $idUtilisateur, PDO::PARAM_INT);
 
             $requete->execute();
         } catch (PDOException $exception) {
-            // Si jamais la BDD refuse, on renvoie un message compréhensible.
+            /*
+             * Le code `23514` correspond à une contrainte CHECK violée.
+             * Ici, cela rejoint la règle métier qui impose au moins un rôle.
+             */
             if ($exception->getCode() === '23514') {
                 throw new RuntimeException('Vous devez garder au moins un rôle : chauffeur ou passager.', 0, $exception);
             }
@@ -341,4 +501,3 @@ final class PersistanceUtilisateurPostgresql
         }
     }
 }
-

@@ -1,12 +1,29 @@
 {# templates/espace_employe/index.html.twig #}
-{# PLAN (espace employé) :
-  1) Héritage : base.html.twig + css espace_employe.css
-  2) En-tête : entete_utilisateur (espace connecté)
-  3) Messages flash : visibles et accessibles (aria-live)
-  4) Onglets : avis / signalements (contrôle par paramètre ?onglet=)
-  5) Listes : état vide + cartes (infos à gauche / actions à droite)
-  6) Actions en POST : CSRF obligatoire (valider/refuser/traiter)
-  7) Garde-fous Twig : on évite les crashs si une clé manque (default + is defined)
+{# Plan du fichier :
+
+  1. Hériter de base.html.twig
+     - le socle commun fournit l'en-tête, le pied de page
+       et maintenant aussi l'affichage global des messages flash
+
+  2. Charger la feuille CSS propre à l'espace employé
+     - cette feuille complète le style commun défini dans global.css
+
+  3. Forcer l'en-tête utilisateur
+     - cette page appartient à un espace connecté
+
+  4. Afficher la structure de l'espace employé
+     - titre
+     - sous-titre
+     - onglets de navigation
+
+  5. Afficher l'onglet actif
+     - soit la liste des avis à modérer
+     - soit la liste des signalements
+
+  Point important :
+  - les messages flash ne sont plus affichés dans ce template
+  - ils sont gérés globalement dans base.html.twig
+  - il n'y a donc rien à ajouter ici côté JavaScript pour les flashs
 #}
 
 {% extends 'base.html.twig' %}
@@ -26,35 +43,30 @@
 <main class="page_espace_employe">
   <section class="panneau_espace_employe">
 
+    {# En-tête de page :
+       il présente le rôle de l'écran avant les onglets et les listes. #}
     <header class="entete_espace_employe">
       <h1>Espace employé</h1>
       <p class="texte_secondaire">Modération des avis et gestion des signalements</p>
     </header>
 
-    {# Messages flash #}
-    <div class="zone_flash" aria-live="polite">
-      {% for type, messages in app.flashes %}
-        {% for message in messages %}
-          <div class="flash flash_{{ type|e }}">
-            {{ message }}
-          </div>
-        {% endfor %}
-      {% endfor %}
-    </div>
-<nav class="onglets_employe" aria-label="Onglets espace employé">
-  <a class="onglet {{ onglet == 'avis' ? 'actif' : '' }}"
-     href="{{ path('espace_employe', { onglet: 'avis' }) }}">
-    Avis à modérer
-  </a>
+    {# Navigation par onglets :
+       le contrôleur envoie la variable "onglet"
+       pour savoir quelle section doit être affichée. #}
+    <nav class="onglets_employe" aria-label="Onglets espace employé">
+      <a class="onglet {{ onglet == 'avis' ? 'actif' : '' }}"
+         href="{{ path('espace_employe', { onglet: 'avis' }) }}">
+        Avis à modérer
+      </a>
 
-  <a class="onglet {{ onglet == 'signalements' ? 'actif' : '' }}"
-     href="{{ path('espace_employe', { onglet: 'signalements' }) }}">
-    Signalements
-  </a>
-</nav>
+      <a class="onglet {{ onglet == 'signalements' ? 'actif' : '' }}"
+         href="{{ path('espace_employe', { onglet: 'signalements' }) }}">
+        Signalements
+      </a>
+    </nav>
 
-
-    {# ONGLET : AVIS #}
+    {# ONGLET : AVIS
+       Cette partie s'affiche seulement si l'onglet actif vaut "avis". #}
     {% if onglet == 'avis' %}
       <section class="bloc_liste" aria-label="Liste des avis à modérer">
         {% if avis|default([])|length == 0 %}
@@ -87,7 +99,7 @@
               </div>
 
               <div class="carte_actions">
-                {# Bouton détail : seulement si l'id est présent #}
+                {# Le bouton détail n'est affiché que si l'identifiant existe. #}
                 {% if a.id_avis is defined and a.id_avis %}
                   <a class="bouton_action bouton_secondaire"
                      href="{{ path('espace_employe_avis_detail', { idAvis: a.id_avis }) }}">
@@ -97,6 +109,8 @@
                   <span class="texte_mini">Détail indisponible</span>
                 {% endif %}
 
+                {# Action de validation :
+                   formulaire POST protégé par un jeton CSRF. #}
                 <form method="post" action="{{ path('espace_employe_avis_valider') }}">
                   <input type="hidden" name="id_avis" value="{{ a.id_avis|default(0) }}">
                   <input type="hidden" name="_token" value="{{ csrf_token('avis_valider_' ~ (a.id_avis|default(0))) }}">
@@ -106,6 +120,8 @@
                   </button>
                 </form>
 
+                {# Action de refus :
+                   formulaire POST protégé lui aussi par un jeton CSRF. #}
                 <form method="post" action="{{ path('espace_employe_avis_refuser') }}">
                   <input type="hidden" name="id_avis" value="{{ a.id_avis|default(0) }}">
                   <input type="hidden" name="_token" value="{{ csrf_token('avis_refuser_' ~ (a.id_avis|default(0))) }}">
@@ -121,7 +137,8 @@
       </section>
     {% endif %}
 
-    {# ONGLET : SIGNALEMENTS #}
+    {# ONGLET : SIGNALEMENTS
+       Cette partie s'affiche seulement si l'onglet actif vaut "signalements". #}
     {% if onglet == 'signalements' %}
       <section class="bloc_liste" aria-label="Liste des signalements">
         {% if signalements|default([])|length == 0 %}
@@ -144,7 +161,7 @@
                     </span>
                   </div>
 
-                  {# Passager #}
+                  {# Le passager n'est affiché que si l'information existe réellement. #}
                   {% if s.pseudo_passager is defined and s.pseudo_passager|trim != '' %}
                     <div class="meta_ligne">
                       <span class="icone icone_avatar" aria-hidden="true"></span>
@@ -168,7 +185,7 @@
               </div>
 
               <div class="carte_actions">
-                {# Bouton détail incident #}
+                {# Le bouton détail n'est affiché que si l'identifiant du covoiturage existe. #}
                 {% if s.id_covoiturage is defined and s.id_covoiturage %}
                   <a class="bouton_action bouton_secondaire"
                      href="{{ path('espace_employe_incident_detail', { idCovoiturage: s.id_covoiturage }) }}">
@@ -178,6 +195,8 @@
                   <span class="texte_mini">Détail indisponible</span>
                 {% endif %}
 
+                {# Action de traitement du signalement :
+                   formulaire POST protégé par un jeton CSRF. #}
                 <form method="post" action="{{ path('espace_employe_incident_traite') }}">
                   <input type="hidden" name="id_covoiturage" value="{{ s.id_covoiturage|default(0) }}">
                   <input type="hidden" name="_token" value="{{ csrf_token('incident_traite_' ~ (s.id_covoiturage|default(0))) }}">

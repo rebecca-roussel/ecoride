@@ -1,13 +1,40 @@
 {# templates/historique/satisfaction.html.twig #}
-{# PLAN (satisfaction) :
-  1) Page protégée : arrivée depuis l'historique (passager)
-  2) Panneau beige cohérent (mêmes classes que historique)
-  3) Formulaire :
-     - note (1 à 5) avec étoiles (radio + labels)
-     - commentaire (optionnel)
-     - CSRF + id_covoiturage
-  4) Erreurs : sous le champ + classes champ_en_erreur
-  5) Boutons : envoyer + retour
+{# Plan du fichier :
+
+  1. Hériter de base.html.twig
+     - le socle commun fournit l'en-tête, le pied de page
+       et l'affichage global des messages flash
+
+  2. Forcer l'en-tête utilisateur
+     - cette page appartient à l'espace connecté
+     - elle correspond au parcours passager après un trajet
+
+  3. Charger la feuille CSS de l'historique
+     - elle apporte aussi le style du formulaire d'avis
+
+  4. Préparer les garde-fous Twig
+     - identifiant du covoiturage
+     - anciennes valeurs saisies
+     - erreurs de validation
+
+  5. Afficher le formulaire d'avis
+     - note sur 5 avec étoiles
+     - commentaire optionnel
+     - jeton CSRF
+     - identifiant du covoiturage
+
+  6. Garder les erreurs locales dans la page
+     - elles servent à corriger la saisie en cours
+     - elles ne doivent pas être remplacées par des flashs globaux
+
+  7. Prévoir les actions de bas de formulaire
+     - envoyer l'avis
+     - revenir à l'historique des participations
+
+  Point important :
+  - les messages flash globaux ne sont plus affichés dans ce template
+  - ils sont gérés dans base.html.twig
+  - les erreurs de validation du formulaire restent ici
 #}
 
 {% extends 'base.html.twig' %}
@@ -23,30 +50,43 @@
   {% include 'fragments/entete_utilisateur.html.twig' %}
 {% endblock %}
 
-
 {% block body %}
-  {# Garde-fous #}
+  {# Garde-fous Twig :
+     si le contrôleur n'envoie pas certaines valeurs,
+     on pose ici des valeurs par défaut pour garder une page stable. #}
   {% set id_covoiturage = id_covoiturage|default(0) %}
   {% set ancien = ancien|default({}) %}
   {% set erreurs = erreurs|default({}) %}
 
   <main class="page_historique">
     <section class="panneau_historique" aria-labelledby="titre_satisfaction">
+
+      {# En-tête de page :
+         on rappelle ici l'action attendue du passager. #}
       <header class="entete_historique">
         <h1 id="titre_satisfaction">Donner mon avis</h1>
         <p class="texte_secondaire">Notez le trajet et laissez un commentaire (optionnel).</p>
       </header>
 
+      {# Formulaire principal :
+         - method POST : envoi de l'avis au serveur
+         - action : route de traitement de l'avis
+         - jeton CSRF : protection contre les soumissions forgées
+         - id_covoiturage : rattache l'avis au bon trajet #}
       <form method="post" action="{{ path('enregistrer_satisfaction') }}" class="formulaire_satisfaction">
         <input type="hidden" name="_token" value="{{ csrf_token('enregistrer_satisfaction') }}">
         <input type="hidden" name="id_covoiturage" value="{{ id_covoiturage }}">
 
-        {# NOTE (étoiles) #}
+        {# NOTE SUR 5 :
+           on utilise des boutons radio pour garder une vraie valeur de formulaire,
+           puis des labels en forme d'étoiles pour l'affichage. #}
         <div class="champ_formulaire">
           <label class="libelle_champ" for="note_5">Votre note</label>
 
           <div class="etoiles" role="radiogroup" aria-label="Note sur 5">
 
+            {# On recharge la note précédemment saisie
+               pour éviter de faire perdre la saisie en cas d'erreur. #}
             {% set note_ancienne = ancien.note|default('') %}
 
             <input class="etoile_radio" type="radio" name="note" id="note_5" value="5"
@@ -70,12 +110,15 @@
             <label class="etoile_label" for="note_1" aria-label="1 sur 5">★</label>
           </div>
 
+          {# Erreur locale sur la note :
+             elle reste dans la page pour guider la correction immédiate. #}
           {% if erreurs.note is defined %}
             <p class="champ_erreur">{{ erreurs.note }}</p>
           {% endif %}
         </div>
 
-        {# COMMENTAIRE #}
+        {# COMMENTAIRE :
+           il est optionnel, mais reste limité à 1000 caractères. #}
         <div class="champ_formulaire">
           <label class="libelle_champ" for="commentaire">Votre commentaire (optionnel)</label>
 
@@ -89,18 +132,23 @@
 
           <p class="texte_mini">1000 caractères maximum.</p>
 
+          {# Erreur locale sur le commentaire :
+             la classe champ_en_erreur permet aussi un retour visuel sur le champ. #}
           {% if erreurs.commentaire is defined %}
             <p class="champ_erreur">{{ erreurs.commentaire }}</p>
           {% endif %}
         </div>
 
+        {# Actions de bas de formulaire :
+           - le bouton principal envoie l'avis
+           - le lien secondaire ramène à la liste des participations #}
         <div class="actions_formulaire">
           <button class="bouton_valider" type="submit">
             <span class="icone_bouton icone_valide" aria-hidden="true"></span>
             Envoyer mon avis
           </button>
 
-          <a class="bouton_secondaire" href="{{ path('historique', {onglet: 'participations'}) }}">
+          <a class="bouton_secondaire" href="{{ path('historique', { onglet: 'participations' }) }}">
             Retour à mes participations
           </a>
         </div>

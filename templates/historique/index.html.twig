@@ -1,16 +1,37 @@
 {# templates/historique/index.html.twig #}
-{# PLAN (historique) :
-  1) Garde-fous Twig (variables toujours définies)
-  2) Onglets : covoiturages publiés / participations
-  3) Cartes : trajet + date/heure + badges + méta
-  4) Actions chauffeur :
-     - PLANIFIE : démarrer + annuler
-     - EN_COURS : arrivée à destination + déclarer incident
-     - TERMINE : déclarer incident
-     - INCIDENT / ANNULE : pas d’action (libellé)
-  5) Actions passager :
-     - TERMINE + validation EN_ATTENTE : donner mon avis
-     - Annuler participation : uniquement si PLANIFIE et non annulée
+{# Plan du fichier :
+
+  1. Hériter de base.html.twig
+     - le socle commun fournit l'en-tête, le pied de page
+       et l'affichage global des messages flash
+
+  2. Forcer l'en-tête utilisateur
+     - cette page appartient à l'espace connecté
+
+  3. Charger la feuille CSS de l'historique
+     - elle apporte la mise en forme propre à cet écran
+
+  4. Préparer les garde-fous Twig
+     - valeurs par défaut pour éviter les erreurs si une donnée manque
+
+  5. Afficher la navigation par onglets
+     - covoiturages publiés
+     - participations
+
+  6. Afficher le contenu selon l'onglet actif
+     - liste des trajets publiés côté chauffeur
+     - liste des participations côté passager
+
+  7. Afficher les actions disponibles selon le statut
+     - démarrer
+     - terminer
+     - annuler
+     - déclarer un incident
+     - donner un avis
+
+  Point important :
+  - les messages flash ne sont plus affichés dans ce template
+  - ils sont gérés globalement dans base.html.twig
 #}
 
 {% extends 'base.html.twig' %}
@@ -21,19 +42,22 @@
   {% include 'fragments/entete_utilisateur.html.twig' %}
 {% endblock %}
 
-
 {% block stylesheets %}
   {{ parent() }}
   <link rel="stylesheet" href="{{ asset('css/historique.css') }}">
 {% endblock %}
 
 {% block body %}
-  {# Garde-fous #}
+  {# Garde-fous Twig :
+     si le contrôleur n'envoie pas certaines variables,
+     on pose ici des valeurs par défaut pour garder une page stable. #}
   {% set onglet = onglet|default('covoiturages') %}
   {% set covoiturages_publies = covoiturages_publies|default([]) %}
   {% set participations = participations|default([]) %}
 
-  {# Libellés #}
+  {# Dictionnaires de libellés :
+     la base stocke des valeurs techniques,
+     ici on les transforme en textes lisibles pour l'interface. #}
   {% set libelles_statut = {
     'PLANIFIE': 'Planifié',
     'EN_COURS': 'En cours',
@@ -51,20 +75,26 @@
 
   <main class="page_historique">
     <section class="panneau_historique" aria-labelledby="titre_historique">
+
+      {# En-tête de page :
+         il présente l'écran avant l'affichage des listes. #}
       <header class="entete_historique">
         <h1 id="titre_historique">Mon historique</h1>
         <p class="texte_secondaire">Consultez vos covoiturages et vos participations</p>
       </header>
 
+      {# Navigation par onglets :
+         le contrôleur envoie la variable "onglet"
+         pour savoir quelle liste doit être affichée. #}
       <nav class="onglets" aria-label="Historique">
         <a class="onglet {{ onglet == 'covoiturages' ? 'onglet_actif' : '' }}"
-           href="{{ path('historique', {onglet: 'covoiturages'}) }}"
+           href="{{ path('historique', { onglet: 'covoiturages' }) }}"
            {% if onglet == 'covoiturages' %}aria-current="page"{% endif %}>
           Mes covoiturages publiés
         </a>
 
         <a class="onglet {{ onglet == 'participations' ? 'onglet_actif' : '' }}"
-           href="{{ path('historique', {onglet: 'participations'}) }}"
+           href="{{ path('historique', { onglet: 'participations' }) }}"
            {% if onglet == 'participations' %}aria-current="page"{% endif %}>
           Mes participations
         </a>
@@ -72,7 +102,8 @@
 
       <div class="zone_listes">
 
-        {# ONGLET : COVOITURAGES PUBLIÉS #}
+        {# ONGLET : COVOITURAGES PUBLIÉS
+           Cette partie correspond au parcours chauffeur. #}
         {% if onglet == 'covoiturages' %}
           <div class="liste_cartes">
             {% if covoiturages_publies|length == 0 %}
@@ -80,18 +111,24 @@
             {% endif %}
 
             {% for c in covoiturages_publies %}
+              {# Préparation des données utiles à l'affichage et aux actions. #}
               {% set statut = c.statut_covoiturage|default('PLANIFIE') %}
               {% set id_covoiturage = c.id_covoiturage|default(0) %}
-              {% set incident_possible = (statut in ['EN_COURS','TERMINE']) %}
+              {% set incident_possible = (statut in ['EN_COURS', 'TERMINE']) %}
 
               <article class="carte_trajet">
                 <div class="carte_principale">
+
+                  {# Trajet principal :
+                     ville de départ puis ville d'arrivée. #}
                   <p class="trajet">
                     <strong>{{ c.ville_depart|default('Départ') }}</strong>
                     <span class="fleche" aria-hidden="true">→</span>
                     <strong>{{ c.ville_arrivee|default('Arrivée') }}</strong>
                   </p>
 
+                  {# Date et heure de départ :
+                     si la donnée manque, on affiche un message neutre. #}
                   <p class="date_heure">
                     {% if c.date_heure_depart is not empty %}
                       {{ c.date_heure_depart|date('d/m/Y \\à H:i') }}
@@ -100,12 +137,15 @@
                     {% endif %}
                   </p>
 
+                  {# Badge de statut du covoiturage. #}
                   <p class="statut">
                     <span class="badge badge_{{ statut|lower }}">
                       {{ libelles_statut[statut]|default('Statut inconnu') }}
                     </span>
                   </p>
 
+                  {# Métadonnées secondaires :
+                     places disponibles et prix en crédits. #}
                   <p class="meta">
                     {% set places = c.nb_places_dispo|default(null) %}
                     {% if places is not null %}
@@ -119,6 +159,9 @@
                 </div>
 
                 <div class="carte_actions">
+
+                  {# Cas 1 : trajet planifié.
+                     Le chauffeur peut démarrer ou annuler. #}
                   {% if statut == 'PLANIFIE' %}
                     <form method="post" action="{{ path('demarrer_covoiturage') }}">
                       <input type="hidden" name="_token" value="{{ csrf_token('demarrer_covoiturage') }}">
@@ -138,6 +181,8 @@
                       </button>
                     </form>
 
+                  {# Cas 2 : trajet en cours.
+                     Le chauffeur peut signaler l'arrivée ou déclarer un incident. #}
                   {% elseif statut == 'EN_COURS' %}
                     <form method="post" action="{{ path('terminer_covoiturage') }}">
                       <input type="hidden" name="_token" value="{{ csrf_token('terminer_covoiturage') }}">
@@ -156,6 +201,8 @@
                       </a>
                     {% endif %}
 
+                  {# Cas 3 : trajet terminé.
+                     Il reste encore possible de déclarer un incident. #}
                   {% elseif statut == 'TERMINE' %}
                     {% if incident_possible and id_covoiturage > 0 %}
                       <a class="bouton_alerte"
@@ -165,6 +212,8 @@
                       </a>
                     {% endif %}
 
+                  {# Cas 4 : aucun autre traitement disponible.
+                     On affiche seulement un libellé passif. #}
                   {% else %}
                     {% if statut == 'INCIDENT' %}
                       <span class="libelle_action">Incident déclaré</span>
@@ -177,7 +226,8 @@
             {% endfor %}
           </div>
 
-        {# ONGLET : PARTICIPATIONS #}
+        {# ONGLET : PARTICIPATIONS
+           Cette partie correspond au parcours passager. #}
         {% else %}
           <div class="liste_cartes">
             {% if participations|length == 0 %}
@@ -185,6 +235,7 @@
             {% endif %}
 
             {% for p in participations %}
+              {# Préparation des variables utiles aux badges et aux actions. #}
               {% set statut = p.statut_covoiturage|default('PLANIFIE') %}
               {% set est_annulee = p.est_annulee|default(false) %}
               {% set validation = p.statut_validation|default('NON_DEMANDEE') %}
@@ -192,20 +243,27 @@
               {% set id_participation = p.id_participation|default(0) %}
               {% set id_covoiturage = p.id_covoiturage|default(0) %}
 
-              {# Annulation participation : uniquement si PLANIFIE et non annulée #}
+              {# Règle d'annulation :
+                 possible seulement si le trajet est planifié
+                 et que la participation n'est pas déjà annulée. #}
               {% set annulation_autorisee = (not est_annulee) and (statut == 'PLANIFIE') %}
 
-              {# Satisfaction : après trajet terminé, si validation demandée (EN_ATTENTE) #}
+              {# Règle de satisfaction :
+                 possible seulement après un trajet terminé
+                 avec validation encore en attente. #}
               {% set satisfaction_possible = (not est_annulee) and (statut == 'TERMINE') and (validation == 'EN_ATTENTE') %}
 
               <article class="carte_trajet">
                 <div class="carte_principale">
+
+                  {# Trajet principal. #}
                   <p class="trajet">
                     <strong>{{ p.ville_depart|default('Départ') }}</strong>
                     <span class="fleche" aria-hidden="true">→</span>
                     <strong>{{ p.ville_arrivee|default('Arrivée') }}</strong>
                   </p>
 
+                  {# Date et heure du départ. #}
                   <p class="date_heure">
                     {% if p.date_heure_depart is not empty %}
                       {{ p.date_heure_depart|date('d/m/Y \\à H:i') }}
@@ -214,6 +272,10 @@
                     {% endif %}
                   </p>
 
+                  {# Badges :
+                     - statut du trajet
+                     - état de validation si demandé
+                     - annulation éventuelle de la participation #}
                   <p class="statut">
                     <span class="badge badge_{{ statut|lower }}">
                       {{ libelles_statut[statut]|default('Statut inconnu') }}
@@ -230,6 +292,8 @@
                     {% endif %}
                   </p>
 
+                  {# Métadonnée secondaire :
+                     crédits utilisés pour cette participation. #}
                   <p class="meta">
                     {% if p.credits_utilises is defined %}
                       <span class="prix">{{ p.credits_utilises }} crédits</span>
@@ -238,6 +302,10 @@
                 </div>
 
                 <div class="carte_actions">
+
+                  {# Donner un avis :
+                     possible seulement après le trajet
+                     si une validation passager est attendue. #}
                   {% if satisfaction_possible and id_covoiturage > 0 %}
                     <a class="bouton_valider"
                        href="{{ path('satisfaction_formulaire', { id: id_covoiturage }) }}">
@@ -246,6 +314,8 @@
                     </a>
                   {% endif %}
 
+                  {# Annuler :
+                     bouton actif seulement si la règle métier l'autorise. #}
                   {% if annulation_autorisee %}
                     <form method="post" action="{{ path('annuler_participation') }}">
                       <input type="hidden" name="_token" value="{{ csrf_token('annuler_participation') }}">
