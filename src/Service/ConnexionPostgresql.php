@@ -13,13 +13,13 @@ namespace App\Service;
  * connexion se fait toujours au même endroit.
  *
  * Démarche retenue :
- * on veut une connexion simple à appeler, qui soit réutilisable, et configurée de la
+ * on veut une connexion simple à appeler, réutilisable, et configurée de la
  * même manière dans tout le projet. L'idée est donc de créer PDO une seule fois,
  * puis de renvoyer cette même connexion quand un autre service en a besoin.
  *
  * Ce que ce service fait concrètement :
- * on lit les variables d'environnement utiles à PostgreSQL, on construit la
- * chaîne de connexion, on crée PDO avec les options retenues pour EcoRide,
+ * IL lit les variables d'environnement utiles à PostgreSQL depuis .env, il construit la
+ * chaîne de connexion, il crée PDO avec les options retenues pour EcoRide,
  * puis on conserve cette connexion pour éviter de la recréer inutilement.
  */
 final class ConnexionPostgresql
@@ -38,7 +38,7 @@ final class ConnexionPostgresql
    *
    * La logique retenue ici est simple :
    * si une connexion a déjà été créée auparavant, on la renvoie directement.
-   * Sinon, on lit la configuration, on prépare le DSN PostgreSQL, puis on crée PDO.
+   * Sinon, il lit la configuration, prépare le DSN PostgreSQL, puis crée PDO.
    *
    * Pourquoi ce choix :
    * cela évite de répéter partout le même code de connexion et cela garantit

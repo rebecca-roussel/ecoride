@@ -8,84 +8,81 @@ use App\Service\ConnexionPostgresql;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Vérifie un comportement simple du service de connexion PostgreSQL.
+ * Test unitaire du service ConnexionPostgresql.
  *
- * Démarche retenue :
- * on ne cherche pas ici à tester une vraie connexion vers la base.
- * On vérifie d'abord une règle déjà présente dans le service :
- * si le mot de passe PostgreSQL est vide, on bloque tout de suite
- * avec une erreur explicite.
+ * Objectif du test :
+ * vérifier le comportement du service quand la variable
+ * d'environnement POSTGRES_PASSWORD est vide.
  *
- * Intérêt du test :
- * ce contrôle reste rapide, stable et indépendant d'un conteneur
- * PostgreSQL en cours d'exécution.
+ * Règle testée :
+ * dans ce cas précis, le service ne doit pas essayer
+ * d'aller plus loin dans la création de PDO.
+ * Il doit interrompre le traitement immédiatement
+ * avec une RuntimeException explicite.
+ *
+ * Intérêt de ce test :
+ * ce contrôle isole une règle simple mais sensible.
+ * Il permet de vérifier qu'une configuration incomplète
+ * est détectée très tôt, avec un message compréhensible.
  */
 final class ConnexionPostgresqlTest extends TestCase
 {
     /**
-     * Sauvegarde l'état initial de POSTGRES_PASSWORD avant le test.
+     * Vérifie qu'une erreur claire est levée
+     * quand POSTGRES_PASSWORD est vide.
      *
-     * @var string|false
-     */
-    private string|false $ancienneValeurGetenv = false;
-
-    /**
-     * Indique si POSTGRES_PASSWORD existait déjà dans $_ENV.
+     * Déroulement du test :
+     * 1. forcer la variable d'environnement POSTGRES_PASSWORD à vide ;
+     * 2. instancier le service ConnexionPostgresql ;
+     * 3. annoncer à PHPUnit qu'une RuntimeException est attendue ;
+     * 4. vérifier que le message contient bien
+     *    "POSTGRES_PASSWORD est vide" ;
+     * 5. appeler obtenirPdo() pour déclencher le comportement testé.
      *
-     * @var bool
+     * Résultat attendu :
+     * le service refuse de poursuivre la création de la connexion
+     * et lève immédiatement l'exception prévue.
      */
-    private bool $ancienneValeurEnvExiste = false;
-
-    /**
-     * Sauvegarde l'ancienne valeur de POSTGRES_PASSWORD dans $_ENV.
-     *
-     * @var string|null
-     */
-    private ?string $ancienneValeurEnv = null;
-
-    /**
-     * Sauvegarde l'environnement avant chaque test.
-     */
-    protected function setUp(): void
+    public function testMotDePassePostgresqlVide(): void
     {
-        $this->ancienneValeurGetenv = getenv('POSTGRES_PASSWORD');
-        $this->ancienneValeurEnvExiste = array_key_exists('POSTGRES_PASSWORD', $_ENV);
-        $this->ancienneValeurEnv = $this->ancienneValeurEnvExiste
-            ? (string) $_ENV['POSTGRES_PASSWORD']
-            : null;
-    }
-
-    /**
-     * Restaure l'environnement après chaque test.
-     */
-    protected function tearDown(): void
-    {
-        if (false === $this->ancienneValeurGetenv) {
-            putenv('POSTGRES_PASSWORD');
-        } else {
-            putenv('POSTGRES_PASSWORD=' . $this->ancienneValeurGetenv);
-        }
-
-        if ($this->ancienneValeurEnvExiste) {
-            $_ENV['POSTGRES_PASSWORD'] = $this->ancienneValeurEnv;
-        } else {
-            unset($_ENV['POSTGRES_PASSWORD']);
-        }
-    }
-
-    /**
-     * Vérifie qu'une erreur claire est levée si POSTGRES_PASSWORD est vide.
-     */
-    public function testObtientUneErreurClaireQuandLeMotDePassePostgresqlEstVide(): void
-    {
+        /*
+         * On vide volontairement la variable d'environnement
+         * dans $_ENV pour simuler une configuration invalide.
+         */
         $_ENV['POSTGRES_PASSWORD'] = '';
+
+        /*
+         * On vide aussi la variable côté environnement système.
+         * Le service lit d'abord $_ENV puis getenv(),
+         * donc on aligne les deux sources sur le même cas de test.
+         */
         putenv('POSTGRES_PASSWORD=');
 
+        /*
+         * On crée l'objet que l'on veut tester.
+         * À ce stade, aucune connexion PDO n'est encore créée.
+         */
         $service = new ConnexionPostgresql();
 
+        /*
+         * PHPUnit doit maintenant attendre une RuntimeException.
+         * Le test sera considéré comme correct seulement si cette
+         * exception est réellement levée lors de l'appel suivant.
+         */
         $this->expectException(\RuntimeException::class);
+
+        /*
+         * On vérifie aussi le contenu du message.
+         * Cela permet de contrôler que l'erreur levée
+         * correspond bien au cas du mot de passe vide.
+         */
         $this->expectExceptionMessage('POSTGRES_PASSWORD est vide');
 
+        /*
+         * Cet appel déclenche la lecture des variables d'environnement.
+         * Comme le mot de passe a été vidé juste avant,
+         * le service doit interrompre le traitement ici.
+         */
         $service->obtenirPdo();
     }
 }
