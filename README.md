@@ -2,7 +2,7 @@
 
 **Plateforme de covoiturage écoresponsable** — Titre Professionnel Développeur Web et Web Mobile (RNCP TP-01280)
 
-EcoRide connecte conducteurs et passagers autour d'un objectif commun : réduire l'impact environnemental des déplacements en voiture. Les trajets réalisés avec un véhicule électrique sont identifiés comme écologiques et mis en avant dans les résultats de recherche.
+EcoRide connecte conducteurs et passagers autour d'un objectif commun : réduire l'impact environnemental des déplacements en voiture. *Les covoiturages réalisés avec un véhicule électrique sont identifiés comme écologiques*
 
 ---
 
@@ -90,12 +90,11 @@ docker compose exec php php bin/console cache:clear
 
 ## Accès à l'application
 
-```text
 | Service | URL |
 |---|---|
-| Application | http://localhost:8080 |
-| MailHog (emails de test) | http://localhost:8025 |
-```
+| Application en production | <https://www.eco-ride.fr> |
+| Application en local | <http://localhost:8080> |
+| MailHog en local | <http://localhost:8025> |
 
 ---
 
@@ -103,19 +102,17 @@ docker compose exec php php bin/console cache:clear
 
 Mot de passe commun à tous les comptes : **`Ecoride2026!`**
 
-```text
 | Rôle | Email |
 |---|---|
-| Administrateur | jose@ecoride.fr |
-| Employé | sophie@ecoride.fr |
-| Employé | thomas@ecoride.fr |
-| Utilisateur (chauffeur/passager) | muriel@ecoride.fr |
-| Utilisateur (chauffeur/passager) | benjamin@ecoride.fr |
-| Utilisateur (chauffeur/passager) | raoul@ecoride.fr |
-| Utilisateur (passager) | nina@ecoride.fr |
-| Utilisateur (passager) | luc@ecoride.fr |
-| Utilisateur (passager) | emma@ecoride.fr |
-```
+| Administrateur | <jose@ecoride.fr> |
+| Employé | <sophie@ecoride.fr> |
+| Employé suspendu | <thomas@ecoride.fr> |
+| Chauffeur et passager | <muriel@ecoride.fr> |
+| Chauffeur | <benjamin@ecoride.fr> |
+| Passager | <raoul@ecoride.fr> |
+| Passager | <nina@ecoride.fr> |
+| Chauffeur et passager | <luc@ecoride.fr> |
+| Passager suspendu | <emma@ecoride.fr> |
 
 ---
 
@@ -161,14 +158,14 @@ Résultat attendu : `HTTP/1.1 200 OK` avec présence de `X-Frame-Options`, `X-Co
 Navigateur
     │
     ▼
- Nginx :8080          (point d'entrée HTTP — code source en read-only)
+ Nginx :8080          (point d'entrée HTTP )
     │
     ▼
- PHP-FPM               (Symfony 7 — PHP 8.3)
+ PHP-FPM               (Symfony 7 -PHP 8.3)
     │
-    ├──▶ PostgreSQL     (données métier — triggers et fonctions SQL)
+    ├──▶ PostgreSQL     (données métier - triggers et fonctions SQL)
     ├──▶ MongoDB        (journal opérationnel d'événements)
-    └──▶ MailHog :8025  (simulation SMTP — développement uniquement)
+    └──▶ MailHog :8025  (simulation SMTP en condition de développement uniquement)
 ```
 
 Tous les services communiquent via le réseau interne de Docker Compose. PostgreSQL n'est pas exposé sur la machine hôte. MongoDB est publié uniquement en local sur `127.0.0.1:27017`, ce qui permet son utilisation avec MongoDB Compass depuis le poste de développement.
@@ -179,6 +176,10 @@ Tous les services communiquent via le réseau interne de Docker Compose. Postgre
 
 ```text
 ecoride/
+├── .github/
+│   └── workflows/          # CI/CD GitHub Actions
+├── bin/                    # Entrées console Symfony / PHPUnit
+├── config/                 # Configuration Symfony (packages, routes, services)
 ├── src/
 │   ├── Controller/         # Routes et orchestration des requêtes HTTP
 │   ├── Service/            # Logique métier et accès aux données
@@ -188,20 +189,33 @@ ecoride/
 │   ├── css/
 │   ├── js/
 │   ├── images/
-│   └── polices/            # Polices auto-hébergées
+│   └── polices/            # Polices auto-hébergées 
 ├── config/                 # Configuration Symfony et services
 ├── docs/
 │   ├── sql/                # Scripts SQL (schéma + données de démonstration)
+│   ├── documentation_code/
 │   ├── modelisation_donnees/
 │   ├── interface/          # Maquettes
 │   └── gestion_projet/
 ├── docker/
 │   ├── nginx/default.conf
 │   └── php/Dockerfile
-├── docker-compose.yml
+├── docker-compose.yaml
+├── composer.lock
 ├── composer.json
-└── .env                    # Variables d'environnement (valeurs de développement)
+├── tests/                  # Tests automatisés
+├── .env                    # Variables d'environnement (valeurs de développement)
+├── .env.prod
+├── .env.test
+├── phpunit.dist.xml
+└── symfony.lock                
 ```
+
+---
+
+## Manuel d'utilisation
+
+Le guide utilisateur est disponible ici : **`docs/manuel_utilisation.md`**.
 
 ---
 
