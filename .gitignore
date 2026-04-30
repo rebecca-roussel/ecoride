@@ -17,7 +17,6 @@
 
 # Documentation générée localement
 .phpdoc/
-docs/api/
 
 # Fichiers de référence générés
 config/reference.php
