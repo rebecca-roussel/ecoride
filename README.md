@@ -1,34 +1,86 @@
 # EcoRide
 
-**Plateforme de covoiturage écoresponsable** — Titre Professionnel Développeur Web et Web Mobile (RNCP TP-01280)
+**Plateforme de covoiturage écoresponsable** - Titre Professionnel Développeur Web et Web Mobile
 
-EcoRide connecte conducteurs et passagers autour d'un objectif commun : réduire l'impact environnemental des déplacements en voiture. *Les covoiturages réalisés avec un véhicule électrique sont identifiés comme écologiques*.
+EcoRide connecte conducteurs et passagers autour d'un objectif commun : réduire l'impact environnemental des déplacements en voiture. *Les covoiturages réalisés avec un véhicule électrique sont identifiés comme écologiques.*
 
 ---
 
-## Points forts de l'architecture
+## À propos de l’architecture
 
-### Persistance polyglotte (SQL + NoSQL)
+L’architecture repose sur Symfony côté serveur, Twig pour les vues, PostgreSQL pour les données métier et MongoDB pour le journal d’événements.
 
-L'application repose sur deux bases de données aux rôles strictement distincts.
+### Organisation générale
 
-**PostgreSQL 16** gère l'ensemble des données métier structurées : utilisateurs, véhicules, covoiturages, participations, avis, commissions. L'intégrité métier est garantie au niveau de la base via des **triggers et fonctions SQL** qui prennent en charge automatiquement le débit des crédits, le calcul des commissions, la mise à jour des places disponibles et le verrouillage des prix après validation d'une participation. Ces règles s'appliquent indépendamment de la couche applicative.
+L’application est organisée autour de trois parties principales.
 
-**MongoDB 7** est utilisé exclusivement comme **journal opérationnel d'événements** (*Audit Trail*). Il ne stocke aucune donnée métier et n'alimente pas les statistiques de l'application. Son rôle est d'enregistrer une trace chronologique et exploitable des événements significatifs (connexions, participations, incidents, modérations, suspensions) pour permettre une reconstitution rapide de toute situation sensible.
+| Partie | Rôle |
+|---|---|
+| Contrôleurs | Recevoir les requêtes HTTP et orienter le parcours utilisateur |
+| Vues Twig | Afficher les pages de l’application |
+| Services | Regrouper la logique métier et l’accès aux données |
+
+Les contrôleurs restent centrés sur le parcours utilisateur. Les traitements plus techniques sont placés dans les services.
+
+### Accès aux données
+
+EcoRide utilise PDO avec des requêtes préparées. Cette approche garde un contrôle direct sur les requêtes SQL et rend les échanges avec PostgreSQL plus visibles.
+
+| Base | Rôle dans le projet |
+|---|---|
+| PostgreSQL 16 | Stocker les données métier structurées |
+| MongoDB 7 | Conserver le journal opérationnel d’événements |
+
+PostgreSQL gère :
+
+- les utilisateurs,
+- les véhicules,
+- les covoiturages,
+- les participations,
+- les avis,
+- les commissions.
+
+Les règles les plus importantes sont aussi protégées au niveau de la base avec des contraintes, des fonctions et des triggers.
+
+MongoDB garde une trace chronologique des actions importantes qui concerne par exemple :
+
+- les connexions,
+- les participations,
+- les incidents,
+- les modérations,
+- les suspensions...
+
+### Conteneurs Docker
+
+L’environnement repose sur Docker Compose. Il lance les services nécessaires au projet.
+
+| Service | Rôle |
+|---|---|
+| Nginx | Point d’entrée HTTP |
+| PHP-FPM | Exécution de l’application Symfony |
+| PostgreSQL | Données métier |
+| MongoDB | Journal d’événements |
+| MailHog | Tests des emails en local |
+
+Les services communiquent dans le réseau interne Docker. PostgreSQL reste réservé aux conteneurs. MongoDB est publié seulement en local pour pouvoir l’ouvrir avec MongoDB Compass pendant le développement.
 
 ### Sécurité
 
-```text
 | Domaine | Mesure appliquée |
 |---|---|
 | Mots de passe | Hachage BCrypt |
 | Réinitialisation | Jeton `random_bytes` haché en SHA-256, stocké en base, usage unique |
 | Infrastructure | Code source monté en `read-only` dans le conteneur Nginx |
-| Formulaires | Protection CSRF (Symfony Security) |
+| Formulaires | Protection CSRF Symfony Security |
 | En-têtes HTTP | `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` |
 | Secrets | `.env.local` exclu du dépôt via `.gitignore` |
-| Droits réseau | PostgreSQL non exposé sur la machine hôte ; MongoDB publié uniquement en local sur `127.0.0.1:27017` |
-```
+| Droits réseau | PostgreSQL non exposé sur la machine hôte. MongoDB publié seulement en local sur `127.0.0.1:27017` |
+
+### Choix de conception
+
+EcoRide ne repose pas sur un ORM. Les accès aux données sont écrits dans des services dédiés, avec des requêtes SQL explicites. Ce choix m’a aidée à relier directement les règles métier au schéma de base de données.
+
+Les règles les plus sensibles, comme les crédits, les places disponibles et les commissions, sont protégées côté PostgreSQL. Cela évite de dépendre uniquement du code applicatif pour maintenir la cohérence des données.
 
 ---
 
@@ -190,7 +242,6 @@ ecoride/
 │   ├── js/
 │   ├── images/
 │   └── polices/            # Polices auto-hébergées 
-├── config/                 # Configuration Symfony et services
 ├── docs/
 │   ├── sql/                # Scripts SQL (schéma + données de démonstration)
 │   ├── documentation_code/
