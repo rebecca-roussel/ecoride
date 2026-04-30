@@ -2,7 +2,7 @@
 
 **Plateforme de covoiturage écoresponsable** — Titre Professionnel Développeur Web et Web Mobile (RNCP TP-01280)
 
-EcoRide connecte conducteurs et passagers autour d'un objectif commun : réduire l'impact environnemental des déplacements en voiture. *Les covoiturages réalisés avec un véhicule électrique sont identifiés comme écologiques*
+EcoRide connecte conducteurs et passagers autour d'un objectif commun : réduire l'impact environnemental des déplacements en voiture. *Les covoiturages réalisés avec un véhicule électrique sont identifiés comme écologiques*.
 
 ---
 
