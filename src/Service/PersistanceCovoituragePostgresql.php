@@ -642,8 +642,8 @@ final class PersistanceCovoituragePostgresql
             throw new RuntimeException('Création impossible : nombre de places invalide.');
         }
 
-        if ($prixCredits <= 0) {
-            throw new RuntimeException('Création impossible : prix invalide.');
+        if ($prixCredits <= 2) {
+            throw new RuntimeException('Création impossible : le prix doit être supérieur à 2 crédits.');
         }
 
         $departIncomplet = ($latitudeDepart === null) !== ($longitudeDepart === null);

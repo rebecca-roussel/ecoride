@@ -195,27 +195,40 @@ final class PublierCovoiturageController extends AbstractController
         }
 
         /*
-         * Le prix doit au moins couvrir la commission prévue dans le projet.
+         * Le prix doit être supérieur à la commission prévue.
+         * La commission de la plateforme est fixée à 2 crédits.
+         * Le prix minimum accepté est donc 3 crédits.
          */
-        if ($prixCredits < 2) {
-            $erreurs['prix_credits'] = 'Le prix minimum est de 2 crédits (commission EcoRide incluse).';
+        if ($prixCredits <= 2) {
+            $erreurs['prix_credits'] = 'Le prix doit être supérieur à 2 crédits, car la commission de la plateforme est de 2 crédits.';
+        }
+
+        /*
+         * On vérifie que la voiture choisie fait bien partie
+         * des voitures actives de l'utilisateur connecté.
+         */
+        $voitureChoisie = null;
+
+        foreach ($voitures as $voiture) {
+            if ((int) ($voiture['id_voiture'] ?? 0) === $idVoiture) {
+                $voitureChoisie = $voiture;
+                break;
+            }
+        }
+
+        if ($idVoiture > 0 && $voitureChoisie === null) {
+            $erreurs['id_voiture'] = 'La voiture sélectionnée est invalide.';
         }
 
         /*
          * Le nombre de places proposé doit rester cohérent
          * avec la capacité de la voiture choisie.
          */
-        if ($idVoiture > 0 && !isset($erreurs['nb_places_dispo'])) {
-            foreach ($voitures as $voiture) {
-                if ((int) ($voiture['id_voiture'] ?? 0) === $idVoiture) {
-                    $placesVoiture = (int) ($voiture['nb_places'] ?? 0);
+        if ($voitureChoisie !== null && !isset($erreurs['nb_places_dispo'])) {
+            $placesVoiture = (int) ($voitureChoisie['nb_places'] ?? 0);
 
-                    if ($placesVoiture > 0 && $nbPlacesDispo > $placesVoiture) {
-                        $erreurs['nb_places_dispo'] = 'Les places disponibles ne peuvent pas dépasser les places de la voiture.';
-                    }
-
-                    break;
-                }
+            if ($placesVoiture > 0 && $nbPlacesDispo > $placesVoiture) {
+                $erreurs['nb_places_dispo'] = 'Les places disponibles ne peuvent pas dépasser les places de la voiture.';
             }
         }
 

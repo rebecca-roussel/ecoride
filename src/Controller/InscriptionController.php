@@ -198,7 +198,7 @@ final class InscriptionController extends AbstractController
                             $this->addFlash('succes', 'Compte créé avec succès.');
                         }
 
-                        return $this->redirectToRoute('accueil');
+                        return $this->redirectToRoute('tableau_de_bord');
                     } catch (RuntimeException $e) {
                         /*
                          * Ici, on récupère surtout les messages métier
