@@ -32,4 +32,4 @@ Ce dossier est ignoré par Git car les sauvegardes peuvent contenir des données
 
 ./docker/sauvegardes/nettoyer_sauvegardes.sh 7
 
-En production, cette logique devrait être complétée par une planification, un stockage sécurisé et un test régulier de restauration.
+Cette procédure concerne l’environnement local du projet. Pour un déploiement en production, il faudrait compléter ce travail par des sauvegardes à l'externe planifiées et protégées, mais aussi des tests réguliers de restauration.

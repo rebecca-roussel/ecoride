@@ -251,6 +251,7 @@ ecoride/
 ├── docker/
 │   ├── nginx/default.conf
 │   └── php/Dockerfile
+│   └── sauvegardes/         # Scripts de sauvegarde et restauration des bases de données
 ├── docker-compose.yaml
 ├── composer.lock
 ├── composer.json
@@ -267,6 +268,18 @@ ecoride/
 ## Manuel d'utilisation
 
 Le guide utilisateur est disponible ici : **`docs/manuel_utilisation.md`**.
+
+---
+
+## Sauvegardes des bases de données
+
+Git versionne le code source du projet, mais les données persistantes de l’application vivent dans PostgreSQL et MongoDB.
+
+EcoRide contient donc des scripts de sauvegarde, de restauration et de nettoyage local dans le dossier `docker/sauvegardes/`.
+
+Les sauvegardes générées sont stockées dans `var/sauvegardes/`. Ce dossier est ignoré par Git car ces fichiers peuvent contenir des données personnelles.
+
+La procédure complète est documentée dans `docker/sauvegardes/README.md`.
 
 ---
 
