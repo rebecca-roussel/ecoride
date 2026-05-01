@@ -6,7 +6,7 @@ RACINE_PROJET="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${RACINE_PROJET}"
 
 DOSSIER_SORTIE="var/sauvegardes/postgresql"
-DATE_SAUVEGARDE="$(date +%Y%m%d_%H%M%S)"
+DATE_SAUVEGARDE="$(date +%d-%m-%Y_%Hh%Mm%Ss)"
 FICHIER_SORTIE="${DOSSIER_SORTIE}/ecoride_postgresql_${DATE_SAUVEGARDE}.sql"
 
 mkdir -p "${DOSSIER_SORTIE}"

@@ -7,7 +7,7 @@ cd "${RACINE_PROJET}"
 
 NOM_BASE_MONGODB="${MONGO_DB:-ecoride_journal}"
 DOSSIER_SORTIE="var/sauvegardes/mongodb"
-DATE_SAUVEGARDE="$(date +%Y%m%d_%H%M%S)"
+DATE_SAUVEGARDE="$(date +%d-%m-%Y_%Hh%Mm%Ss)"
 FICHIER_SORTIE="${DOSSIER_SORTIE}/ecoride_mongodb_${NOM_BASE_MONGODB}_${DATE_SAUVEGARDE}.archive.gz"
 
 mkdir -p "${DOSSIER_SORTIE}"
