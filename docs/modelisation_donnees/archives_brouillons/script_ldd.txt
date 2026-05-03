@@ -10,6 +10,8 @@ DoCmd.RunSQL "CREATE TABLE UTILISATEUR(" & _
    "role_passager LOGICAL NOT NULL," & _
    "photo_path VARCHAR(255)," & _
    "statut VARCHAR(20) NOT NULL," & _
+   "role_interne LOGICAL," & _
+   "date_changement_statut DATETIME," & _
    "PRIMARY KEY(Id_UTILISATEUR)," & _
    "UNIQUE(pseudo)," & _
    "UNIQUE(email)" & _
@@ -23,6 +25,8 @@ DoCmd.RunSQL "CREATE TABLE VOITURE(" & _
    "couleur VARCHAR(30) NOT NULL," & _
    "energie VARCHAR(20) NOT NULL," & _
    "nb_places INT NOT NULL," & _
+   "est_active LOGICAL NOT NULL," & _
+   "date_desactivation DATETIME," & _
    "Id_UTILISATEUR INT NOT NULL," & _
    "PRIMARY KEY(Id_VOITURE)," & _
    "UNIQUE(immatriculation)," & _
@@ -31,6 +35,11 @@ DoCmd.RunSQL "CREATE TABLE VOITURE(" & _
 
 DoCmd.RunSQL "CREATE TABLE COVOITURAGE(" & _
    "Id_COVOITURAGE COUNTER," & _
+   "latitude_depart DECIMAL(9,6)," & _
+   "longitude_depart DECIMAL(9,6)," & _
+   "latitude_arrivee DECIMAL(9,6)," & _
+   "longitude_arrivee DECIMAL(9,6)," & _
+   "preferences_libre VARCHAR(1000)," & _
    "date_heure_depart DATETIME NOT NULL," & _
    "date_heure_arrivee DATETIME NOT NULL," & _
    "adresse_arrivee VARCHAR(255) NOT NULL," & _
@@ -54,6 +63,8 @@ DoCmd.RunSQL "CREATE TABLE PARTICIPATION(" & _
    "Id_PARTICIPATION COUNTER," & _
    "date_heure_confirmation DATETIME NOT NULL," & _
    "credits_utilises INT NOT NULL," & _
+   "statut_validation VARCHAR(20) NOT NULL," & _
+   "commentaire_validation VARCHAR(1000)," & _
    "est_annulee LOGICAL NOT NULL," & _
    "Id_UTILISATEUR INT NOT NULL," & _
    "Id_COVOITURAGE INT NOT NULL," & _
@@ -72,6 +83,27 @@ DoCmd.RunSQL "CREATE TABLE ADMINISTRATEUR(" & _
    "Id_UTILISATEUR INT," & _
    "PRIMARY KEY(Id_UTILISATEUR)," & _
    "FOREIGN KEY(Id_UTILISATEUR) REFERENCES UTILISATEUR(Id_UTILISATEUR)" & _
+");"   
+
+DoCmd.RunSQL "CREATE TABLE REINITIALISATION_MOT_DE_PASSE(" & _
+   "id_reinitialisation COUNTER," & _
+   "jeton_hash CHAR(64) NOT NULL," & _
+   "date_creation DATETIME NOT NULL," & _
+   "date_expiration DATETIME NOT NULL," & _
+   "date_utilisation DATETIME," & _
+   "Id_UTILISATEUR INT NOT NULL," & _
+   "PRIMARY KEY(id_reinitialisation)," & _
+   "FOREIGN KEY(Id_UTILISATEUR) REFERENCES UTILISATEUR(Id_UTILISATEUR)" & _
+");"   
+
+DoCmd.RunSQL "CREATE TABLE COMMISSION_PLATEFORME(" & _
+   "id_commission COUNTER," & _
+   "date_commission DATETIME," & _
+   "credits_commission INT," & _
+   "Id_PARTICIPATION INT NOT NULL," & _
+   "PRIMARY KEY(id_commission)," & _
+   "UNIQUE(Id_PARTICIPATION)," & _
+   "FOREIGN KEY(Id_PARTICIPATION) REFERENCES PARTICIPATION(Id_PARTICIPATION)" & _
 ");"   
 
 DoCmd.RunSQL "CREATE TABLE AVIS(" & _
