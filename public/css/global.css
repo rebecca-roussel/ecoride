@@ -35,7 +35,11 @@
   /* Focus visible (navigation clavier) */
   --anneau_focus: rgba(199,195,184,0.45);
 }
-
+/*
+* "*" cible tous les éléments HTML.
+* ::before cible les pseudo-éléments créés avant le contenu.
+* ::after cible les pseudo-éléments créés après le contenu.
+*/
 *,
 *::before,
 *::after{
