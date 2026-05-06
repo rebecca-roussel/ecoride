@@ -1,5 +1,7 @@
 # Cahier des charges — EcoRide
 
+La version du `cahier des charges.pdf` d'EcoRide est jointe à ce dossier ecoride/docs/cahier_des_charges.
+
 ## Contexte
 
 EcoRide est un projet d’application web porté par une startup fictive

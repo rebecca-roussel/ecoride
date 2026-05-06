@@ -8,6 +8,14 @@ L’objectif est de permettre la reproduction complète de la base de données, 
 
 ## Contenu du dossier
 
+---
+
+### modele_relationnel_looping.txt
+
+Ce script récupérer depuis la modélisation des données avec Looping.exe m'a permis de traduire plus facilement le schéma SQL pour PostgreSQL.
+
+---
+
 ### 01_schema.sql
 
 Ce script contient la création complète du schéma de la base de données PostgreSQL :
@@ -65,9 +73,10 @@ Il constitue une preuve visuelle du bon fonctionnement de la base de données.
 
 ## Ordre d’exécution recommandé
 
-1. `01_schema.sql`
-2. `02_donnees_demo.sql`
-3. `03_requetes_verification.sql`
+1. `modele_relationnel_looping.txt`
+2. `01_schema.sql`
+3. `02_donnees_demo.sql`
+4. `03_requetes_verification.sql`
 
 ---
 
@@ -83,6 +92,6 @@ docker compose exec -T postgresql psql -U ecoride -d ecoride < docs/sql/03_reque
 
 ## Outils utilisés
 
+- Looping.exe
 - PostgreSQL
-
 - DBeaver
