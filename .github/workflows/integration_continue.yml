@@ -34,6 +34,30 @@ jobs:
       - name: Installer les dépendances PHP
         run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
 
+      - name: Préparer les variables d'environnement de CI
+        run: |
+          cat > .env.docker <<'EOF'
+          UID=1000
+          GID=1000
+          APP_ENV=test
+          APP_DEBUG=1
+          APP_SECRET=secret_ci_non_utilise_en_production
+          APP_TIMEZONE=Europe/Paris
+          DEFAULT_URI=http://localhost:8080
+          POSTGRES_DB=ecoride
+          POSTGRES_USER=ecoride
+          POSTGRES_PASSWORD=ecoride
+          POSTGRES_HOST=postgresql
+          POSTGRES_PORT=5432
+          DATABASE_URL=pgsql://ecoride:ecoride@postgresql:5432/ecoride
+          MONGO_URI=mongodb://mongodb:27017
+          MONGO_DB=ecoride_journal
+          MONGO_COLLECTION=journal_evenements
+          MAILER_DSN=null://null
+          COURRIEL_EXPEDITEUR=nepasrepondre@ecoride.fr
+          EOF
+          cp .env.docker .env
+
       - name: Vérifier Docker Compose
         run: |
           docker compose version
