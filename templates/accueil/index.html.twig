@@ -36,14 +36,9 @@
 {# Titre de l’onglet du navigateur #}
 {% block title %}EcoRide – Accueil{% endblock %}
 
-{# Feuille de style spécifique à la page d’accueil #}
-{% block stylesheets %}
-  <link rel="stylesheet" href="{{ asset('css/accueil.css') }}">
-{% endblock %}
-
 {# EN-TÊTE / NAVIGATION #}
 {# IMPORTANT : l’en-tête est géré par base.html.twig #}
-{# Ici on garde un header identique à la recherche en incluant le fragment public #}
+{# Ici on garde un header identique à la recherche en incluant le fragment public (visiteur) #}
 {% block entete %}
   {% include 'fragments/entete_public.html.twig' %}
 {% endblock %}
