@@ -6,69 +6,74 @@ namespace App\Service;
 
 use DateTimeImmutable;
 use PDO;
+use PDOException;
 use RuntimeException;
+use Throwable;
 
+/**
+ * Service de persistance PostgreSQL pour les covoiturages.
+ *
+ * Cette classe regroupe les requêtes SQL liées aux covoiturages :
+ * recherche, détail, publication, participation
+ * et quelques lectures utiles aux courriels.
+ *
+ * Cette classe sert d'intermédiaire entre l'application et la base de données.
+ * Son rôle est de préparer les requêtes SQL, de les exécuter,
+ * puis de renvoyer des données déjà exploitables par les contrôleurs.
+ *
+ * @package App\Service
+ */
 final class PersistanceCovoituragePostgresql
 {
-  /*
-    PLAN (PersistanceCovoituragePostgresql) :
-
-    1) Rôle de ce service
-       - pont entre Symfony et PostgreSQL pour les covoiturages
-
-    2) Ce que je gère dans ce fichier
-       - recherche de covoiturages avec filtres
-       - détails et infos relatives au covoiturage 
-       - liste d’avis valides 
-       - création d’un covoiturage planifié 
-
-    3) Principe important
-       - la base est la source de vérité
-       - requêtes préparées pour éviter les injections
-  */
-
-  public function __construct(private ConnexionPostgresql $connexionPostgresql)
-  {
-  }
-
-  /**
-   * Recherche de covoiturages PLANIFIE avec places dispo.
-   * Les paramètres optionnels peuvent être null.
-   *
-   * @return array<int, array<string, mixed>>
-   */
-  public function rechercherCovoiturages(
-    string $villeDepart,
-    string $villeArrivee,
-    DateTimeImmutable $date,
-    ?string $heureMin,
-    ?string $heureMax,
-    ?int $prixMax,
-    ?string $energie,
-    ?int $ageMaxVoiture,
-    ?int $noteMin,
-    ?int $dureeMaxMinutes = null,
-  ): array {
-    $pdo = $this->connexionPostgresql->obtenirPdo();
-
-    $debut = $date->setTime(0, 0);
-    $fin = $date->setTime(23, 59, 59);
-
-    if (null !== $heureMin && preg_match('/^\d{2}:\d{2}$/', $heureMin)) {
-      [$h, $m] = array_map('intval', explode(':', $heureMin));
-      $debut = $date->setTime($h, $m);
+    /**
+     * Initialise le service avec la connexion PostgreSQL.
+     *
+     * @param ConnexionPostgresql $connexionPostgresql Service qui fournit l'objet PDO.
+     */
+    public function __construct(private ConnexionPostgresql $connexionPostgresql)
+    {
     }
 
-    if (null !== $heureMax && preg_match('/^\d{2}:\d{2}$/', $heureMax)) {
-      [$h, $m] = array_map('intval', explode(':', $heureMax));
-      $fin = $date->setTime($h, $m);
-    }
+    /**
+     * Recherche les covoiturages planifiés avec des places disponibles.
+     *
+     * La méthode construit une requête SQL à partir
+     * des critères de recherche obligatoires et des filtres optionnels.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function rechercherCovoiturages(
+        string $villeDepart,
+        string $villeArrivee,
+        DateTimeImmutable $date,
+        ?string $heureMin,
+        ?string $heureMax,
+        ?int $prixMax,
+        ?string $energie,
+        ?int $ageMaxVoiture,
+        ?int $noteMin,
+        ?int $dureeMaxMinutes = null,
+    ): array {
+        $pdo = $this->connexionPostgresql->obtenirPdo();
 
-    if ($fin < $debut) {
-      [$debut, $fin] = [$fin, $debut];
-    }
+        $debut = $date->setTime(0, 0);
+        $fin = $date->setTime(23, 59, 59);
 
-    $sql = "
+        if (null !== $heureMin && preg_match('/^\d{2}:\d{2}$/', $heureMin)) {
+            [$h, $m] = array_map('intval', explode(':', $heureMin));
+            $debut = $date->setTime($h, $m);
+        }
+
+        if (null !== $heureMax && preg_match('/^\d{2}:\d{2}$/', $heureMax)) {
+            [$h, $m] = array_map('intval', explode(':', $heureMax));
+            $fin = $date->setTime($h, $m);
+        }
+
+        if ($fin < $debut) {
+            [$debut, $fin] = [$fin, $debut];
+        }
+
+        $sql = "
             SELECT
                 covoiturage.id_covoiturage,
                 covoiturage.date_heure_depart,
@@ -127,210 +132,208 @@ final class PersistanceCovoituragePostgresql
               AND covoiturage.date_heure_depart BETWEEN :debut AND :fin
         ";
 
-    $parametres = [
-      'ville_depart' => '%' . trim($villeDepart) . '%',
-      'ville_arrivee' => '%' . trim($villeArrivee) . '%',
-      'debut' => $debut->format('Y-m-d H:i:s'),
-      'fin' => $fin->format('Y-m-d H:i:s'),
-    ];
+        $parametres = [
+            'ville_depart' => '%' . trim($villeDepart) . '%',
+            'ville_arrivee' => '%' . trim($villeArrivee) . '%',
+            'debut' => $debut->format('Y-m-d H:i:s'),
+            'fin' => $fin->format('Y-m-d H:i:s'),
+        ];
 
-    if (null !== $prixMax) {
-      $sql .= ' AND covoiturage.prix_credits <= :prix_max';
-      $parametres['prix_max'] = $prixMax;
-    }
+        if (null !== $prixMax) {
+            $sql .= ' AND covoiturage.prix_credits <= :prix_max';
+            $parametres['prix_max'] = $prixMax;
+        }
 
-    if (null !== $energie && '' !== $energie) {
-      $energie = strtoupper(trim($energie));
-      $sql .= ' AND voiture.energie = :energie';
-      $parametres['energie'] = $energie;
-    }
+        if (null !== $energie && '' !== $energie) {
+            $energie = strtoupper(trim($energie));
+            $sql .= ' AND voiture.energie = :energie';
+            $parametres['energie'] = $energie;
+        }
 
-    if (null !== $ageMaxVoiture) {
-      $sql .= " AND voiture.date_1ere_mise_en_circulation >= (CURRENT_DATE - (:age_max * INTERVAL '1 year'))";
-      $parametres['age_max'] = $ageMaxVoiture;
-    }
+        if (null !== $ageMaxVoiture) {
+            $sql .= " AND voiture.date_1ere_mise_en_circulation >= (CURRENT_DATE - (:age_max * INTERVAL '1 year'))";
+            $parametres['age_max'] = $ageMaxVoiture;
+        }
 
-    if (null !== $noteMin) {
-      $sql .= ' AND COALESCE(note.note_moyenne, 0) >= :note_min';
-      $parametres['note_min'] = $noteMin;
-    }
+        if (null !== $noteMin) {
+            $sql .= ' AND COALESCE(note.note_moyenne, 0) >= :note_min';
+            $parametres['note_min'] = $noteMin;
+        }
 
-    if (null !== $dureeMaxMinutes) {
-      $sql .= " AND (covoiturage.date_heure_arrivee - covoiturage.date_heure_depart) <= (:duree_max_minutes * INTERVAL '1 minute')";
-      $parametres['duree_max_minutes'] = $dureeMaxMinutes;
-    }
+        if (null !== $dureeMaxMinutes) {
+            $sql .= " AND (covoiturage.date_heure_arrivee - covoiturage.date_heure_depart) <= (:duree_max_minutes * INTERVAL '1 minute')";
+            $parametres['duree_max_minutes'] = $dureeMaxMinutes;
+        }
 
-    $sql .= ' ORDER BY covoiturage.date_heure_depart ASC';
+        $sql .= ' ORDER BY covoiturage.date_heure_depart ASC';
 
-    $requete = $pdo->prepare($sql);
-    $requete->execute($parametres);
+        $requete = $pdo->prepare($sql);
+        $requete->execute($parametres);
 
-    return $requete->fetchAll(PDO::FETCH_ASSOC) ?: [];
-  }
-
-      /**
-     * Trouver une date alternative la plus proche quand aucun covoiturage ne correspond aux critères.
-     * respect des filtres : prix/énergie/âge/note/durée + si une plage horaire existe respect aussi de l'heure
-     */
-    public function trouverDateDisponibleLaPlusProche(
-      string $villeDepart,
-      string $villeArrivee,
-      DateTimeImmutable $date,
-      ?string $heureMin,
-      ?string $heureMax,
-      ?int $prixMax,
-      ?string $energie,
-      ?int $ageMaxVoiture,
-      ?int $noteMin,
-      ?int $dureeMaxMinutes = null,
-    ): ?DateTimeImmutable {
-      $debutJournee = $date->setTime(0, 0, 0);
-      $finJournee = $date->setTime(23, 59, 59);
-
-      $suivante = $this->trouverDateProche('>', 'ASC', $villeDepart, $villeArrivee, $finJournee, $heureMin, $heureMax, $prixMax, $energie, $ageMaxVoiture, $noteMin, $dureeMaxMinutes);
-      $precedente = $this->trouverDateProche('<', 'DESC', $villeDepart, $villeArrivee, $debutJournee, $heureMin, $heureMax, $prixMax, $energie, $ageMaxVoiture, $noteMin, $dureeMaxMinutes);
-
-      if (null === $suivante && null === $precedente) {
-        return null;
-      }
-      if (null === $suivante) {
-        return $precedente;
-      }
-      if (null === $precedente) {
-        return $suivante;
-      }
-
-      // Comparaison stable autour du milieu de journée
-      $reference = $date->setTime(12, 0, 0)->getTimestamp();
-      $ecartSuivant = abs($suivante->getTimestamp() - $reference);
-      $ecartPrecedent = abs($reference - $precedente->getTimestamp());
-
-      return ($ecartPrecedent <= $ecartSuivant) ? $precedente : $suivante;
+        return $requete->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     /**
-     * Trouver la date  du premier covoiturage après et avant une borne, avec les mêmes filtres que la recherche
+     * Cherche la date disponible la plus proche
+     * quand aucun covoiturage n'est trouvé à la date demandée.
+     */
+    public function trouverDateDisponibleLaPlusProche(
+        string $villeDepart,
+        string $villeArrivee,
+        DateTimeImmutable $date,
+        ?string $heureMin,
+        ?string $heureMax,
+        ?int $prixMax,
+        ?string $energie,
+        ?int $ageMaxVoiture,
+        ?int $noteMin,
+        ?int $dureeMaxMinutes = null,
+    ): ?DateTimeImmutable {
+        $debutJournee = $date->setTime(0, 0, 0);
+        $finJournee = $date->setTime(23, 59, 59);
+
+        $suivante = $this->trouverDateProche('>', 'ASC', $villeDepart, $villeArrivee, $finJournee, $heureMin, $heureMax, $prixMax, $energie, $ageMaxVoiture, $noteMin, $dureeMaxMinutes);
+        $precedente = $this->trouverDateProche('<', 'DESC', $villeDepart, $villeArrivee, $debutJournee, $heureMin, $heureMax, $prixMax, $energie, $ageMaxVoiture, $noteMin, $dureeMaxMinutes);
+
+        if (null === $suivante && null === $precedente) {
+            return null;
+        }
+        if (null === $suivante) {
+            return $precedente;
+        }
+        if (null === $precedente) {
+            return $suivante;
+        }
+
+        $reference = $date->setTime(12, 0, 0)->getTimestamp();
+        $ecartSuivant = abs($suivante->getTimestamp() - $reference);
+        $ecartPrecedent = abs($reference - $precedente->getTimestamp());
+
+        return ($ecartPrecedent <= $ecartSuivant) ? $precedente : $suivante;
+    }
+
+    /**
+     * Cherche la première date disponible avant ou après une borne donnée.
      */
     private function trouverDateProche(
-      string $comparateur,
-      string $ordre,
-      string $villeDepart,
-      string $villeArrivee,
-      DateTimeImmutable $borne,
-      ?string $heureMin,
-      ?string $heureMax,
-      ?int $prixMax,
-      ?string $energie,
-      ?int $ageMaxVoiture,
-      ?int $noteMin,
-      ?int $dureeMaxMinutes,
+        string $comparateur,
+        string $ordre,
+        string $villeDepart,
+        string $villeArrivee,
+        DateTimeImmutable $borne,
+        ?string $heureMin,
+        ?string $heureMax,
+        ?int $prixMax,
+        ?string $energie,
+        ?int $ageMaxVoiture,
+        ?int $noteMin,
+        ?int $dureeMaxMinutes,
     ): ?DateTimeImmutable {
-      if (!in_array($comparateur, ['>', '<'], true)) {
-        return null;
-      }
-      if (!in_array($ordre, ['ASC', 'DESC'], true)) {
-        return null;
-      }
+        if (!in_array($comparateur, ['>', '<'], true)) {
+            return null;
+        }
+        if (!in_array($ordre, ['ASC', 'DESC'], true)) {
+            return null;
+        }
 
-      $pdo = $this->connexionPostgresql->obtenirPdo();
+        $pdo = $this->connexionPostgresql->obtenirPdo();
 
-      $sql = "
-        SELECT (covoiturage.date_heure_depart::date) AS date_depart
-        FROM covoiturage
-        JOIN voiture
-          ON voiture.id_voiture = covoiturage.id_voiture
-         AND voiture.id_utilisateur = covoiturage.id_utilisateur
+        $sql = "
+            SELECT (covoiturage.date_heure_depart::date) AS date_depart
+            FROM covoiturage
+            JOIN voiture
+              ON voiture.id_voiture = covoiturage.id_voiture
+             AND voiture.id_utilisateur = covoiturage.id_utilisateur
 
-        LEFT JOIN (
-            SELECT
-                covoiturage.id_utilisateur AS id_chauffeur,
-                ROUND(AVG(avis.note)::numeric, 2) AS note_moyenne,
-                COUNT(*) AS nb_avis_valides
-            FROM avis
-            JOIN participation
-              ON participation.id_participation = avis.id_participation
-             AND participation.est_annulee = false
-            JOIN covoiturage
-              ON covoiturage.id_covoiturage = participation.id_covoiturage
-            WHERE avis.statut_moderation = 'VALIDE'
-            GROUP BY covoiturage.id_utilisateur
-        ) AS note
-          ON note.id_chauffeur = covoiturage.id_utilisateur
+            LEFT JOIN (
+                SELECT
+                    covoiturage.id_utilisateur AS id_chauffeur,
+                    ROUND(AVG(avis.note)::numeric, 2) AS note_moyenne,
+                    COUNT(*) AS nb_avis_valides
+                FROM avis
+                JOIN participation
+                  ON participation.id_participation = avis.id_participation
+                 AND participation.est_annulee = false
+                JOIN covoiturage
+                  ON covoiturage.id_covoiturage = participation.id_covoiturage
+                WHERE avis.statut_moderation = 'VALIDE'
+                GROUP BY covoiturage.id_utilisateur
+            ) AS note
+              ON note.id_chauffeur = covoiturage.id_utilisateur
 
-        WHERE covoiturage.statut_covoiturage = 'PLANIFIE'
-          AND covoiturage.nb_places_dispo > 0
-          AND covoiturage.ville_depart ILIKE :ville_depart
-          AND covoiturage.ville_arrivee ILIKE :ville_arrivee
-          AND covoiturage.date_heure_depart $comparateur :borne
-      ";
+            WHERE covoiturage.statut_covoiturage = 'PLANIFIE'
+              AND covoiturage.nb_places_dispo > 0
+              AND covoiturage.ville_depart ILIKE :ville_depart
+              AND covoiturage.ville_arrivee ILIKE :ville_arrivee
+              AND covoiturage.date_heure_depart $comparateur :borne
+        ";
 
-      $parametres = [
-        'ville_depart' => '%' . trim($villeDepart) . '%',
-        'ville_arrivee' => '%' . trim($villeArrivee) . '%',
-        'borne' => $borne->format('Y-m-d H:i:s'),
-      ];
+        $parametres = [
+            'ville_depart' => '%' . trim($villeDepart) . '%',
+            'ville_arrivee' => '%' . trim($villeArrivee) . '%',
+            'borne' => $borne->format('Y-m-d H:i:s'),
+        ];
 
-      // Respect de l’heure si une plage existe
-      if (
-        null !== $heureMin && null !== $heureMax
-        && preg_match('/^\d{2}:\d{2}$/', $heureMin)
-        && preg_match('/^\d{2}:\d{2}$/', $heureMax)
-      ) {
-        $sql .= " AND (covoiturage.date_heure_depart::time BETWEEN (:heure_min)::time AND (:heure_max)::time)";
-        $parametres['heure_min'] = $heureMin;
-        $parametres['heure_max'] = $heureMax;
-      }
+        if (
+            null !== $heureMin && null !== $heureMax
+            && preg_match('/^\d{2}:\d{2}$/', $heureMin)
+            && preg_match('/^\d{2}:\d{2}$/', $heureMax)
+        ) {
+            $sql .= " AND (covoiturage.date_heure_depart::time BETWEEN (:heure_min)::time AND (:heure_max)::time)";
+            $parametres['heure_min'] = $heureMin;
+            $parametres['heure_max'] = $heureMax;
+        }
 
-      if (null !== $prixMax) {
-        $sql .= ' AND covoiturage.prix_credits <= :prix_max';
-        $parametres['prix_max'] = $prixMax;
-      }
+        if (null !== $prixMax) {
+            $sql .= ' AND covoiturage.prix_credits <= :prix_max';
+            $parametres['prix_max'] = $prixMax;
+        }
 
-      if (null !== $energie && '' !== $energie) {
-        $energie = strtoupper(trim($energie));
-        $sql .= ' AND voiture.energie = :energie';
-        $parametres['energie'] = $energie;
-      }
+        if (null !== $energie && '' !== $energie) {
+            $energie = strtoupper(trim($energie));
+            $sql .= ' AND voiture.energie = :energie';
+            $parametres['energie'] = $energie;
+        }
 
-      if (null !== $ageMaxVoiture) {
-        $sql .= " AND voiture.date_1ere_mise_en_circulation >= (CURRENT_DATE - (:age_max * INTERVAL '1 year'))";
-        $parametres['age_max'] = $ageMaxVoiture;
-      }
+        if (null !== $ageMaxVoiture) {
+            $sql .= " AND voiture.date_1ere_mise_en_circulation >= (CURRENT_DATE - (:age_max * INTERVAL '1 year'))";
+            $parametres['age_max'] = $ageMaxVoiture;
+        }
 
-      if (null !== $noteMin) {
-        $sql .= ' AND COALESCE(note.note_moyenne, 0) >= :note_min';
-        $parametres['note_min'] = $noteMin;
-      }
+        if (null !== $noteMin) {
+            $sql .= ' AND COALESCE(note.note_moyenne, 0) >= :note_min';
+            $parametres['note_min'] = $noteMin;
+        }
 
-      if (null !== $dureeMaxMinutes) {
-        $sql .= " AND (covoiturage.date_heure_arrivee - covoiturage.date_heure_depart) <= (:duree_max_minutes * INTERVAL '1 minute')";
-        $parametres['duree_max_minutes'] = $dureeMaxMinutes;
-      }
+        if (null !== $dureeMaxMinutes) {
+            $sql .= " AND (covoiturage.date_heure_arrivee - covoiturage.date_heure_depart) <= (:duree_max_minutes * INTERVAL '1 minute')";
+            $parametres['duree_max_minutes'] = $dureeMaxMinutes;
+        }
 
-      $sql .= " ORDER BY covoiturage.date_heure_depart $ordre LIMIT 1";
+        $sql .= " ORDER BY covoiturage.date_heure_depart $ordre LIMIT 1";
 
-      $requete = $pdo->prepare($sql);
-      $requete->execute($parametres);
+        $requete = $pdo->prepare($sql);
+        $requete->execute($parametres);
 
-      $valeur = $requete->fetchColumn();
+        $valeur = $requete->fetchColumn();
 
-      return $valeur ? new DateTimeImmutable((string) $valeur) : null;
+        return $valeur ? new DateTimeImmutable((string) $valeur) : null;
     }
 
-  /**
-   * Détail d'un covoiturage par id.
-   *
-   * @return array<string, mixed>|null
-   */
-  public function obtenirDetailCovoiturageParId(int $idCovoiturage): ?array
-  {
-    if ($idCovoiturage <= 0) {
-      return null;
-    }
+    /**
+     * Récupère le détail complet d'un covoiturage.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function obtenirDetailCovoiturageParId(int $idCovoiturage): ?array
+    {
+        if ($idCovoiturage <= 0) {
+            return null;
+        }
 
-    $pdo = $this->connexionPostgresql->obtenirPdo();
+        $pdo = $this->connexionPostgresql->obtenirPdo();
 
-    $sql = "
+        $sql = "
             SELECT
                 c.id_covoiturage,
                 c.date_heure_depart,
@@ -392,30 +395,30 @@ final class PersistanceCovoituragePostgresql
             LIMIT 1
         ";
 
-    $requete = $pdo->prepare($sql);
-    $requete->execute(['id_covoiturage' => $idCovoiturage]);
+        $requete = $pdo->prepare($sql);
+        $requete->execute(['id_covoiturage' => $idCovoiturage]);
 
-    $ligne = $requete->fetch(PDO::FETCH_ASSOC);
+        $ligne = $requete->fetch(PDO::FETCH_ASSOC);
 
-    return false !== $ligne ? $ligne : null;
-  }
-
-  /**
-   * Avis validés liés à un chauffeur via ses covoiturages
-   *
-   * @return array<int, array<string, mixed>>
-   */
-  public function obtenirAvisValidesDuChauffeur(int $idChauffeur, int $limite = 5): array
-  {
-    if ($idChauffeur <= 0) {
-      return [];
+        return false !== $ligne ? $ligne : null;
     }
 
-    $limite = max(1, min(20, (int) $limite));
+    /**
+     * Récupère les avis validés laissés au chauffeur.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function obtenirAvisValidesDuChauffeur(int $idChauffeur, int $limite = 5): array
+    {
+        if ($idChauffeur <= 0) {
+            return [];
+        }
 
-    $pdo = $this->connexionPostgresql->obtenirPdo();
+        $limite = max(1, min(20, (int) $limite));
 
-    $sql = "
+        $pdo = $this->connexionPostgresql->obtenirPdo();
+
+        $sql = "
             SELECT
                 a.note,
                 a.commentaire,
@@ -432,89 +435,248 @@ final class PersistanceCovoituragePostgresql
             LIMIT :limite
         ";
 
-    $requete = $pdo->prepare($sql);
-    $requete->bindValue('id_chauffeur', $idChauffeur, PDO::PARAM_INT);
-    $requete->bindValue('limite', $limite, PDO::PARAM_INT);
-    $requete->execute();
+        $requete = $pdo->prepare($sql);
+        $requete->bindValue('id_chauffeur', $idChauffeur, PDO::PARAM_INT);
+        $requete->bindValue('limite', $limite, PDO::PARAM_INT);
+        $requete->execute();
 
-    return $requete->fetchAll(PDO::FETCH_ASSOC) ?: [];
-  }
-
-  public function creerCovoituragePlanifie(
-    int $idUtilisateur,
-    int $idVoiture,
-    DateTimeImmutable $dateHeureDepart,
-    DateTimeImmutable $dateHeureArrivee,
-    string $adresseDepart,
-    string $adresseArrivee,
-    string $villeDepart,
-    string $villeArrivee,
-    ?float $latitudeDepart,
-    ?float $longitudeDepart,
-    ?float $latitudeArrivee,
-    ?float $longitudeArrivee,
-    int $nbPlacesDispo,
-    int $prixCredits,
-    bool $estNonFumeur,
-    bool $accepteAnimaux,
-    ?string $preferenceLibre
-  ): int {
-    if ($idUtilisateur <= 0 || $idVoiture <= 0) {
-      throw new RuntimeException('Création impossible : paramètres invalides.');
+        return $requete->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    if ($dateHeureArrivee <= $dateHeureDepart) {
-      throw new RuntimeException('Création impossible : la date d’arrivée doit être après le départ.');
+    /**
+     * Enregistre la participation d'un passager à un covoiturage.
+     *
+     * Cette opération repose sur une transaction.
+     * Une transaction permet de regrouper plusieurs étapes SQL
+     * pour qu'elles soient validées ensemble ou annulées ensemble.
+     *
+     * Ici, plusieurs vérifications doivent rester cohérentes :
+     * - le covoiturage doit exister ;
+     * - il doit être en statut `PLANIFIE` ;
+     * - il doit rester au moins une place ;
+     * - le passager doit avoir assez de crédits ;
+     * - le chauffeur ne peut pas réserver son propre covoiturage publié ;
+     * - une double participation doit être refusée.
+     *
+     * `FOR UPDATE` est utilisé sur certaines lignes.
+     * Cela signifie que PostgreSQL verrouille temporairement ces lignes
+     * pendant la transaction pour éviter qu'une autre requête concurrente
+     * vienne les modifier au même moment.
+     *
+     * L'insertion dans `participation` déclenche ensuite la logique prévue
+     * en base de données pour le débit de crédits et la mise à jour des places.
+     * Un déclencheur, appelé aussi *trigger*, est un mécanisme
+     * qui exécute automatiquement du code SQL quand une opération précise
+     * a lieu sur une table.
+     *
+     * @param int $idCovoiturage Identifiant du covoiturage réservé.
+     * @param int $idPassager Identifiant de l'utilisateur qui participe.
+     *
+     * @return void
+     *
+     * @throws RuntimeException Si la réservation est refusée
+     *                          ou si une erreur empêche l'opération.
+     */
+    public function participerAuCovoiturage(int $idCovoiturage, int $idPassager): void
+    {
+        if ($idCovoiturage <= 0 || $idPassager <= 0) {
+            throw new RuntimeException('Participation impossible : paramètres invalides.');
+        }
+
+        $pdo = $this->connexionPostgresql->obtenirPdo();
+        $pdo->beginTransaction();
+
+        try {
+            /*
+             * Lecture du covoiturage avec verrouillage de la ligne.
+             * On récupère ici les informations minimales nécessaires
+             * pour décider si la participation est autorisée.
+             */
+            $stmt = $pdo->prepare("
+                SELECT
+                    id_covoiturage,
+                    id_utilisateur AS id_chauffeur,
+                    nb_places_dispo,
+                    prix_credits,
+                    statut_covoiturage
+                FROM covoiturage
+                WHERE id_covoiturage = :id
+                FOR UPDATE
+            ");
+            $stmt->execute(['id' => $idCovoiturage]);
+
+            /** @var array<string, mixed>|false $covoit */
+            $covoit = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!is_array($covoit)) {
+                throw new RuntimeException('Covoiturage introuvable.');
+            }
+
+            if (($covoit['statut_covoiturage'] ?? '') !== 'PLANIFIE') {
+                throw new RuntimeException('Ce covoiturage n’est pas réservable.');
+            }
+
+            $idChauffeur = (int) ($covoit['id_chauffeur'] ?? 0);
+            if ($idChauffeur === $idPassager) {
+                throw new RuntimeException('Vous ne pouvez pas participer à votre propre covoiturage.');
+            }
+
+            $places = (int) ($covoit['nb_places_dispo'] ?? 0);
+            if ($places <= 0) {
+                throw new RuntimeException('Ce covoiturage est complet.');
+            }
+
+            $prix = (int) ($covoit['prix_credits'] ?? 0);
+            if ($prix <= 0) {
+                throw new RuntimeException('Prix invalide.');
+            }
+
+            /*
+             * Lecture du solde de crédits du passager avec verrouillage.
+             * Le verrou évite qu'une autre opération concurrente
+             * ne modifie le solde au même moment.
+             */
+            $stmt = $pdo->prepare("
+                SELECT credits
+                FROM utilisateur
+                WHERE id_utilisateur = :id_passager
+                FOR UPDATE
+            ");
+            $stmt->execute(['id_passager' => $idPassager]);
+
+            $creditsPassager = (int) $stmt->fetchColumn();
+
+            if ($creditsPassager < $prix) {
+                throw new RuntimeException('Crédits insuffisants pour participer à ce covoiturage.');
+            }
+
+            /*
+             * L'insertion crée la participation.
+             * Les déclencheurs de la base se chargent ensuite
+             * de décrémenter les places disponibles
+             * et de débiter les crédits nécessaires.
+             */
+            $stmt = $pdo->prepare("
+                INSERT INTO participation (
+                    date_heure_confirmation,
+                    credits_utilises,
+                    est_annulee,
+                    id_utilisateur,
+                    id_covoiturage
+                )
+                VALUES (NOW(), :credits_utilises, false, :id_utilisateur, :id_covoiturage)
+            ");
+            $stmt->execute([
+                'credits_utilises' => $prix,
+                'id_utilisateur' => $idPassager,
+                'id_covoiturage' => $idCovoiturage,
+            ]);
+
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            /*
+             * Le code PostgreSQL `23505` correspond ici
+             * à la contrainte d'unicité de PostgreSQL qui empêche une double participation.
+             */
+            if ($e instanceof PDOException && $e->getCode() === '23505') {
+                throw new RuntimeException('Vous participez déjà à ce covoiturage.', 0, $e);
+            }
+
+            if ($e instanceof PDOException) {
+                throw new RuntimeException('Erreur lors de la participation.', 0, $e);
+            }
+
+            throw $e;
+        }
     }
 
-    $adresseDepart = trim($adresseDepart);
-    $adresseArrivee = trim($adresseArrivee);
-    $villeDepart = trim($villeDepart);
-    $villeArrivee = trim($villeArrivee);
+    /**
+     * Crée un covoiturage planifié.
+     *
+     * Cette méthode vérifie d'abord les paramètres minimaux,
+     * puis insère le covoiturage dans PostgreSQL.
+     *
+     * @return int Identifiant du covoiturage créé.
+     */
+    public function creerCovoituragePlanifie(
+        int $idUtilisateur,
+        int $idVoiture,
+        DateTimeImmutable $dateHeureDepart,
+        DateTimeImmutable $dateHeureArrivee,
+        string $adresseDepart,
+        string $adresseArrivee,
+        string $villeDepart,
+        string $villeArrivee,
+        ?float $latitudeDepart,
+        ?float $longitudeDepart,
+        ?float $latitudeArrivee,
+        ?float $longitudeArrivee,
+        int $nbPlacesDispo,
+        int $prixCredits,
+        bool $estNonFumeur,
+        bool $accepteAnimaux,
+        ?string $preferenceLibre
+    ): int {
+        if ($idUtilisateur <= 0 || $idVoiture <= 0) {
+            throw new RuntimeException('Création impossible : paramètres invalides.');
+        }
 
-    if ($adresseDepart === '' || $adresseArrivee === '' || $villeDepart === '' || $villeArrivee === '') {
-      throw new RuntimeException('Création impossible : adresse/ville manquante.');
-    }
+        if ($dateHeureArrivee <= $dateHeureDepart) {
+            throw new RuntimeException('Création impossible : la date d’arrivée doit être après le départ.');
+        }
 
-    if ($nbPlacesDispo < 1 || $nbPlacesDispo > 4) {
-      throw new RuntimeException('Création impossible : nombre de places invalide.');
-    }
+        $adresseDepart = trim($adresseDepart);
+        $adresseArrivee = trim($adresseArrivee);
+        $villeDepart = trim($villeDepart);
+        $villeArrivee = trim($villeArrivee);
 
-    if ($prixCredits <= 0) {
-      throw new RuntimeException('Création impossible : prix invalide.');
-    }
+        if ($adresseDepart === '' || $adresseArrivee === '' || $villeDepart === '' || $villeArrivee === '') {
+            throw new RuntimeException('Création impossible : adresse/ville manquante.');
+        }
 
-    $departIncomplet = ($latitudeDepart === null) !== ($longitudeDepart === null);
-    if ($departIncomplet) {
-      throw new RuntimeException('Création impossible : coordonnées de départ incomplètes.');
-    }
+        if ($nbPlacesDispo < 1 || $nbPlacesDispo > 4) {
+            throw new RuntimeException('Création impossible : nombre de places invalide.');
+        }
 
-    $arriveeIncomplet = ($latitudeArrivee === null) !== ($longitudeArrivee === null);
-    if ($arriveeIncomplet) {
-      throw new RuntimeException('Création impossible : coordonnées d’arrivée incomplètes.');
-    }
+        if ($prixCredits <= 2) {
+            throw new RuntimeException('Création impossible : le prix doit être supérieur à 2 crédits.');
+        }
 
-    if ($latitudeDepart !== null && ($latitudeDepart < -90 || $latitudeDepart > 90)) {
-      throw new RuntimeException('Création impossible : latitude de départ invalide.');
-    }
-    if ($longitudeDepart !== null && ($longitudeDepart < -180 || $longitudeDepart > 180)) {
-      throw new RuntimeException('Création impossible : longitude de départ invalide.');
-    }
-    if ($latitudeArrivee !== null && ($latitudeArrivee < -90 || $latitudeArrivee > 90)) {
-      throw new RuntimeException('Création impossible : latitude d’arrivée invalide.');
-    }
-    if ($longitudeArrivee !== null && ($longitudeArrivee < -180 || $longitudeArrivee > 180)) {
-      throw new RuntimeException('Création impossible : longitude d’arrivée invalide.');
-    }
+        $departIncomplet = ($latitudeDepart === null) !== ($longitudeDepart === null);
+        if ($departIncomplet) {
+            throw new RuntimeException('Création impossible : coordonnées de départ incomplètes.');
+        }
 
-    $preferenceLibre = null !== $preferenceLibre ? trim($preferenceLibre) : null;
-    if ($preferenceLibre === '') {
-      $preferenceLibre = null;
-    }
+        $arriveeIncomplet = ($latitudeArrivee === null) !== ($longitudeArrivee === null);
+        if ($arriveeIncomplet) {
+            throw new RuntimeException('Création impossible : coordonnées d’arrivée incomplètes.');
+        }
 
-    $pdo = $this->connexionPostgresql->obtenirPdo();
+        if ($latitudeDepart !== null && ($latitudeDepart < -90 || $latitudeDepart > 90)) {
+            throw new RuntimeException('Création impossible : latitude de départ invalide.');
+        }
+        if ($longitudeDepart !== null && ($longitudeDepart < -180 || $longitudeDepart > 180)) {
+            throw new RuntimeException('Création impossible : longitude de départ invalide.');
+        }
+        if ($latitudeArrivee !== null && ($latitudeArrivee < -90 || $latitudeArrivee > 90)) {
+            throw new RuntimeException('Création impossible : latitude d’arrivée invalide.');
+        }
+        if ($longitudeArrivee !== null && ($longitudeArrivee < -180 || $longitudeArrivee > 180)) {
+            throw new RuntimeException('Création impossible : longitude d’arrivée invalide.');
+        }
 
-    $sql = "
+        $preferenceLibre = null !== $preferenceLibre ? trim($preferenceLibre) : null;
+        if ($preferenceLibre === '') {
+            $preferenceLibre = null;
+        }
+
+        $pdo = $this->connexionPostgresql->obtenirPdo();
+
+        $sql = "
             INSERT INTO covoiturage (
                 date_heure_depart,
                 date_heure_arrivee,
@@ -566,54 +728,54 @@ final class PersistanceCovoituragePostgresql
             RETURNING id_covoiturage
         ";
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([
-      'date_heure_depart' => $dateHeureDepart->format('Y-m-d H:i:s'),
-      'date_heure_arrivee' => $dateHeureArrivee->format('Y-m-d H:i:s'),
-      'adresse_depart' => $adresseDepart,
-      'adresse_arrivee' => $adresseArrivee,
-      'ville_depart' => $villeDepart,
-      'ville_arrivee' => $villeArrivee,
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            'date_heure_depart' => $dateHeureDepart->format('Y-m-d H:i:s'),
+            'date_heure_arrivee' => $dateHeureArrivee->format('Y-m-d H:i:s'),
+            'adresse_depart' => $adresseDepart,
+            'adresse_arrivee' => $adresseArrivee,
+            'ville_depart' => $villeDepart,
+            'ville_arrivee' => $villeArrivee,
 
-      'latitude_depart' => $latitudeDepart,
-      'longitude_depart' => $longitudeDepart,
-      'latitude_arrivee' => $latitudeArrivee,
-      'longitude_arrivee' => $longitudeArrivee,
+            'latitude_depart' => $latitudeDepart,
+            'longitude_depart' => $longitudeDepart,
+            'latitude_arrivee' => $latitudeArrivee,
+            'longitude_arrivee' => $longitudeArrivee,
 
-      'nb_places_dispo' => $nbPlacesDispo,
-      'prix_credits' => $prixCredits,
+            'nb_places_dispo' => $nbPlacesDispo,
+            'prix_credits' => $prixCredits,
 
-      'est_non_fumeur' => $estNonFumeur ? 1 : 0,
-      'accepte_animaux' => $accepteAnimaux ? 1 : 0,
-      'preferences_libre' => $preferenceLibre,
+            'est_non_fumeur' => $estNonFumeur ? 1 : 0,
+            'accepte_animaux' => $accepteAnimaux ? 1 : 0,
+            'preferences_libre' => $preferenceLibre,
 
-      'id_utilisateur' => $idUtilisateur,
-      'id_voiture' => $idVoiture,
-    ]);
+            'id_utilisateur' => $idUtilisateur,
+            'id_voiture' => $idVoiture,
+        ]);
 
-    $id = $stmt->fetchColumn();
-    if ($id === false) {
-      throw new RuntimeException('Création impossible : aucun id de covoiturage retourné.');
+        $id = $stmt->fetchColumn();
+        if ($id === false) {
+            throw new RuntimeException('Création impossible : aucun id de covoiturage retourné.');
+        }
+
+        return (int) $id;
     }
 
-    return (int) $id;
-  }
+    /**
+     * Liste les participants (chauffeur et passagers) actifs d’un covoiturage,
+     * utile pour l’envoi des courriels.
+     *
+     * @return array<int, array{pseudo: string, email: string}>
+     */
+    public function listerParticipantsPourCourriel(int $idCovoiturage): array
+    {
+        if ($idCovoiturage <= 0) {
+            return [];
+        }
 
-  /**
-   * Récupérer les participants actifs d’un covoiturage (pseudo + email),
-   * pour l’envoi des courriels (annulation / demande de validation).
-   *
-   * @return array<int, array{pseudo: string, email: string}>
-   */
-  public function listerParticipantsPourCourriel(int $idCovoiturage): array
-  {
-    if ($idCovoiturage <= 0) {
-      return [];
-    }
+        $pdo = $this->connexionPostgresql->obtenirPdo();
 
-    $pdo = $this->connexionPostgresql->obtenirPdo();
-
-    $sql = "
+        $sql = "
             SELECT u.pseudo, u.email
             FROM participation p
             JOIN utilisateur u
@@ -622,26 +784,27 @@ final class PersistanceCovoituragePostgresql
               AND p.est_annulee = false
         ";
 
-    $requete = $pdo->prepare($sql);
-    $requete->execute(['id_covoiturage' => $idCovoiturage]);
+        $requete = $pdo->prepare($sql);
+        $requete->execute(['id_covoiturage' => $idCovoiturage]);
 
-    return $requete->fetchAll(PDO::FETCH_ASSOC) ?: [];
-  }
-
-  /**
-   * Résumé minimal d’un covoiturage pour alimenter les gabarits Twig de courriel.
-   *
-   * @return array<string, mixed>|null
-   */
-  public function obtenirResumeCovoituragePourCourriel(int $idCovoiturage): ?array
-  {
-    if ($idCovoiturage <= 0) {
-      return null;
+        return $requete->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    $pdo = $this->connexionPostgresql->obtenirPdo();
+    /**
+     * Récupère un résumé minimal d’un covoiturage
+     * pour alimenter les gabarits de courriel.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function obtenirResumeCovoituragePourCourriel(int $idCovoiturage): ?array
+    {
+        if ($idCovoiturage <= 0) {
+            return null;
+        }
 
-    $sql = "
+        $pdo = $this->connexionPostgresql->obtenirPdo();
+
+        $sql = "
             SELECT
                 ville_depart,
                 ville_arrivee,
@@ -652,11 +815,11 @@ final class PersistanceCovoituragePostgresql
             LIMIT 1
         ";
 
-    $requete = $pdo->prepare($sql);
-    $requete->execute(['id_covoiturage' => $idCovoiturage]);
+        $requete = $pdo->prepare($sql);
+        $requete->execute(['id_covoiturage' => $idCovoiturage]);
 
-    $ligne = $requete->fetch(PDO::FETCH_ASSOC);
+        $ligne = $requete->fetch(PDO::FETCH_ASSOC);
 
-    return $ligne !== false ? $ligne : null;
-  }
+        return $ligne !== false ? $ligne : null;
+    }
 }

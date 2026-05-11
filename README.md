@@ -1,267 +1,319 @@
 # EcoRide
 
-Plateforme de covoiturage écoresponsable développée dans le cadre de l'Évaluation Certificative Finale (ECF).
+**Plateforme de covoiturage écoresponsable** - Titre Professionnel Développeur Web et Web Mobile
 
-## Fonctionnalités principales
+EcoRide connecte conducteurs et passagers autour d'un objectif commun : réduire l'impact environnemental des déplacements en voiture. *Les covoiturages réalisés avec un véhicule électrique sont identifiés comme écologiques.*
 
-* Inscription / connexion utilisateur
-* Gestion des rôles (chauffeur / passager)
-* Publication de covoiturages
-* Recherche avec filtres avancés
-* Système de crédits internes
-* Gestion des participations
-* Système d’avis modéré
-* Journalisation des événements (MongoDB)
+---
 
-## Pré-requis
+## À propos de l’architecture
 
-Avant de lancer l’application, les éléments suivants doivent être installés sur la machine :
+L’architecture repose sur Symfony côté serveur, Twig pour les vues, PostgreSQL pour les données métier et MongoDB pour le journal d’événements.
 
-* Windows avec WSL2 activé (Ubuntu utilisé pour le développement)
+### Organisation générale
 
-* Docker Desktop (avec intégration WSL2 activée)
+L’application est organisée autour de trois parties principales.
 
-* Git
+| Partie | Rôle |
+|---|---|
+| Contrôleurs | Recevoir les requêtes HTTP et orienter le parcours utilisateur |
+| Vues Twig | Afficher les pages de l’application |
+| Services | Regrouper la logique métier et l’accès aux données |
 
-* Un navigateur web
+Les contrôleurs restent centrés sur le parcours utilisateur. Les traitements plus techniques sont placés dans les services.
 
-L’application repose sur les technologies suivantes, exécutées dans des conteneurs Docker :
+### Accès aux données
 
-* PHP 8.x
+EcoRide utilise PDO avec des requêtes préparées. Cette approche garde un contrôle direct sur les requêtes SQL et rend les échanges avec PostgreSQL plus visibles.
 
-* Symfony
+| Base | Rôle dans le projet |
+|---|---|
+| PostgreSQL 16 | Stocker les données métier structurées |
+| MongoDB 7 | Conserver le journal opérationnel d’événements |
 
-* PostgreSQL
+PostgreSQL gère :
 
-* MongoDB
+- les utilisateurs,
+- les véhicules,
+- les covoiturages,
+- les participations,
+- les avis,
+- les commissions.
 
-* Nginx
+Les règles les plus importantes sont aussi protégées au niveau de la base avec des contraintes, des fonctions et des triggers.
 
-* MailHog
+MongoDB garde une trace chronologique des actions importantes qui concerne par exemple :
 
-Symfony et ses dépendances sont installés via Composer dans le conteneur PHP.
-Aucune installation globale de Symfony sur la machine hôte n’est requise.
+- les connexions,
+- les participations,
+- les incidents,
+- les modérations,
+- les suspensions...
 
-## Architecture
+### Conteneurs Docker
 
-L’application repose sur :
+L’environnement repose sur Docker Compose. Il lance les services nécessaires au projet.
 
-* Symfony (architecture MVC)
-* PostgreSQL pour les données relationnelles
-* MongoDB pour la journalisation
-* Docker pour l’isolation des services
-* Nginx comme serveur web
+| Service | Rôle |
+|---|---|
+| Nginx | Point d’entrée HTTP |
+| PHP-FPM | Exécution de l’application Symfony |
+| PostgreSQL | Données métier |
+| MongoDB | Journal d’événements |
+| MailHog | Tests des emails en local |
 
-## Structure du projet
+Les services communiquent dans le réseau interne Docker. PostgreSQL reste réservé aux conteneurs. MongoDB est publié seulement en local pour pouvoir l’ouvrir avec MongoDB Compass pendant le développement.
 
-L’organisation du projet suit une architecture Symfony classique, adaptée à un environnement Dockerisé.
+### Sécurité
 
-```text
-ecoride/
-│
-├── src/                    # Code source Symfony
-│   ├── Controller/         # Contrôleurs (routes et requêtes HTTP)
-│   ├── Service/            # Services métier (persistance, journalisation, logique applicative)
-│   └── Command/            # Commandes console Symfony
-│
-├── public/                 # Point d’entrée web (index.php)
-│   ├── css/                # Feuilles de style
-│   ├── js/                 # Scripts JavaScript
-│   ├── images/             # Images statiques
-│   ├── photos/             # Photos de profil (uploads utilisateurs)
-│   ├── icones/             # Pictogrammes SVG
-│   └── polices/            # Polices (auto-hébergement)
-│
-├── templates/              # Vues Twig (interface utilisateur)
-│
-├── config/                 # Configuration Symfony
-│
-├── docs/                   # Documentation du projet
-│   ├── gestion_projet/     # Organisation, suivi, livrables (Kanban, User Story mapping, Cahier des charges...)
-│   ├── interface/          # Maquettes et éléments d’interface
-│   ├── modelisation_donnees/ # Modélisation (MCD/MLD)
-│   ├── ressources/         # Ressources utiles (routes, test email)
-│   ├── sql/                # Scripts SQL (schéma, données de démonstration, vérifications)
-│   └── uml/                # Exports UML destinés à la documentation
-│
-├── docker/                 # Configuration Docker (PHP, Nginx)
-│
-├── docker-compose.yaml      # Orchestration des conteneurs
-├── composer.json           # Dépendances PHP
-├── .env* / .env.docker     # Variables d’environnement (Symfony + Docker)
-└── README.md               # Documentation principale
-```
+| Domaine | Mesure appliquée |
+|---|---|
+| Mots de passe | Hachage BCrypt |
+| Réinitialisation | Jeton `random_bytes` haché en SHA-256, stocké en base, usage unique |
+| Infrastructure | Code source monté en `read-only` dans le conteneur Nginx |
+| Formulaires | Protection CSRF Symfony Security |
+| En-têtes HTTP | `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` |
+| Secrets | Fichiers `.env`, `.env.local`, `.env.docker`, `.env.prod` et `.env.test` exclus du dépôt via `.gitignore` |
+| Droits réseau | PostgreSQL non exposé publiquement. Les ports publics de production sont gérés dans la configuration de déploiement VPS |
 
-### Organisation technique
+### Choix de conception
 
-* **Controllers** : gèrent les routes et orchestrent les appels aux services.
-* **Services** : contiennent la logique métier et l’accès aux bases de données.
-* **Templates Twig** : assurent le rendu des pages.
-* **PostgreSQL** : stocke les données relationnelles (utilisateurs, covoiturages, participations, avis, commissions).
-* **MongoDB** : enregistre les événements applicatifs (journalisation).
-* **Docker** : isole chaque service dans un conteneur dédié.
+EcoRide ne repose pas sur un ORM. Les accès aux données sont écrits dans des services dédiés, avec des requêtes SQL explicites. Ce choix m’a aidée à relier directement les règles métier au schéma de base de données.
+
+Les règles les plus sensibles, comme les crédits, les places disponibles et les commissions, sont protégées côté PostgreSQL. Cela évite de dépendre uniquement du code applicatif pour maintenir la cohérence des données.
+
+---
+
+## Prérequis
+
+- Windows avec WSL2 activé (distribution Ubuntu recommandée) — ou Linux / macOS
+- Docker Desktop avec intégration WSL2 activée
+- Git
+- Un navigateur web
+
+Aucune installation locale de PHP, Symfony ou Composer n'est requise. Tous les services s'exécutent dans des conteneurs Docker.
+
+---
 
 ## Installation
 
 ### 1. Cloner le dépôt
 
 ```bash
-git clone <https://github.com/rebecca-roussel/ecoride.git>
+git clone https://github.com/rebecca-roussel/ecoride.git
 cd ecoride
 ```
 
-### 2. Lancer les conteneurs Docker
+### 2. Construire et démarrer les conteneurs
 
 ```bash
 docker compose up -d --build
 ```
 
-### 3. Vérifier que les services sont actifs
+Cette commande démarre cinq services : Nginx, PHP-FPM, PostgreSQL, MongoDB et MailHog.
+
+### 3. Installer les dépendances PHP
 
 ```bash
-docker compose ps
+docker compose exec php composer install
 ```
 
-## Configuration (.env)
+### 4. Initialiser la base de données PostgreSQL
 
-Les variables d’environnement sont définies dans :
-
-* .env
-
-* .env.docker
-
-Elles configurent notamment :
-
-* la connexion PostgreSQL
-
-* la connexion MongoDB
-
-* la configuration SMTP (MailHog en local)
-
-* les paramètres Symfony
-
-Pour un usage local, aucune modification n’est nécessaire.
-
-## Base de données (PostgreSQL)
-
-### 1. Création du schéma
+Créer le schéma relationnel (tables, triggers, fonctions, contraintes) :
 
 ```bash
 docker compose exec -T postgresql psql -U ecoride -d ecoride -f docs/sql/01_schema.sql
 ```
 
-### 2. Insertion des données de démonstration
+Charger les données de démonstration :
 
 ```bash
 docker compose exec -T postgresql psql -U ecoride -d ecoride -f docs/sql/02_donnees_demo.sql
 ```
 
-Ce script insère :
+### 5. Vider le cache Symfony
 
-* les utilisateurs
+```bash
+docker compose exec php php bin/console cache:clear
+```
 
-* les rôles administrateur et employé
+---
 
-* les véhicules
+## Accès à l'application
 
-* les covoiturages
+| Service | URL |
+|---|---|
+| Application en production | <https://www.eco-ride.fr> |
+| Application en local | <http://localhost:8080> |
+| MailHog en local | <http://localhost:8025> |
 
-* les participations
+---
 
-* les avis
+## Comptes de démonstration
 
-* les commissions plateforme
+Mot de passe commun à tous les comptes : **`Ecoride2026!`**
 
-## Base de données NoSQL (MongoDB)
+| Rôle | Email |
+|---|---|
+| Administrateur | <jose@ecoride.fr> |
+| Employé | <sophie@ecoride.fr> |
+| Employé suspendu | <thomas@ecoride.fr> |
+| Chauffeur et passager | <muriel@ecoride.fr> |
+| Chauffeur | <benjamin@ecoride.fr> |
+| Passager | <raoul@ecoride.fr> |
+| Passager | <nina@ecoride.fr> |
+| Chauffeur et passager | <luc@ecoride.fr> |
+| Passager suspendu | <emma@ecoride.fr> |
 
-MongoDB est utilisé pour le journal des événements (traçabilité).
+---
 
-Les événements enregistrés concernent notamment :
+## Vérification de l'environnement
 
-* ouverture de pages
+Contrôler l'état des conteneurs :
 
-* recherches effectuées
+```bash
+docker compose ps
+```
 
-* publications de covoiturages
+Vérifier les extensions PHP actives :
 
-* créations de participations
+```bash
+docker compose exec -T php php -m | grep -E 'pdo_pgsql|intl|zip|mongodb'
+```
 
-* annulations
+Contrôler la cohérence du conteneur de services Symfony :
 
-* modérations
+```bash
+docker compose exec php php bin/console lint:container
+```
 
-Aucune action manuelle n’est nécessaire : la base est utilisée automatiquement par l’application.
+Vérifier la validité du fichier `composer.json` :
 
-## Lancer l'application en local
+```bash
+docker compose exec php composer validate
+```
 
-Une fois les conteneurs actifs, l’application est accessible à l’adresse :
+Contrôler la réponse HTTP et les en-têtes de sécurité :
 
-* <http://localhost:8080>
+```bash
+curl -I http://localhost:8080
+```
 
-Interface MailHog (simulation des emails) :
+Résultat attendu : `HTTP/1.1 200 OK` avec présence de `X-Frame-Options`, `X-Content-Type-Options` et `Referrer-Policy`.
 
-* <http://localhost:8025>
+---
 
-## Tests / comptes de démo
+## Architecture des conteneurs
 
-Mot de passe commun à tous les comptes :
+```text
+Navigateur
+    │
+    ▼
+ Nginx :8080          (point d'entrée HTTP )
+    │
+    ▼
+ PHP-FPM               (Symfony 7 -PHP 8.3)
+    │
+    ├──▶ PostgreSQL     (données métier - triggers et fonctions SQL)
+    ├──▶ MongoDB        (journal opérationnel d'événements)
+    └──▶ MailHog :8025  (simulation SMTP en condition de développement uniquement)
+```
 
-* Ecoride2026!
+Tous les services communiquent via le réseau interne de Docker Compose. PostgreSQL n'est pas exposé sur la machine hôte. MongoDB est publié uniquement en local sur `127.0.0.1:27017`, ce qui permet son utilisation avec MongoDB Compass depuis le poste de développement.
 
-### Administrateur
+---
 
-* <jose@ecoride.fr>
+## Structure du projet
 
-### Employés
+```text
+ecoride/
+├── .github/
+│   └── workflows/          # CI/CD GitHub Actions
+├── bin/                    # Entrées console Symfony / PHPUnit
+├── config/                 # Configuration Symfony (packages, routes, services)
+├── src/
+│   ├── Controller/         # Routes et orchestration des requêtes HTTP
+│   ├── Service/            # Logique métier et accès aux données
+│   └── Command/            # Commandes console Symfony
+├── templates/              # Vues Twig
+├── public/                 # Point d'entrée web (index.php) — exposé par Nginx
+│   ├── css/
+│   ├── js/
+│   ├── images/
+│   └── polices/            # Polices auto-hébergées 
+├── docs/
+│   ├── sql/                # Scripts SQL (schéma + données de démonstration)
+│   ├── documentation_code/
+│   ├── modelisation_donnees/
+│   ├── interface/          # Maquettes
+│   └── gestion_projet/
+├── docker/
+│   ├── nginx/default.conf
+│   └── php/Dockerfile
+│   └── sauvegardes/         # Scripts de sauvegarde et restauration des bases de données
+├── docker-compose.yaml
+├── composer.lock
+├── composer.json
+├── tests/                  # Tests automatisés
+├── .env                    # Variables d'environnement (valeurs de développement)
+├── .env.prod
+├── .env.test
+├── phpunit.dist.xml
+└── symfony.lock                
+```
 
-* <sophie@ecoride.fr>
+---
 
-* <thomas@ecoride.fr>
+## Manuel d'utilisation
 
-### Chauffeurs / Passagers
+Le guide utilisateur est disponible ici : **`docs/manuel_utilisation.md`**.
 
-* <muriel@ecoride.fr>
+---
 
-* <benjamin@ecoride.fr>
+## Sauvegardes des bases de données
 
-* <raoul@ecoride.fr>
+Git versionne le code source du projet, mais les données persistantes de l’application vivent dans PostgreSQL et MongoDB.
 
-* <nina@ecoride.fr>
+EcoRide contient donc des scripts de sauvegarde, de restauration et de nettoyage local dans le dossier `docker/sauvegardes/`.
 
-* <luc@ecoride.fr>
+Les sauvegardes générées sont stockées dans `var/sauvegardes/`. Ce dossier est ignoré par Git car ces fichiers peuvent contenir des données personnelles.
 
-* <emma@ecoride.fr>
+La procédure complète est documentée dans `docker/sauvegardes/README.md`.
+
+---
 
 ## Dépannage
 
-* Les conteneurs ne démarrent pas :
+**Les conteneurs ne démarrent pas :**
 
 ```bash
 docker compose down -v
 docker compose up -d --build
 ```
 
-* Problème de base de données :
+**Erreur de connexion à la base de données :**
 
 ```bash
 docker compose exec -T postgresql psql -U ecoride -d ecoride -f docs/sql/01_schema.sql
 docker compose exec -T postgresql psql -U ecoride -d ecoride -f docs/sql/02_donnees_demo.sql
 ```
 
-* Cache Symfony :
+**Cache Symfony à vider :**
 
 ```bash
-docker compose exec -T php php bin/console cache:clear
+docker compose exec php php bin/console cache:clear
 ```
 
-## Documentation
+**Vérifier les variables d'environnement PostgreSQL :**
 
-* Modélisation des données : /docs/modelisation_donnees
-* Scripts SQL : /docs/sql
-* Diagrammes UML : /uml
-* Maquettes interface : /docs/interface
+```bash
+docker compose exec postgresql printenv | grep '^POSTGRES_'
+```
+
+---
 
 ## Auteur
 
-Rebecca Roussel  
-Projet réalisé dans le cadre du RNCP Développeur Web et Web Mobile – 2026
+Rebecca Roussel
+Projet réalisé dans le cadre du titre professionnel DWWM — Studi, promotion Juin / Juillet 2026.

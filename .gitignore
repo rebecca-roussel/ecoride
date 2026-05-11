@@ -1,9 +1,11 @@
 ###> symfony/framework-bundle ###
-.env
-.env .dev
+/.env
 /.env.local
 /.env.local.php
 /.env.*.local
+/.env.docker
+/.env.prod
+/.env.test
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
 /var/
@@ -13,24 +15,20 @@
 # Sauvegardes
 *.bak
 
-# Outils locaux (à ne pas versionner)
+# Outils locaux
 .php-cs-fixer.cache
 .vscode/
+home.lnk
 
-# Fichiers d'environnement (prod)
-.env.prod
+# Documentation générée localement
+.phpdoc/
+docs/api/
 
-# Environnement production (local uniquement)
-.env.prod
-
-# Fichiers d'environnement (local)
-.env.dev
-.env.prod
-.env.docker
-
-# Fichiers de référence générés (bruit)
+# Fichiers de référence générés
 config/reference.php
 docs/gestion_projet/routes_et_controleurs.txt
-docs/api/
-.phpdoc/
-home.lnk
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###

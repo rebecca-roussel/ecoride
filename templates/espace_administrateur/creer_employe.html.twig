@@ -1,3 +1,35 @@
+{# templates/espace_administrateur/creer_employe.html.twig #}
+{# Plan du fichier :
+
+  1. Hériter de base.html.twig
+     - le socle commun fournit l'en-tête, le pied de page
+       et l'affichage global des messages flash
+
+  2. Charger la feuille CSS de l'espace administrateur
+     - on réutilise le même univers visuel
+       que dans l'espace administrateur principal
+
+  3. Afficher un formulaire de création d'employé
+     - pseudo
+     - email
+     - mot de passe
+     - confirmation du mot de passe
+
+  4. Garder les erreurs locales de validation
+     - ici, on ne parle pas de flashs globaux
+     - la variable "erreurs" sert à réafficher les problèmes du formulaire
+       directement dans la page courante
+
+  5. Protéger l'envoi avec un jeton CSRF
+     - le formulaire passe en POST
+     - le jeton évite une soumission forgée depuis l'extérieur
+
+  Point important :
+  - les messages flash globaux sont gérés dans base.html.twig
+  - les erreurs de ce formulaire restent affichées ici
+    car elles font partie du traitement local de la saisie
+#}
+
 {% extends 'base.html.twig' %}
 
 {% block title %}Créer un employé - EcoRide{% endblock %}
@@ -11,11 +43,16 @@
 <main class="page_espace_admin">
   <section class="panneau_espace_admin panneau_espace_admin--etroit">
 
+    {# En-tête de page :
+       on annonce clairement l'action d'administration en cours. #}
     <header class="entete_espace_admin">
       <h1 class="titre_espace_admin">Créer un compte employé</h1>
       <p class="texte_secondaire">Création d’un compte interne.</p>
     </header>
 
+    {# Erreurs locales du formulaire :
+       elles restent dans ce template,
+       car elles servent à expliquer pourquoi la saisie actuelle est refusée. #}
     {% if erreurs is defined and erreurs|length > 0 %}
       <div class="bloc_erreurs">
         <ul>
@@ -26,42 +63,78 @@
       </div>
     {% endif %}
 
-<form method="post"
+    {# Formulaire de création :
+       - method POST : envoi des données au serveur
+       - action : même route, qui gère l'affichage initial puis le traitement
+       - novalidate : la validation principale reste gérée côté serveur #}
+    <form
+      method="post"
       action="{{ path('espace_administrateur_creer_employe') }}"
       class="form_admin"
-      novalidate>
+      novalidate
+    >
 
-  <input type="hidden" name="_csrf" value="{{ csrf_token('creer_employe') }}">
+      {# Jeton CSRF :
+         il protège la soumission du formulaire. #}
+      <input type="hidden" name="_csrf" value="{{ csrf_token('creer_employe') }}">
 
-  <div class="bloc_champ">
-    <label class="champ_libelle" for="pseudo">Pseudo</label>
-    <input class="champ_texte" id="pseudo" name="pseudo" type="text"
-           value="{{ valeurs.pseudo|default('')|e }}" required>
-  </div>
+      <div class="bloc_champ">
+        <label class="champ_libelle" for="pseudo">Pseudo</label>
+        <input
+          class="champ_texte"
+          id="pseudo"
+          name="pseudo"
+          type="text"
+          value="{{ valeurs.pseudo|default('')|e }}"
+          required
+        >
+      </div>
 
-  <div class="bloc_champ">
-    <label class="champ_libelle" for="email">Email</label>
-    <input class="champ_texte" id="email" name="email" type="email"
-           value="{{ valeurs.email|default('')|e }}" required autocomplete="email">
-  </div>
+      <div class="bloc_champ">
+        <label class="champ_libelle" for="email">Email</label>
+        <input
+          class="champ_texte"
+          id="email"
+          name="email"
+          type="email"
+          value="{{ valeurs.email|default('')|e }}"
+          required
+          autocomplete="email"
+        >
+      </div>
 
-  <div class="bloc_champ">
-    <label class="champ_libelle" for="mot_de_passe">Mot de passe</label>
-    <input class="champ_texte" id="mot_de_passe" name="mot_de_passe" type="password"
-           autocomplete="new-password" required>
-  </div>
+      <div class="bloc_champ">
+        <label class="champ_libelle" for="mot_de_passe">Mot de passe</label>
+        <input
+          class="champ_texte"
+          id="mot_de_passe"
+          name="mot_de_passe"
+          type="password"
+          autocomplete="new-password"
+          required
+        >
+      </div>
 
-  <div class="bloc_champ">
-    <label class="champ_libelle" for="confirmation">Confirmation</label>
-    <input class="champ_texte" id="confirmation" name="confirmation" type="password"
-           autocomplete="new-password" required>
-  </div>
+      <div class="bloc_champ">
+        <label class="champ_libelle" for="confirmation">Confirmation</label>
+        <input
+          class="champ_texte"
+          id="confirmation"
+          name="confirmation"
+          type="password"
+          autocomplete="new-password"
+          required
+        >
+      </div>
 
-  <div class="ligne_actions_admin">
-    <button class="bouton_principal" type="submit">Créer l’employé</button>
-    <a class="lien_secondaire" href="{{ path('espace_administrateur', {onglet: 'comptes'}) }}">Annuler</a>
-  </div>
-</form>
+      {# Ligne d'actions :
+         - bouton principal pour envoyer le formulaire
+         - lien annuler pour revenir à la liste des comptes #}
+      <div class="ligne_actions_admin">
+        <button class="bouton_principal" type="submit">Créer l’employé</button>
+        <a class="lien_secondaire" href="{{ path('espace_administrateur', { onglet: 'comptes' }) }}">Annuler</a>
+      </div>
+    </form>
 
   </section>
 </main>

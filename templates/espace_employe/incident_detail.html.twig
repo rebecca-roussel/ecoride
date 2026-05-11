@@ -1,12 +1,34 @@
 {# templates/espace_employe/incident_detail.html.twig #}
-{# PLAN (détail incident) :
-  1) Héritage + css espace_employe.css
-  2) Panneau beige centré
-  3) 1 carte : même structure que la liste (réutilise le CSS)
-  4) Contexte : trajet + chauffeur + passagers
-  5) Contenu : commentaire incident
-  6) Actions : marquer traité (POST + CSRF) + retour
-  7) Garde-fous : incident absent -> message + retour
+{# Plan du fichier :
+
+  1. Hériter de base.html.twig
+     - le socle commun fournit l'en-tête, le pied de page
+       et l'affichage global des messages flash
+
+  2. Charger la feuille CSS de l'espace employé
+     - on réutilise le même style que pour la liste
+       afin de garder une continuité visuelle
+
+  3. Forcer l'en-tête utilisateur
+     - cette page appartient à un espace connecté
+
+  4. Afficher le détail d'un signalement
+     - en-tête de page
+     - informations du covoiturage
+     - commentaire d'incident
+     - liste des passagers concernés
+
+  5. Prévoir deux cas
+     - signalement trouvé : affichage complet
+     - signalement absent ou déjà traité : message simple + retour
+
+  6. Prévoir les actions
+     - retour vers la liste
+     - marquer comme traité via un formulaire POST protégé par CSRF
+
+  Point important :
+  - les messages flash ne sont plus affichés dans ce template
+  - ils sont gérés globalement dans base.html.twig
 #}
 
 {% extends 'base.html.twig' %}
@@ -26,12 +48,18 @@
 <main class="page_espace_employe page_espace_employe_detail">
   <section class="panneau_espace_employe">
 
+    {# En-tête de la page détail :
+       on rappelle qu'on traite ici un signalement précis
+       et on affiche l'identifiant du covoiturage concerné. #}
     <header class="entete_espace_employe">
       <h1>Détail d’un signalement</h1>
       <p class="texte_secondaire">Incident ouvert à traiter</p>
       <p class="texte_secondaire">Covoiturage n° {{ incident.id_covoiturage|default(0) }}</p>
     </header>
 
+    {# Garde-fou :
+       si le contrôleur n'envoie rien ou si l'incident est vide,
+       on affiche un état simple avec un lien de retour. #}
     {% if incident is not defined or incident is empty %}
       <p class="etat_vide">Signalement introuvable ou déjà traité.</p>
 
@@ -43,11 +71,18 @@
       <section class="bloc_liste" aria-label="Détail signalement">
         <article class="carte_item">
           <div class="carte_gauche">
+
+            {# Ligne de titre :
+               on reprend la logique visuelle de la liste
+               avec un badge d'état et le libellé du signalement. #}
             <div class="ligne_titre">
               <span class="badge badge_attente">En attente</span>
               <strong class="libelle_incident">{{ incident.libelle|default('Signalement') }}</strong>
             </div>
 
+            {# Bloc méta :
+               il regroupe les informations principales utiles
+               pour comprendre le contexte du signalement. #}
             <div class="meta">
               <div class="meta_ligne">
                 <span class="icone icone_alerte" aria-hidden="true"></span>
@@ -79,6 +114,9 @@
               </div>
             </div>
 
+            {# Commentaire du signalement :
+               si aucun texte n'est présent, on évite une zone vide
+               et on affiche un message simple. #}
             <div class="bloc_texte">
               <h2 class="titre_secondaire">Commentaire du signalement</h2>
 
@@ -90,6 +128,9 @@
               {% endif %}
             </div>
 
+            {# Passagers concernés :
+               le contrôleur envoie déjà une liste filtrée.
+               Ici on l'affiche telle quelle si elle existe. #}
             <div class="bloc_texte">
               <h2 class="titre_secondaire">Passagers concernés</h2>
 
@@ -98,13 +139,19 @@
               {% else %}
                 <ul class="liste_simple">
                   {% for p in incident.passagers %}
-                    <li><strong>{{ p.pseudo|default('') }}</strong> <span class="texte_secondaire">({{ p.email|default('') }})</span></li>
+                    <li>
+                      <strong>{{ p.pseudo|default('') }}</strong>
+                      <span class="texte_secondaire">({{ p.email|default('') }})</span>
+                    </li>
                   {% endfor %}
                 </ul>
               {% endif %}
             </div>
           </div>
 
+          {# Colonne d'actions :
+             - retour vers la liste des signalements
+             - validation du traitement via un POST + jeton CSRF #}
           <div class="carte_actions">
             <a class="bouton_action bouton_secondaire"
                href="{{ path('espace_employe', { onglet: 'signalements' }) }}">
@@ -127,4 +174,3 @@
   </section>
 </main>
 {% endblock %}
-

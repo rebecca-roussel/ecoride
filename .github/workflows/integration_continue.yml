@@ -1,0 +1,52 @@
+name: Intégration continue EcoRide
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+      - correction/**
+      - fonctionnalite/**
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  verification_qualite:
+    name: Vérifications qualité
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer PHP 8.3 et les extensions requises
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: ctype, iconv, mongodb, pdo_pgsql
+          coverage: none
+
+      - name: Vérifier Composer
+        run: composer --version
+
+      - name: Installer les dépendances PHP
+        run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
+
+      - name: Vérifier Docker Compose
+        run: |
+          docker compose version
+          docker compose config > /tmp/docker-compose-resolu.yml
+
+      - name: Vérifier la configuration du conteneur Symfony
+        run: php bin/console lint:container
+
+      - name: Vérifier la syntaxe Twig
+        run: php bin/console lint:twig templates
+
+      - name: Vérifier la syntaxe PHP
+        run: find src -type f -name "*.php" -print0 | xargs -0 -n1 php -l
+
+      - name: Exécuter les tests PHPUnit
+        run: php bin/phpunit

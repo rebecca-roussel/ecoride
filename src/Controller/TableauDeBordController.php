@@ -10,55 +10,96 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * Contrôleur du tableau de bord utilisateur.
+ *
+ * Cette classe gère l'affichage de la page principale
+ * d'un utilisateur connecté après son authentification.
+ *
+ * Son rôle consiste à :
+ * - vérifier qu'une session utilisateur existe ;
+ * - charger les données utiles au tableau de bord ;
+ * - préparer des informations lisibles pour l'interface ;
+ * - renvoyer la vue Twig correspondante.
+ *
+ * La lecture des données est déléguée
+ * au service PersistanceUtilisateurPostgresql.
+ */
 final class TableauDeBordController extends AbstractController
 {
+    /**
+     * Affiche le tableau de bord de l'utilisateur connecté.
+     *
+     * La route /tableau-de-bord est accessible en GET.
+     * Cette page est réservée à un utilisateur authentifié.
+     *
+     * Déroulement général :
+     * la méthode vérifie d'abord qu'un identifiant utilisateur
+     * est présent en session, charge ensuite les données utiles
+     * au tableau de bord, transforme certains champs
+     * pour l'affichage, puis transmet le tout à Twig.
+     *
+     * Les informations préparées pour la vue sont :
+     * - le nombre de crédits ;
+     * - les rôles actifs de l'utilisateur ;
+     * - le pseudo ;
+     * - l'URL de la photo de profil.
+     *
+     * @param SessionUtilisateur $sessionUtilisateur Service de lecture de la session utilisateur.
+     * @param PersistanceUtilisateurPostgresql $persistanceUtilisateur
+     *        Service de lecture des données du tableau de bord.
+     *
+     * @return Response Réponse HTTP contenant le rendu HTML du tableau de bord.
+     */
     #[Route('/tableau-de-bord', name: 'tableau_de_bord', methods: ['GET'])]
     public function index(
         SessionUtilisateur $sessionUtilisateur,
         PersistanceUtilisateurPostgresql $persistanceUtilisateur
     ): Response {
         /*
-          PLAN (TableauDeBordController) :
-
-          1) Sécurité
-             - si je ne suis pas connectée, je renvoie vers /connexion
-             - je ne laisse pas quelqu’un accéder au tableau de bord “au hasard”
-
-          2) Lecture de l’utilisateur en base
-             - je prends l’id depuis la session
-             - je recharge les infos depuis PostgreSQL (source de vérité)
-             - comme ça, si la photo a été modifiée dans /profil, je la récupère bien ici
-
-          3) Préparation des données pour Twig
-             - crédits
-             - rôles actifs (chauffeur / passager / ou les deux)
-             - pseudo
-             - photo : je transforme photo_path en URL affichable
-
-          4) Affichage
-             - j’envoie au template tableau_de_bord/index.html.twig
-        */
-
-        // 1) Sécurité : page réservée aux utilisateurs connectés
+         * Contrôle d'accès
+         *
+         * Le tableau de bord est réservé à un utilisateur connecté.
+         * On lit l'identifiant utilisateur depuis la session.
+         * Si aucun identifiant n'est trouvé,
+         * on redirige vers la page de connexion.
+         */
         $idUtilisateur = $sessionUtilisateur->idUtilisateur();
         if (null === $idUtilisateur) {
             return $this->redirectToRoute('connexion');
         }
 
-        // 2) Je recharge les infos depuis la base
-        //    si la photo a été changée dans /profil, je la récupère ici.
+        /*
+         * Lecture des données du tableau de bord
+         *
+         * On demande au service de persistance
+         * les informations utiles à l'affichage.
+         *
+         * Cas particulier :
+         * une session peut exister alors que le compte n'est plus trouvé
+         * en base, par exemple après une suppression
+         * ou une incohérence de session.
+         *
+         * Dans ce cas, on ferme la session
+         * puis on redirige vers la connexion.
+         */
         $utilisateur = $persistanceUtilisateur->obtenirDonneesTableauDeBord($idUtilisateur);
         if (null === $utilisateur) {
-            // Session incohérente (ex : utilisateur supprimé)
             $sessionUtilisateur->deconnecter();
+
             return $this->redirectToRoute('connexion');
         }
 
-        // 3) Rôles actifs
-        //    Un utilisateur peut avoir :
-        //    - chauffeur
-        //    - passager
-        //    - ou les deux 
+        /*
+         * Préparation des rôles actifs
+         *
+         * On construit un tableau de libellés lisibles
+         * à partir des rôles stockés en base.
+         *
+         * Le but est de transformer les valeurs techniques
+         * role_chauffeur et role_passager
+         * en texte directement exploitable dans la vue.
+         */
         $rolesActifs = [];
 
         if ((int) ($utilisateur['role_chauffeur'] ?? 0) === 1) {
@@ -69,17 +110,31 @@ final class TableauDeBordController extends AbstractController
             $rolesActifs[] = 'Passager';
         }
 
-        // 3) Données finales envoyées à Twig
+        /*
+         * Préparation des données envoyées à Twig
+         *
+         * - credits : nombre de crédits du compte ;
+         * - roles_actifs : chaîne lisible pour l'interface ;
+         * - pseudo : pseudo utilisateur affiché sur la page ;
+         * - photo : URL finale de la photo de profil.
+         *
+         * Si aucun rôle actif n'est trouvé,
+         * on affiche un tiret long pour garder
+         * une valeur lisible dans l'interface.
+         */
         $donnees = [
             'credits' => (int) ($utilisateur['credits'] ?? 0),
             'roles_actifs' => $rolesActifs !== [] ? implode(' · ', $rolesActifs) : '—',
             'pseudo' => (string) ($utilisateur['pseudo'] ?? 'EcoRider'),
-
-            // Photo 
             'photo' => $persistanceUtilisateur->urlPhotoProfil($utilisateur['photo_path'] ?? null),
         ];
 
-        // 4) Affichage
+        /*
+         * Rendu de la vue
+         *
+         * Le contrôleur transmet les données préparées
+         * au template Twig du tableau de bord.
+         */
         return $this->render('tableau_de_bord/index.html.twig', [
             'donnees' => $donnees,
         ]);

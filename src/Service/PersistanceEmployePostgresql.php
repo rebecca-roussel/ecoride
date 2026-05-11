@@ -6,32 +6,50 @@ namespace App\Service;
 
 use PDO;
 
+/**
+ * Service de persistance PostgreSQL pour l'espace employé.
+ *
+ * Cette classe regroupe les requêtes SQL utiles au parcours employé :
+ * lecture des avis en attente, lecture des incidents ouverts,
+ * récupération du détail d'un avis,
+ * récupération du détail d'un incident,
+ * modération d'un avis et marquage d'un incident comme traité.
+ *
+ * Une persistance est une classe qui sert de point d'accès à la base de données.
+ * Son rôle est de préparer les requêtes SQL, de les exécuter,
+ * puis de renvoyer des données déjà prêtes à être exploitées
+ * par le contrôleur.
+ *
+ * Le contrôleur garde donc la gestion du web,
+ * tandis que cette classe garde les accès à PostgreSQL.
+ *
+ * @package App\Service
+ */
 final class PersistanceEmployePostgresql
 {
-    /*
-      PLAN (PersistanceEmployePostgresql) :
-
-      1) Rôle du service
-         - regrouper toutes les requêtes SQL utiles à l’espace employé
-         - le contrôleur décide qui a le droit, ici on branche la BDD
-
-      2) Listes à afficher
-         a) Avis en attente (modération)
-         b) Incidents ouverts (signalements)
-
-      3) Actions employé de mise à jour 
-         a) Valider / refuser un avis (statut_moderation + modérateur)
-         b) Marquer un incident comme traité (incident_resolu)
-    */
-
+    /**
+     * Initialise le service avec la connexion PostgreSQL.
+     *
+     * @param ConnexionPostgresql $connexion Service qui fournit l'objet PDO.
+     */
     public function __construct(private ConnexionPostgresql $connexion)
     {
     }
 
     /**
-     * Lister les avis dont la modération est EN_ATTENTE.
-     * - On récupère l’avis + le passager + les villes du covoiturage
-     * - Limité pour éviter une liste trop longue
+     * Liste les avis encore en attente de modération.
+     *
+     * La requête récupère ici :
+     * - l'identifiant et la note de l'avis ;
+     * - son statut de modération ;
+     * - la date de dépôt ;
+     * - le pseudo du passager ;
+     * - la ville de départ et la ville d'arrivée du covoiturage.
+     *
+     * `LIMIT` permet de borner le nombre de lignes renvoyées.
+     * Cela évite de charger une liste trop longue d'un seul coup.
+     *
+     * @param int $limite Nombre maximum de lignes à renvoyer.
      *
      * @return array<int, array{
      *   id_avis:int,
@@ -45,10 +63,8 @@ final class PersistanceEmployePostgresql
      */
     public function listerAvisEnAttente(int $limite = 50): array
     {
-        // 1) Connexion PDO 
         $pdo = $this->connexion->obtenirPdo();
 
-        // 2) Avis en attente 
         $stmt = $pdo->prepare("
             SELECT
               a.id_avis,
@@ -67,14 +83,22 @@ final class PersistanceEmployePostgresql
             LIMIT :limite
         ");
 
-        // 3) Sécurité : la limite est un entier (évite une injection via LIMIT)
+        /*
+         * `bindValue()` associe ici la valeur `limite` au paramètre SQL.
+         * Le type entier est forcé explicitement pour garder une requête sûre
+         * même avec `LIMIT`.
+         */
         $stmt->bindValue('limite', $limite, PDO::PARAM_INT);
         $stmt->execute();
 
         /** @var array<int, array<string, mixed>> $lignes */
         $lignes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // 4) Normalisation 
+        /*
+         * La normalisation transforme les valeurs lues dans une structure stable.
+         * Le contrôleur et Twig reçoivent ainsi toujours les mêmes clés
+         * avec des types plus clairs.
+         */
         $resultat = [];
         foreach ($lignes as $ligne) {
             $resultat[] = [
@@ -92,9 +116,18 @@ final class PersistanceEmployePostgresql
     }
 
     /**
-     * Lister les covoiturages en statut INCIDENT non résolu.
-     * - On récupère le chauffeur et optionnellement un passager lié
-     * - On garde une structure stable pour l’affichage dans l’espace employé
+     * Liste les incidents encore ouverts.
+     *
+     * La requête cherche les covoiturages :
+     * - en statut `INCIDENT` ;
+     * - avec `incident_resolu = false`.
+     *
+     * `LEFT JOIN` signifie ici que la ligne principale doit rester présente
+     * même si aucun passager n'est trouvé.
+     * Cela permet d'afficher quand même l'incident
+     * même si aucun participant actif n'est lié au covoiturage.
+     *
+     * @param int $limite Nombre maximum de lignes à renvoyer.
      *
      * @return array<int, array{
      *   id_covoiturage:int,
@@ -113,11 +146,6 @@ final class PersistanceEmployePostgresql
     {
         $pdo = $this->connexion->obtenirPdo();
 
-        /*
-          - JOIN utilisateur u_ch : le chauffeur existe toujours (covoiturage -> id_utilisateur)
-          - LEFT JOIN participation + utilisateur passager : il peut ne pas y avoir de passager
-            (ou plusieurs, mais ici je prend la jointure telle quelle pour avoir du contexte)
-        */
         $stmt = $pdo->prepare("
             SELECT
               c.id_covoiturage,
@@ -167,20 +195,214 @@ final class PersistanceEmployePostgresql
         return $resultat;
     }
 
-    /*
-      Modération d’un avis :
-      - décision attendue : VALIDE ou REFUSE
-      - on n’autorise la modification que si l’avis est encore EN_ATTENTE
-      - on enregistre l’employé modérateur
-    */
+    /**
+     * Recherche le détail d'un avis encore en attente.
+     *
+     * Cette lecture sert à afficher une page de détail plus complète :
+     * avis, passager, chauffeur, covoiturage et date de départ.
+     *
+     * Si l'identifiant reçu est invalide ou si aucune ligne ne correspond,
+     * la méthode renvoie `null`.
+     *
+     * @param int $idAvis Identifiant de l'avis.
+     *
+     * @return array{
+     *   id_avis:int,
+     *   note:int,
+     *   commentaire:string,
+     *   statut_moderation:string,
+     *   date_depot:string,
+     *   pseudo_passager:string,
+     *   email_passager:string,
+     *   pseudo_chauffeur:string,
+     *   email_chauffeur:string,
+     *   id_covoiturage:int,
+     *   date_depart:string,
+     *   ville_depart:string,
+     *   ville_arrivee:string
+     * }|null
+     */
+    public function trouverAvisEnAttenteParId(int $idAvis): ?array
+    {
+        if ($idAvis <= 0) {
+            return null;
+        }
+
+        $pdo = $this->connexion->obtenirPdo();
+
+        $stmt = $pdo->prepare("
+            SELECT
+              a.id_avis,
+              a.note,
+              COALESCE(a.commentaire, '') AS commentaire,
+              a.statut_moderation,
+              to_char(a.date_depot, 'YYYY-MM-DD HH24:MI') AS date_depot,
+              u_pa.pseudo AS pseudo_passager,
+              u_pa.email AS email_passager,
+              u_ch.pseudo AS pseudo_chauffeur,
+              u_ch.email AS email_chauffeur,
+              c.id_covoiturage,
+              to_char(c.date_heure_depart, 'YYYY-MM-DD HH24:MI') AS date_depart,
+              c.ville_depart,
+              c.ville_arrivee
+            FROM avis a
+            JOIN participation p ON p.id_participation = a.id_participation
+            JOIN covoiturage c ON c.id_covoiturage = p.id_covoiturage
+            JOIN utilisateur u_pa ON u_pa.id_utilisateur = p.id_utilisateur
+            JOIN utilisateur u_ch ON u_ch.id_utilisateur = c.id_utilisateur
+            WHERE a.id_avis = :id_avis
+              AND a.statut_moderation = 'EN_ATTENTE'
+            LIMIT 1
+        ");
+        $stmt->execute(['id_avis' => $idAvis]);
+
+        /** @var array<string, mixed>|false $ligne */
+        $ligne = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($ligne)) {
+            return null;
+        }
+
+        return [
+            'id_avis' => (int) ($ligne['id_avis'] ?? 0),
+            'note' => (int) ($ligne['note'] ?? 0),
+            'commentaire' => (string) ($ligne['commentaire'] ?? ''),
+            'statut_moderation' => (string) ($ligne['statut_moderation'] ?? ''),
+            'date_depot' => (string) ($ligne['date_depot'] ?? ''),
+            'pseudo_passager' => (string) ($ligne['pseudo_passager'] ?? ''),
+            'email_passager' => (string) ($ligne['email_passager'] ?? ''),
+            'pseudo_chauffeur' => (string) ($ligne['pseudo_chauffeur'] ?? ''),
+            'email_chauffeur' => (string) ($ligne['email_chauffeur'] ?? ''),
+            'id_covoiturage' => (int) ($ligne['id_covoiturage'] ?? 0),
+            'date_depart' => (string) ($ligne['date_depart'] ?? ''),
+            'ville_depart' => (string) ($ligne['ville_depart'] ?? ''),
+            'ville_arrivee' => (string) ($ligne['ville_arrivee'] ?? ''),
+        ];
+    }
+
+    /**
+     * Recherche le détail d'un incident encore ouvert.
+     *
+     * Cette méthode lit d'abord les données principales du covoiturage,
+     * puis charge séparément la liste des passagers actifs.
+     *
+     * Cette séparation garde une lecture plus simple :
+     * - une première requête pour l'incident ;
+     * - une seconde pour les passagers.
+     *
+     * @param int $idCovoiturage Identifiant du covoiturage concerné.
+     *
+     * @return array{
+     *   id_covoiturage:int,
+     *   libelle:string,
+     *   incident_commentaire:string,
+     *   statut:string,
+     *   date_depart:string,
+     *   date_arrivee:string,
+     *   ville_depart:string,
+     *   ville_arrivee:string,
+     *   pseudo_chauffeur:string,
+     *   email_chauffeur:string,
+     *   passagers: array<int, array{pseudo:string, email:string}>
+     * }|null
+     */
+    public function trouverIncidentOuvertParCovoiturage(int $idCovoiturage): ?array
+    {
+        if ($idCovoiturage <= 0) {
+            return null;
+        }
+
+        $pdo = $this->connexion->obtenirPdo();
+
+        $stmt = $pdo->prepare("
+            SELECT
+              c.id_covoiturage,
+              COALESCE(c.incident_commentaire, '') AS incident_commentaire,
+              COALESCE(c.incident_commentaire, 'Incident') AS libelle,
+              c.statut_covoiturage AS statut,
+              to_char(c.date_heure_depart, 'YYYY-MM-DD HH24:MI') AS date_depart,
+              to_char(c.date_heure_arrivee, 'YYYY-MM-DD HH24:MI') AS date_arrivee,
+              c.ville_depart,
+              c.ville_arrivee,
+              u_ch.pseudo AS pseudo_chauffeur,
+              u_ch.email AS email_chauffeur
+            FROM covoiturage c
+            JOIN utilisateur u_ch ON u_ch.id_utilisateur = c.id_utilisateur
+            WHERE c.id_covoiturage = :id
+              AND c.statut_covoiturage = 'INCIDENT'
+              AND c.incident_resolu = false
+            LIMIT 1
+        ");
+        $stmt->execute(['id' => $idCovoiturage]);
+
+        /** @var array<string, mixed>|false $ligne */
+        $ligne = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($ligne)) {
+            return null;
+        }
+
+        $stmt2 = $pdo->prepare("
+            SELECT
+              u_pa.pseudo,
+              u_pa.email
+            FROM participation p
+            JOIN utilisateur u_pa ON u_pa.id_utilisateur = p.id_utilisateur
+            WHERE p.id_covoiturage = :id
+              AND p.est_annulee = false
+            ORDER BY p.date_heure_confirmation DESC
+        ");
+        $stmt2->execute(['id' => $idCovoiturage]);
+
+        /** @var array<int, array<string, mixed>> $lignesPassagers */
+        $lignesPassagers = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+        $passagers = [];
+        foreach ($lignesPassagers as $lignePassager) {
+            $passagers[] = [
+                'pseudo' => (string) ($lignePassager['pseudo'] ?? ''),
+                'email' => (string) ($lignePassager['email'] ?? ''),
+            ];
+        }
+
+        return [
+            'id_covoiturage' => (int) ($ligne['id_covoiturage'] ?? 0),
+            'libelle' => (string) ($ligne['libelle'] ?? ''),
+            'incident_commentaire' => (string) ($ligne['incident_commentaire'] ?? ''),
+            'statut' => (string) ($ligne['statut'] ?? ''),
+            'date_depart' => (string) ($ligne['date_depart'] ?? ''),
+            'date_arrivee' => (string) ($ligne['date_arrivee'] ?? ''),
+            'ville_depart' => (string) ($ligne['ville_depart'] ?? ''),
+            'ville_arrivee' => (string) ($ligne['ville_arrivee'] ?? ''),
+            'pseudo_chauffeur' => (string) ($ligne['pseudo_chauffeur'] ?? ''),
+            'email_chauffeur' => (string) ($ligne['email_chauffeur'] ?? ''),
+            'passagers' => $passagers,
+        ];
+    }
+
+    /**
+     * Met à jour le statut de modération d'un avis.
+     *
+     * Deux décisions sont possibles :
+     * - `VALIDE`
+     * - `REFUSE`
+     *
+     * Si une autre valeur est transmise,
+     * la méthode la ramène volontairement à `REFUSE`.
+     *
+     * La mise à jour n'est autorisée que si l'avis est encore en attente.
+     * Cela évite de remodifier un avis déjà traité.
+     *
+     * @param int $idAvis Identifiant de l'avis.
+     * @param string $decision Décision demandée.
+     * @param int $idEmploye Identifiant de l'employé modérateur.
+     *
+     * @return bool True si une ligne a été modifiée, false sinon.
+     */
     public function modererAvis(int $idAvis, string $decision, int $idEmploye): bool
     {
-        // 1) On force une décision autorisée (garde-fou simple)
         $decision = $decision === 'VALIDE' ? 'VALIDE' : 'REFUSE';
 
         $pdo = $this->connexion->obtenirPdo();
 
-        // 2) Mise à jour : uniquement si EN_ATTENTE
         $stmt = $pdo->prepare("
             UPDATE avis
             SET statut_moderation = :decision,
@@ -198,11 +420,18 @@ final class PersistanceEmployePostgresql
         return $stmt->rowCount() > 0;
     }
 
-    /*
-      Marquer un incident comme traité :
-      - on ne change que si l’incident est encore ouvert 
-      - et si le covoiturage est bien en statut INCIDENT
-    */
+    /**
+     * Marque un incident comme traité.
+     *
+     * La mise à jour n'agit que si :
+     * - le covoiturage existe ;
+     * - son statut est `INCIDENT` ;
+     * - `incident_resolu` vaut encore `false`.
+     *
+     * @param int $idCovoiturage Identifiant du covoiturage.
+     *
+     * @return bool True si une ligne a été modifiée, false sinon.
+     */
     public function marquerIncidentTraite(int $idCovoiturage): bool
     {
         $pdo = $this->connexion->obtenirPdo();

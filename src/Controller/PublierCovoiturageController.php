@@ -15,30 +15,49 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * Contrôleur de publication d'un covoiturage.
+ *
+ * Cette classe gère le formulaire qui permet à un utilisateur connecté
+ * de publier un nouveau trajet.
+ *
+ * Le contrôleur garde ici le rôle lié au web :
+ * contrôler l'accès à la page,
+ * lire les données envoyées par le formulaire,
+ * vérifier les champs,
+ * afficher les messages d'erreur,
+ * puis rediriger après succès.
+ *
+ * L'écriture dans PostgreSQL est confiée à `PersistanceCovoituragePostgresql`.
+ * La lecture des voitures disponibles est confiée à `PersistanceVoiturePostgresql`.
+ * La journalisation MongoDB intervient seulement quand le covoiturage
+ * a réellement été créé.
+ */
 final class PublierCovoiturageController extends AbstractController
 {
-    /*
-      PLAN (PublierCovoiturageController) :
-
-      1) Sécurité
-         - page réservée aux utilisateurs connectés 
-         - publication réservée aux chauffeurs
-
-      2) Afficher le formulaire (GET)
-         - lister les véhicules actifs de l’utilisateur
-         - journaliser l’ouverture
-         - afficher publier/index.html.twig
-
-      3) Traiter la publication (POST)
-         - CSRF
-         - lire les champs
-         - valider (par champ, pour affichage sous chaque champ)
-         - construire date_heure_depart + date_heure_arrivee
-         - créer le covoiturage en base
-         - journaliser
-         - rediriger vers la page détails
-    */
-
+    /**
+     * Affiche le formulaire de publication et traite son envoi.
+     *
+     * En GET, la méthode affiche le formulaire avec la liste
+     * des voitures actives de l'utilisateur.
+     *
+     * En POST, elle lit les champs, applique les vérifications nécessaires,
+     * construit la date et l'heure de départ ainsi que l'heure d'arrivée,
+     * crée le covoiturage dans PostgreSQL,
+     * puis enregistre un événement significatif dans MongoDB.
+     *
+     * @param Request $requete Requête HTTP courante.
+     * @param SessionUtilisateur $sessionUtilisateur
+     *        Service qui permet de lire l'utilisateur connecté.
+     * @param PersistanceVoiturePostgresql $persistanceVoiture
+     *        Service de lecture PostgreSQL pour les voitures.
+     * @param PersistanceCovoituragePostgresql $persistanceCovoiturage
+     *        Service d'écriture PostgreSQL pour les covoiturages.
+     * @param JournalEvenements $journalEvenements
+     *        Service de journalisation MongoDB.
+     *
+     * @return Response Réponse HTML rendue par Twig ou redirection.
+     */
     #[Route('/publier', name: 'publier_covoiturage', methods: ['GET', 'POST'])]
     public function index(
         Request $requete,
@@ -47,30 +66,38 @@ final class PublierCovoiturageController extends AbstractController
         PersistanceCovoituragePostgresql $persistanceCovoiturage,
         JournalEvenements $journalEvenements
     ): Response {
+        /*
+         * La publication d'un trajet n'est possible
+         * que pour un utilisateur connecté.
+         */
         $utilisateur = $sessionUtilisateur->obtenirUtilisateurConnecte();
         if ($utilisateur === null) {
             $this->addFlash('erreur', 'Veuillez vous connecter pour accéder à cette page.');
+
             return $this->redirectToRoute('connexion');
         }
 
         $idUtilisateur = (int) $utilisateur['id_utilisateur'];
 
+        /*
+         * Le rôle chauffeur est nécessaire pour publier un covoiturage.
+         * Si ce rôle n'est pas actif, l'utilisateur est renvoyé
+         * vers son tableau de bord avec un message explicite.
+         */
         $estChauffeur = (bool) ($utilisateur['role_chauffeur'] ?? false);
         if (!$estChauffeur) {
             $this->addFlash('erreur', 'Vous devez activer le rôle chauffeur pour publier un covoiturage.');
+
             return $this->redirectToRoute('tableau_de_bord');
         }
 
+        /*
+         * Le formulaire propose uniquement les voitures actives
+         * appartenant à l'utilisateur connecté.
+         */
         $voitures = $persistanceVoiture->listerVehiculesActifsParUtilisateur($idUtilisateur);
 
         if ($requete->isMethod('GET')) {
-            $journalEvenements->enregistrer(
-                'page_ouverte',
-                'publier_covoiturage',
-                $idUtilisateur,
-                ['nb_voitures_actives' => count($voitures)]
-            );
-
             return $this->render('publier/index.html.twig', [
                 'voitures' => $voitures,
                 'valeurs' => [],
@@ -78,11 +105,19 @@ final class PublierCovoiturageController extends AbstractController
             ]);
         }
 
+        /*
+         * Le jeton CSRF protège l'envoi du formulaire.
+         * Il sert à vérifier que la requête vient bien de l'application.
+         */
         $jeton = (string) $requete->request->get('_token', '');
         if (!$this->isCsrfTokenValid('publier_covoiturage', $jeton)) {
             throw new RuntimeException('Jeton CSRF invalide.');
         }
 
+        /*
+         * Lecture des champs texte et numériques envoyés par le formulaire.
+         * `trim()` retire les espaces inutiles autour des valeurs texte.
+         */
         $villeDepart = trim((string) $requete->request->get('ville_depart', ''));
         $villeArrivee = trim((string) $requete->request->get('ville_arrivee', ''));
         $adresseDepart = trim((string) $requete->request->get('adresse_depart', ''));
@@ -96,6 +131,11 @@ final class PublierCovoiturageController extends AbstractController
         $prixCredits = (int) $requete->request->get('prix_credits', 0);
         $idVoiture = (int) $requete->request->get('id_voiture', 0);
 
+        /*
+         * Les coordonnées géographiques peuvent être absentes.
+         * Si le champ est vide, on garde `null`.
+         * Sinon, on convertit la valeur en nombre décimal.
+         */
         $latitudeDepartBrut = trim((string) $requete->request->get('latitude_depart', ''));
         $longitudeDepartBrut = trim((string) $requete->request->get('longitude_depart', ''));
         $latitudeArriveeBrut = trim((string) $requete->request->get('latitude_arrivee', ''));
@@ -106,6 +146,10 @@ final class PublierCovoiturageController extends AbstractController
         $latitudeArrivee = ($latitudeArriveeBrut === '') ? null : (float) $latitudeArriveeBrut;
         $longitudeArrivee = ($longitudeArriveeBrut === '') ? null : (float) $longitudeArriveeBrut;
 
+        /*
+         * `has()` permet de savoir si une case a été cochée.
+         * Une case décochée n'est pas envoyée dans la requête.
+         */
         $estNonFumeur = $requete->request->has('est_non_fumeur');
         $accepteAnimaux = $requete->request->has('accepte_animaux');
 
@@ -114,6 +158,10 @@ final class PublierCovoiturageController extends AbstractController
             $preferencesLibre = null;
         }
 
+        /*
+         * Le tableau `erreurs` stocke les messages associés aux champs.
+         * Cela permet de réafficher le formulaire avec des indications précises.
+         */
         $erreurs = [];
 
         if ($villeDepart === '') {
@@ -146,24 +194,49 @@ final class PublierCovoiturageController extends AbstractController
             $erreurs['id_voiture'] = 'Vous devez sélectionner une voiture.';
         }
 
-        if ($prixCredits < 2) {
-            $erreurs['prix_credits'] = 'Le prix minimum est de 2 crédits (commission EcoRide incluse).';
+        /*
+         * Le prix doit être supérieur à la commission prévue.
+         * La commission de la plateforme est fixée à 2 crédits.
+         * Le prix minimum accepté est donc 3 crédits.
+         */
+        if ($prixCredits <= 2) {
+            $erreurs['prix_credits'] = 'Le prix doit être supérieur à 2 crédits, car la commission de la plateforme est de 2 crédits.';
         }
 
-        if ($idVoiture > 0 && !isset($erreurs['nb_places_dispo'])) {
-            foreach ($voitures as $v) {
-                if ((int) ($v['id_voiture'] ?? 0) === $idVoiture) {
-                    $placesVoiture = (int) ($v['nb_places'] ?? 0);
+        /*
+         * On vérifie que la voiture choisie fait bien partie
+         * des voitures actives de l'utilisateur connecté.
+         */
+        $voitureChoisie = null;
 
-                    if ($placesVoiture > 0 && $nbPlacesDispo > $placesVoiture) {
-                        $erreurs['nb_places_dispo'] = 'Les places disponibles ne peuvent pas dépasser les places de la voiture.';
-                    }
-
-                    break;
-                }
+        foreach ($voitures as $voiture) {
+            if ((int) ($voiture['id_voiture'] ?? 0) === $idVoiture) {
+                $voitureChoisie = $voiture;
+                break;
             }
         }
 
+        if ($idVoiture > 0 && $voitureChoisie === null) {
+            $erreurs['id_voiture'] = 'La voiture sélectionnée est invalide.';
+        }
+
+        /*
+         * Le nombre de places proposé doit rester cohérent
+         * avec la capacité de la voiture choisie.
+         */
+        if ($voitureChoisie !== null && !isset($erreurs['nb_places_dispo'])) {
+            $placesVoiture = (int) ($voitureChoisie['nb_places'] ?? 0);
+
+            if ($placesVoiture > 0 && $nbPlacesDispo > $placesVoiture) {
+                $erreurs['nb_places_dispo'] = 'Les places disponibles ne peuvent pas dépasser les places de la voiture.';
+            }
+        }
+
+        /*
+         * Une coordonnée géographique doit toujours venir par paire :
+         * latitude + longitude.
+         * Si l'une existe sans l'autre, l'adresse est considérée incomplète.
+         */
         $departIncomplet = ($latitudeDepart === null) !== ($longitudeDepart === null);
         if ($departIncomplet) {
             $erreurs['adresse_depart'] = 'Coordonnées de départ incomplètes. Veuillez retaper l’adresse.';
@@ -174,6 +247,10 @@ final class PublierCovoiturageController extends AbstractController
             $erreurs['adresse_arrivee'] = 'Coordonnées d’arrivée incomplètes. Veuillez retaper l’adresse.';
         }
 
+        /*
+         * Une latitude doit rester entre -90 et 90.
+         * Une longitude doit rester entre -180 et 180.
+         */
         if ($latitudeDepart !== null && ($latitudeDepart < -90 || $latitudeDepart > 90)) {
             $erreurs['adresse_depart'] = 'Latitude de départ invalide.';
         }
@@ -187,6 +264,12 @@ final class PublierCovoiturageController extends AbstractController
             $erreurs['adresse_arrivee'] = 'Longitude d’arrivée invalide.';
         }
 
+        /*
+         * La date et l'heure de départ sont d'abord combinées dans un objet date.
+         * Un objet `DateTimeImmutable` représente une date et une heure complètes.
+         * Le mot "Immutable" signifie que l'objet n'est pas modifié directement :
+         * une nouvelle valeur est produite à chaque calcul.
+         */
         $dateHeureDepart = null;
         $dateHeureArrivee = null;
 
@@ -204,6 +287,11 @@ final class PublierCovoiturageController extends AbstractController
             }
         }
 
+        /*
+         * Si des erreurs existent, le formulaire est réaffiché
+         * avec les valeurs déjà saisies.
+         * Cela évite à l'utilisateur de tout retaper.
+         */
         if (!empty($erreurs)) {
             $this->addFlash('erreur', 'Certains champs contiennent des erreurs. Vérifiez le formulaire.');
 
@@ -235,6 +323,10 @@ final class PublierCovoiturageController extends AbstractController
         \assert($dateHeureDepart instanceof DateTimeImmutable);
         \assert($dateHeureArrivee instanceof DateTimeImmutable);
 
+        /*
+         * L'écriture du covoiturage dans PostgreSQL est centralisée
+         * dans le service de persistance.
+         */
         $idCovoiturage = $persistanceCovoiturage->creerCovoituragePlanifie(
             $idUtilisateur,
             $idVoiture,
@@ -255,6 +347,10 @@ final class PublierCovoiturageController extends AbstractController
             $preferencesLibre
         );
 
+        /*
+         * La journalisation intervient après succès.
+         * Elle conserve ici une trace utile de la publication du trajet.
+         */
         $journalEvenements->enregistrer(
             'covoiturage_publie',
             'covoiturage',

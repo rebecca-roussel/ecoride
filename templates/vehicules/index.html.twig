@@ -1,57 +1,67 @@
 {# templates/vehicules/index.html.twig #}
-{# Plan (structure de la page vehicules/index.html.twig) :
-  1) En-tête : fourni par base.html.twig
-     - fragment attendu : fragments/entete_utilisateur.html.twig (menu espace)
-  2) Zone centrale : grand panneau beige centré (comme maquette)
-     - titre + sous-titre
-     - liste de cartes véhicule (colonnes)
-     - boutons actions (crayon / poubelle)
-     - bouton principal "Ajouter un véhicule"
-  3) Pied de page : fourni par base.html.twig
+{# Plan du fichier :
+
+  1. Hériter de base.html.twig
+     - le socle commun fournit l'en-tête, le pied de page
+       et l'affichage global des messages flash
+
+  2. Charger la feuille CSS propre à la gestion des véhicules
+     - accueil.css reste déjà chargé dans le socle commun
+     - vehicules.css ajoute le style spécifique à cette page
+
+  3. Forcer l'en-tête utilisateur
+     - cette page appartient à l'espace connecté
+
+  4. Afficher la structure principale
+     - titre
+     - sous-titre
+     - liste des véhicules
+     - action pour ajouter un véhicule
+
+  5. Prévoir deux cas
+     - aucun véhicule enregistré
+     - au moins un véhicule à afficher
+
+  6. Prévoir les actions sur chaque véhicule
+     - modification
+     - suppression via POST + jeton CSRF + confirmation navigateur
+
+  Point important :
+  - les messages flash ne sont plus affichés dans ce template
+  - ils sont gérés globalement dans base.html.twig
 #}
 
 {% extends 'base.html.twig' %}
-	{% block title %}
+
+{% block title %}
 Gérer mes véhicules — EcoRide
 {% endblock %}
 
-	{% block stylesheets %}
+{% block stylesheets %}
 	{{ parent() }}
-	{# accueil.css reste chargé partout (socle header/footer) #}
-<link rel="stylesheet" href="{{ asset('css/vehicules.css') }}"> {% endblock %}
+	{# accueil.css reste chargé partout dans base.html.twig
+	   car il sert de socle au header et au footer #}
+	<link rel="stylesheet" href="{{ asset('css/vehicules.css') }}">
+{% endblock %}
 
-{# Fragments en-tête utilisateur #}
 {% block entete %}
 	{% include 'fragments/entete_utilisateur.html.twig' %}
 {% endblock %}
 
-
 {% block body %}
 	<main class="page_vehicules">
-
 		<section class="panneau_vehicules" aria-labelledby="titre_page">
+
+			{# En-tête de la page :
+			   il présente le rôle de l'écran avant la liste. #}
 			<header class="entete_panneau">
 				<h1 id="titre_page">Gérer mes véhicules</h1>
 				<p class="texte_secondaire">Ajouter, modifier ou supprimer vos véhicules</p>
 			</header>
 
-			{# Messages flash : affiche uniquement le dernier message de chaque type #}
-
-			{% set messages_succes = app.flashes('succes') %}
-			{% if messages_succes|length > 0 %}
-				<div class="message message_succes" role="status">
-					{{ messages_succes|last }}
-				</div>
-			{% endif %}
-
-			{% set messages_erreur = app.flashes('erreur') %}
-			{% if messages_erreur|length > 0 %}
-				<div class="message message_erreur" role="alert">
-					{{ messages_erreur|last }}
-				</div>
-			{% endif %}
-
-
+			{# Liste des véhicules :
+			   si la collection est vide, on affiche un état vide.
+			   Sinon, on affiche une carte par véhicule. #}
 			<div class="liste_vehicules" role="list">
 				{% if vehicules is empty %}
 					<div class="etat_vide">
@@ -63,6 +73,10 @@ Gérer mes véhicules — EcoRide
 				{% else %}
 					{% for v in vehicules %}
 						<article class="carte_vehicule" role="listitem">
+
+							{# Grille d'informations :
+							   elle présente les données utiles du véhicule
+							   de manière compacte et lisible. #}
 							<div class="grille_infos">
 								<div class="bloc_info">
 									<span class="libelle">Marque</span>
@@ -93,7 +107,6 @@ Gérer mes véhicules — EcoRide
 									</span>
 								</div>
 
-
 								<div class="bloc_info">
 									<span class="libelle">Places</span>
 									<span class="valeur">{{ v.nb_places }}</span>
@@ -101,20 +114,44 @@ Gérer mes véhicules — EcoRide
 
 								<div class="bloc_info">
 									<span class="libelle">Ancienneté</span>
-									<span class="valeur">{{ v.anciennete_annees }}
-										an{{ v.anciennete_annees != 1 ? 's' : '' }}</span>
+									<span class="valeur">
+										{{ v.anciennete_annees }}
+										an{{ v.anciennete_annees != 1 ? 's' : '' }}
+									</span>
 								</div>
 							</div>
 
+							{# Actions du véhicule :
+							   - lien vers la modification
+							   - suppression en POST avec jeton CSRF
+							   - confirmation simple via le navigateur avant envoi #}
 							<div class="actions">
-								<a class="bouton_icone" href="{{ path('vehicule_modifier', { idVoiture: v.id_voiture }) }}" aria-label="Modifier ce véhicule" title="Modifier">
+								<a
+									class="bouton_icone"
+									href="{{ path('vehicule_modifier', { idVoiture: v.id_voiture }) }}"
+									aria-label="Modifier ce véhicule"
+									title="Modifier"
+								>
 									<img src="{{ asset('icones/crayon.svg') }}" alt="" aria-hidden="true">
 								</a>
 
-
-								<form method="post" action="{{ path('vehicule_supprimer', { idVoiture: v.id_voiture }) }}" class="form_suppression" onsubmit="return confirm('Confirmer la suppression de ce véhicule ?');">
-									<input type="hidden" name="_jeton_csrf" value="{{ csrf_token('supprimer_vehicule_' ~ v.id_voiture) }}">
-									<button type="submit" class="bouton_icone bouton_icone_danger" aria-label="Supprimer ce véhicule" title="Supprimer">
+								<form
+									method="post"
+									action="{{ path('vehicule_supprimer', { idVoiture: v.id_voiture }) }}"
+									class="form_suppression"
+									onsubmit="return confirm('Confirmer la suppression de ce véhicule ?');"
+								>
+									<input
+										type="hidden"
+										name="_jeton_csrf"
+										value="{{ csrf_token('supprimer_vehicule_' ~ v.id_voiture) }}"
+									>
+									<button
+										type="submit"
+										class="bouton_icone bouton_icone_danger"
+										aria-label="Supprimer ce véhicule"
+										title="Supprimer"
+									>
 										<img src="{{ asset('icones/poubelle.svg') }}" alt="" aria-hidden="true">
 									</button>
 								</form>
@@ -124,13 +161,15 @@ Gérer mes véhicules — EcoRide
 				{% endif %}
 			</div>
 
+			{# Action principale :
+			   ce bouton envoie vers le formulaire d'ajout de véhicule. #}
 			<div class="zone_action_principale">
 				<a class="bouton_ajouter" href="{{ path('vehicule_ajouter') }}" aria-label="Ajouter un véhicule">
 					<span class="plus" aria-hidden="true">+</span>
 					Ajouter un véhicule
 				</a>
 			</div>
-		</section>
 
+		</section>
 	</main>
 {% endblock %}
