@@ -38,8 +38,7 @@ Résultats de recherche - EcoRide
 
 	{% block stylesheets %}
 	{{ parent() }}
-	<link rel="stylesheet" href="{{ asset('css/accueil.css') }}"> <link rel="stylesheet" href="{{ asset('css/resultats.css') }}">
-{% endblock %}
+<link rel="stylesheet" href="{{ asset('css/resultats.css') }}"> {% endblock %}
 
 {% block entete %}
 	{% include 'fragments/entete_public.html.twig' %}
