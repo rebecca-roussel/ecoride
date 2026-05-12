@@ -1,15 +1,18 @@
 services:
   nginx:
+    networks:
+      - ecoride_reseau
     image: nginx:1.27-alpine
     container_name: ecoride_nginx
     ports:
-      - "127.0.0.1:8080:80"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./:/var/www/html:ro
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx/default.production.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - php
-    restart: unless-stopped
 
   php:
     build:
@@ -19,44 +22,52 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
+    env_file:
+      - .env.docker
     environment:
       COMPOSER_HOME: /tmp/composer
-    user: "${UID:-1000}:${GID:-1000}"
+      MAILER_DSN: "smtp://mailhog:1025"
+    user: "${UID}:${GID}"
     depends_on:
       - postgresql
       - mongodb
-    restart: unless-stopped
+    networks:
+      - ecoride_reseau
+
 
   postgresql:
     image: postgres:16
     container_name: ecoride_postgresql
-    environment:
-      POSTGRES_DB: "${POSTGRES_DB}"
-      POSTGRES_USER: "${POSTGRES_USER}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    env_file:
+      - .env.docker
     ports:
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - donnees_postgresql:/var/lib/postgresql/data
-    restart: unless-stopped
+    networks:
+      - ecoride_reseau
 
   mongodb:
     image: mongo:7
     container_name: ecoride_mongodb
-    ports:
-      - "127.0.0.1:27017:27017"
     volumes:
       - donnees_mongodb:/data/db
-    restart: unless-stopped
+    networks:
+      - ecoride_reseau
+
 
   mailhog:
-    image: mailhog/mailhog:v1.0.1
+    image: mailhog/mailhog
     container_name: ecoride_mailhog
     ports:
       - "127.0.0.1:1025:1025"
       - "127.0.0.1:8025:8025"
-    restart: unless-stopped
+    networks:
+      - ecoride_reseau
 
 volumes:
   donnees_postgresql:
   donnees_mongodb:
+
+networks:
+  ecoride_reseau:
