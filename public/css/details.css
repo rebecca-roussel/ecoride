@@ -253,6 +253,62 @@
   line-height: 1;
 }
 
+/* Fenêtre de confirmation de participation */
+
+.fenetre_confirmation_participation {
+    width: min(92vw, 620px);
+    border: 1px solid var(--bordure);
+    border-radius: 18px;
+    padding: 28px;
+    background: var(--surface_beige);
+    color: #0F172A;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.fenetre_confirmation_participation::backdrop {
+    background: rgba(15, 23, 42, 0.72);
+}
+
+.fenetre_confirmation_participation h2 {
+    margin-bottom: 16px;
+    color: #0F172A;
+}
+
+.fenetre_confirmation_participation p {
+    margin-bottom: 18px;
+}
+
+.case_confirmation_participation {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 24px;
+    font-size: 16px;
+}
+
+.case_confirmation_participation input {
+    width: 20px;
+    height: 20px;
+}
+
+.actions_confirmation_participation {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.actions_confirmation_participation .bouton_secondaire {
+    min-height: 44px;
+    padding: 12px 18px;
+    border: 1px solid var(--bordure);
+    border-radius: 10px;
+    background: transparent;
+    color: #0F172A;
+    font-weight: 600;
+    cursor: pointer;
+}
+
 /* RESPONSIVE */
 
 @media (max-width: 700px){
