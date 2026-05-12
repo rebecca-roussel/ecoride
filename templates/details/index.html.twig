@@ -336,25 +336,69 @@ Détails du covoiturage - EcoRide
 		{% set id_utilisateur_page = id_utilisateur_connecte|default(0) %}
 		{% set est_chauffeur_du_trajet = id_utilisateur_page > 0 and id_utilisateur_page == id_chauffeur %}
 
-		<div class="actions_details">
-			{% if not est_chauffeur_du_trajet %}
-				<form method="post" action="{{ path('participer_covoiturage', { id: detail.id_covoiturage }) }}">
-					<input
-						type="hidden"
-						name="_token"
-						value="{{ csrf_token('participer_covoiturage_' ~ detail.id_covoiturage) }}"
-					>
+<div class="actions_details">
+        {% if not est_chauffeur_du_trajet %}
+                {% if places <= 0 %}
+                        <button class="bouton_principal" type="button" disabled>
+                                Complet
+                        </button>
+                {% else %}
+                        <button
+                                id="bouton_ouvrir_confirmation_participation"
+                                class="bouton_principal"
+                                type="button"
+                        >
+                                Participer
+                        </button>
 
-					<button class="bouton_principal" type="submit" {% if places <= 0 %}disabled{% endif %}>
-						{% if places <= 0 %}
-							Complet
-						{% else %}
-							Participer
-						{% endif %}
-					</button>
-				</form>
-			{% endif %}
-		</div>
+                        <dialog id="fenetre_confirmation_participation" class="fenetre_confirmation_participation">
+                                <form method="post" action="{{ path('participer_covoiturage', { id: detail.id_covoiturage }) }}">
+                                        <input
+                                                type="hidden"
+                                                name="_token"
+                                                value="{{ csrf_token('participer_covoiturage_' ~ detail.id_covoiturage) }}"
+                                        >
+
+                                        <h2>Confirmer la participation</h2>
+
+                                        <p>
+                                                Ce covoiturage coûte {{ detail.prix_credits|default('—') }} crédits.
+                                                Je confirme vouloir utiliser mes crédits pour participer à ce trajet.
+                                        </p>
+
+                                        <label class="case_confirmation_participation">
+                                                <input id="case_confirmation_credits" type="checkbox">
+                                                Je confirme l’utilisation de mes crédits.
+                                        </label>
+
+                                        <div class="actions_confirmation_participation">
+                                                <button
+                                                        id="bouton_fermer_confirmation_participation"
+                                                        class="bouton_secondaire"
+                                                        type="button"
+                                                >
+                                                        Annuler
+                                                </button>
+
+                                                <button
+                                                        id="bouton_confirmer_participation"
+                                                        class="bouton_principal"
+                                                        type="submit"
+                                                        disabled
+                                                >
+                                                        Confirmer la participation
+                                                </button>
+                                        </div>
+                                </form>
+                        </dialog>
+                {% endif %}
+        {% endif %}
+</div>
 	</section>
 </main>
+{% endblock %}
+
+{% block javascripts %}
+        {{ parent() }}
+        <script src="{{ asset('js/details.js') }}" defer></script>
 {% endblock %}
