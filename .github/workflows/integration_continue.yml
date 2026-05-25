@@ -7,6 +7,7 @@ on:
       - main
       - correction/**
       - fonctionnalite/**
+      - amelioration/**
   pull_request:
     branches:
       - develop
