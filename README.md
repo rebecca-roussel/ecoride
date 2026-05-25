@@ -73,8 +73,8 @@ Les services communiquent dans le réseau interne Docker. PostgreSQL reste rése
 | Infrastructure | Code source monté en `read-only` dans le conteneur Nginx |
 | Formulaires | Protection CSRF Symfony Security |
 | En-têtes HTTP | `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` |
-| Secrets | Fichiers `.env`, `.env.local`, `.env.docker`, `.env.prod` et `.env.test` exclus du dépôt via `.gitignore` |
-| Droits réseau | PostgreSQL non exposé publiquement. Les ports publics de production sont gérés dans la configuration de déploiement VPS |
+| Secrets | `.env.local` exclu du dépôt via `.gitignore` |
+| Droits réseau | PostgreSQL non exposé sur la machine hôte. MongoDB publié seulement en local sur `127.0.0.1:27017` |
 
 ### Choix de conception
 

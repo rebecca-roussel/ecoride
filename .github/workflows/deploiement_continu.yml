@@ -1,0 +1,118 @@
+name: Déploiement continu EcoRide
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag à déployer, exemple v1.0.1"
+        required: true
+        type: string
+
+concurrency:
+  group: deploiement-production
+  cancel-in-progress: false
+
+jobs:
+  deployer:
+    name: Déployer sur le VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Déterminer le tag à déployer
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Préparer la clé SSH
+        env:
+          VPS_CLE_SSH: ${{ secrets.VPS_CLE_SSH }}
+          VPS_PORT_SSH: ${{ secrets.VPS_PORT_SSH }}
+          VPS_HOTE: ${{ secrets.VPS_HOTE }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${VPS_CLE_SSH:-}" ] || [ -z "${VPS_PORT_SSH:-}" ] || [ -z "${VPS_HOTE:-}" ]; then
+            echo "::error::Un secret SSH obligatoire est manquant."
+            exit 1
+          fi
+
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_CLE_SSH" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT_SSH" "$VPS_HOTE" >> ~/.ssh/known_hosts
+
+      - name: Déployer la version taguée sur le VPS
+        env:
+          VPS_HOTE: ${{ secrets.VPS_HOTE }}
+          VPS_UTILISATEUR: ${{ secrets.VPS_UTILISATEUR }}
+          VPS_PORT_SSH: ${{ secrets.VPS_PORT_SSH }}
+          VPS_CHEMIN_PROJET: ${{ secrets.VPS_CHEMIN_PROJET }}
+          URL_PRODUCTION: ${{ secrets.URL_PRODUCTION }}
+          TAG_DEPLOIEMENT: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          for variable in VPS_HOTE VPS_UTILISATEUR VPS_PORT_SSH VPS_CHEMIN_PROJET URL_PRODUCTION TAG_DEPLOIEMENT; do
+            if [ -z "${!variable:-}" ]; then
+              echo "::error::La variable $variable est vide ou manquante."
+              exit 1
+            fi
+          done
+
+          ssh -p "$VPS_PORT_SSH" "$VPS_UTILISATEUR@$VPS_HOTE" \
+            "VPS_CHEMIN_PROJET='$VPS_CHEMIN_PROJET' URL_PRODUCTION='$URL_PRODUCTION' TAG_DEPLOIEMENT='$TAG_DEPLOIEMENT' bash -s" <<'SCRIPT'
+          set -euo pipefail
+
+          cd "$VPS_CHEMIN_PROJET"
+
+          if [ -n "$(git status --short --untracked-files=no)" ]; then
+            echo "Des modifications locales suivies existent sur le VPS. Déploiement interrompu."
+            git status --short --untracked-files=no
+            exit 1
+          fi
+
+          ancienne_reference="$(git rev-parse HEAD)"
+
+          rollback() {
+            code_erreur="$?"
+
+            if [ "$code_erreur" -ne 0 ]; then
+              echo "Échec du déploiement. Retour à la référence précédente : $ancienne_reference"
+              trap - ERR
+
+              git checkout "$ancienne_reference" || true
+              docker compose --env-file .env.production.local -f docker-compose.production.yaml up -d --build --remove-orphans || true
+              curl -fsSIL "$URL_PRODUCTION" >/dev/null || true
+
+              exit "$code_erreur"
+            fi
+          }
+
+          trap rollback ERR
+
+          git fetch --all --tags --prune
+
+          if ! git rev-parse -q --verify "refs/tags/$TAG_DEPLOIEMENT" >/dev/null; then
+            echo "Le tag $TAG_DEPLOIEMENT est introuvable."
+            exit 1
+          fi
+
+          git checkout "$TAG_DEPLOIEMENT"
+
+          docker compose --env-file .env.production.local -f docker-compose.production.yaml config
+          docker compose --env-file .env.production.local -f docker-compose.production.yaml up -d --build --remove-orphans
+          docker compose --env-file .env.production.local -f docker-compose.production.yaml ps
+
+          curl -fsSIL "$URL_PRODUCTION" >/dev/null
+
+          trap - ERR
+
+          echo "Déploiement terminé avec succès."
+          SCRIPT

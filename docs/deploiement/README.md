@@ -56,7 +56,7 @@ Versions installées :
 
 ## 4. Réseau : ports nécessaires
 
-Ports exposés par le `docker-compose.yaml` :
+Ports exposés par le `docker-compose.yml` :
 
 - `8080/tcp` : application EcoRide (Nginx)
 - `8025/tcp` : interface web MailHog (consultation des courriels capturés)
