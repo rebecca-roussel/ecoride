@@ -80,6 +80,14 @@ jobs:
 
           ancienne_reference="$(git rev-parse HEAD)"
 
+          relancer_reference() {
+            if [ -f docker-compose.production.yaml ]; then
+              docker compose --env-file .env.production.local -f docker-compose.production.yaml up -d --build --remove-orphans
+            else
+              docker compose up -d --build
+            fi
+          }
+
           rollback() {
             code_erreur="$?"
 
@@ -88,7 +96,7 @@ jobs:
               trap - ERR
 
               git checkout "$ancienne_reference" || true
-              docker compose --env-file .env.production.local -f docker-compose.production.yaml up -d --build --remove-orphans || true
+              relancer_reference || true
               curl -fsSIL "$URL_PRODUCTION" >/dev/null || true
 
               exit "$code_erreur"
@@ -105,6 +113,16 @@ jobs:
           fi
 
           git checkout "$TAG_DEPLOIEMENT"
+
+          if [ ! -f .env.production.local ]; then
+            echo "Le fichier .env.production.local est introuvable sur le VPS."
+            exit 1
+          fi
+
+          if [ ! -f docker-compose.production.yaml ]; then
+            echo "Le fichier docker-compose.production.yaml est introuvable dans le tag déployé."
+            exit 1
+          fi
 
           docker compose --env-file .env.production.local -f docker-compose.production.yaml config
           docker compose --env-file .env.production.local -f docker-compose.production.yaml up -d --build --remove-orphans
