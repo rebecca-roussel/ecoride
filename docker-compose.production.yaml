@@ -1,7 +1,5 @@
 services:
   nginx:
-    networks:
-      - ecoride_reseau
     image: nginx:1.27-alpine
     container_name: ecoride_nginx
     ports:
@@ -13,6 +11,9 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - php
+    networks:
+      - ecoride_reseau
+    restart: unless-stopped
 
   php:
     build:
@@ -23,29 +24,27 @@ services:
     volumes:
       - ./:/var/www/html
     env_file:
-      - .env.docker
+      - .env.production.local
     environment:
       COMPOSER_HOME: /tmp/composer
-      MAILER_DSN: "smtp://mailhog:1025"
-    user: "${UID}:${GID}"
+    user: "${UID:-1000}:${GID:-1000}"
     depends_on:
       - postgresql
       - mongodb
     networks:
       - ecoride_reseau
-
+    restart: unless-stopped
 
   postgresql:
     image: postgres:16
     container_name: ecoride_postgresql
     env_file:
-      - .env.docker
-    ports:
-      - "127.0.0.1:5432:5432"
+      - .env.production.local
     volumes:
       - donnees_postgresql:/var/lib/postgresql/data
     networks:
       - ecoride_reseau
+    restart: unless-stopped
 
   mongodb:
     image: mongo:7
@@ -54,16 +53,7 @@ services:
       - donnees_mongodb:/data/db
     networks:
       - ecoride_reseau
-
-
-  mailhog:
-    image: mailhog/mailhog
-    container_name: ecoride_mailhog
-    ports:
-      - "127.0.0.1:1025:1025"
-      - "127.0.0.1:8025:8025"
-    networks:
-      - ecoride_reseau
+    restart: unless-stopped
 
 volumes:
   donnees_postgresql:
