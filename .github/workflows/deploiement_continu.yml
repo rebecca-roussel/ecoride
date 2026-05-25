@@ -88,7 +88,7 @@ jobs:
               trap - ERR
 
               git checkout "$ancienne_reference" || true
-              docker compose --env-file .env.production.local -f docker-compose.production.yaml up -d --build || true
+              docker compose --env-file .env.production.local -f docker-compose.production.yaml up -d --build --remove-orphans || true
               curl -fsSIL "$URL_PRODUCTION" >/dev/null || true
 
               exit "$code_erreur"
@@ -107,7 +107,7 @@ jobs:
           git checkout "$TAG_DEPLOIEMENT"
 
           docker compose --env-file .env.production.local -f docker-compose.production.yaml config
-          docker compose --env-file .env.production.local -f docker-compose.production.yaml up -d --build
+          docker compose --env-file .env.production.local -f docker-compose.production.yaml up -d --build --remove-orphans
           docker compose --env-file .env.production.local -f docker-compose.production.yaml ps
 
           curl -fsSIL "$URL_PRODUCTION" >/dev/null
