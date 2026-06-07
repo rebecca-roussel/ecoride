@@ -62,19 +62,20 @@ L’environnement repose sur Docker Compose. Il lance les services nécessaires 
 | MongoDB | Journal d’événements |
 | MailHog | Tests des emails en local |
 
-Les services communiquent dans le réseau interne Docker. PostgreSQL reste réservé aux conteneurs. MongoDB est publié seulement en local pour pouvoir l’ouvrir avec MongoDB Compass pendant le développement.
+Les services communiquent dans le réseau interne Docker. En production, PostgreSQL et MongoDB ne sont pas publiés sur la machine hôte. En local, PostgreSQL est limité à `127.0.0.1:5433` et MongoDB à `127.0.0.1:27017`, afin de permettre les contrôles depuis le poste de développement sans exposition réseau publique.
 
 ### Sécurité
 
 | Domaine | Mesure appliquée |
 |---|---|
-| Mots de passe | Hachage BCrypt |
-| Réinitialisation | Jeton `random_bytes` haché en SHA-256, stocké en base, usage unique |
-| Infrastructure | Code source monté en `read-only` dans le conteneur Nginx |
-| Formulaires | Protection CSRF Symfony Security |
-| En-têtes HTTP | `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` |
+| Mots de passe | Hachage avec `password_hash(..., PASSWORD_BCRYPT)` |
+| Réinitialisation | Jeton généré avec `random_bytes`, haché en SHA-256, expirant après 30 minutes et utilisable une seule fois |
+| Formulaires sensibles | Jetons CSRF générés dans Twig et vérifiés dans les contrôleurs Symfony |
+| Dépendances | Contrôle avec `composer audit --no-dev` en production |
+| Infrastructure | Code source monté en lecture seule dans le conteneur Nginx |
+| En-têtes HTTP | HSTS, CSP minimale, `Permissions-Policy`, `Referrer-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, `X-DNS-Prefetch-Control`, `X-Permitted-Cross-Domain-Policies`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy` |
 | Secrets | `.env.local` exclu du dépôt via `.gitignore` |
-| Droits réseau | PostgreSQL non exposé sur la machine hôte. MongoDB publié seulement en local sur `127.0.0.1:27017` |
+| Réseau Docker | PostgreSQL et MongoDB non exposés publiquement en production |
 
 ### Choix de conception
 
@@ -202,6 +203,14 @@ curl -I http://localhost:8080
 
 Résultat attendu : `HTTP/1.1 200 OK` avec présence de `X-Frame-Options`, `X-Content-Type-Options` et `Referrer-Policy`.
 
+Contrôler les en-têtes de sécurité en production :
+
+```bash
+curl -I https://www.eco-ride.fr
+```
+
+Résultat attendu : HTTP/1.1 200 OK avec présence des en-têtes de sécurité Nginx renforcés, notamment `Strict-Transport-Security`, `Content-Security-Policy`, `Permissions-Policy`, `X-Frame-Options`, `X-Content-Type-Options` et `Referrer-Policy`.
+
 ---
 
 ## Architecture des conteneurs
@@ -220,7 +229,7 @@ Navigateur
     └──▶ MailHog :8025  (simulation SMTP en condition de développement uniquement)
 ```
 
-Tous les services communiquent via le réseau interne de Docker Compose. PostgreSQL n'est pas exposé sur la machine hôte. MongoDB est publié uniquement en local sur `127.0.0.1:27017`, ce qui permet son utilisation avec MongoDB Compass depuis le poste de développement.
+Tous les services communiquent via le réseau interne de Docker Compose. En local, PostgreSQL est publié uniquement sur `127.0.0.1:5433` et MongoDB sur `127.0.0.1:27017`, afin de permettre les contrôles depuis le poste de développement. En production, PostgreSQL et MongoDB ne sont pas publiés sur la machine hôte et restent accessibles uniquement par les services Docker internes.
 
 ---
 
@@ -249,10 +258,13 @@ ecoride/
 │   ├── interface/          # Maquettes
 │   └── gestion_projet/
 ├── docker/
-│   ├── nginx/default.conf
-│   └── php/Dockerfile
-│   └── sauvegardes/         # Scripts de sauvegarde et restauration des bases de données
+│   ├── nginx/
+│   │   ├── default.conf
+│   │   └── default.production.conf
+│   ├── php/Dockerfile
+│   └── sauvegardes/        # Scripts de sauvegarde et restauration des bases de données
 ├── docker-compose.yaml
+├── docker-compose.production.yaml
 ├── composer.lock
 ├── composer.json
 ├── tests/                  # Tests automatisés
