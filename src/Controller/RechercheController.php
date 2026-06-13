@@ -52,7 +52,7 @@ final class RechercheController extends AbstractController
      *
      * @return Response Réponse HTTP contenant le rendu HTML de la page de recherche.
      */
-    #[Route('/recherche', name: 'recherche')]
+    #[Route('/recherche', name: 'recherche', methods: ['GET'])]
     public function __invoke(Request $requete): Response
     {
         /*
