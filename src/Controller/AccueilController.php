@@ -34,7 +34,7 @@ final class AccueilController extends AbstractController
      *
      * @return Response Réponse HTTP contenant le rendu HTML de la page d'accueil.
      */
-    #[Route('/', name: 'accueil')]
+    #[Route('/', name: 'accueil', methods: ['GET'])]
     public function __invoke(): Response
     {
         /*

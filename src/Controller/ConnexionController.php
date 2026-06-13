@@ -258,16 +258,27 @@ final class ConnexionController extends AbstractController
     /**
      * Ferme la session utilisateur puis renvoie vers l'accueil.
      *
-     * Cette méthode vide les informations stockées en session.
-     * L'application considère alors l'utilisateur comme déconnecté.
-     *
+     * La déconnexion est traitée en POST, car elle modifie l'état de la session.
+     * Le jeton CSRF évite qu'une requête de déconnexion soit déclenchée
+     * depuis une source non légitime.
+     * @param Request $requete Requête HTTP contenant le jeton CSRF.
      * @param SessionUtilisateur $sessionUtilisateur Service de gestion de session.
      *
      * @return Response Redirection vers l'accueil.
      */
-    #[Route('/deconnexion', name: 'deconnexion', methods: ['POST', 'GET'])]
-    public function deconnexion(SessionUtilisateur $sessionUtilisateur): Response
+    #[Route('/deconnexion', name: 'deconnexion', methods: ['POST'])]
+    public function deconnexion(Request $requete, SessionUtilisateur $sessionUtilisateur): Response
     {
+     /*
+     * Le champ _token est envoyé par le formulaire POST.
+     * Le cast (string) normalise la valeur récupérée avant la vérification CSRF.
+     */
+        $jeton = (string) $requete->request->get('_token', '');
+
+        if (!$this->isCsrfTokenValid('deconnexion', $jeton)) {
+        throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+        
         $sessionUtilisateur->deconnecter();
 
         return $this->redirectToRoute('accueil');

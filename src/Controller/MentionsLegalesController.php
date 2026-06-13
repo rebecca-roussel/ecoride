@@ -33,7 +33,7 @@ final class MentionsLegalesController extends AbstractController
      *
      * @return Response Réponse HTTP contenant le rendu HTML de la page des mentions légales.
      */
-    #[Route('/mentions-legales', name: 'mentions_legales')]
+    #[Route('/mentions-legales', name: 'mentions_legales', methods: ['GET'])]
     public function index(): Response
     {
         /*
