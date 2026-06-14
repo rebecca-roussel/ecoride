@@ -1,0 +1,6 @@
+# Sauvegarde quotidienne des bases EcoRide en production
+# Exécution tous les jours à 02 h 30
+# Conservation locale des sauvegardes applicatives : 7 jours
+# Les journaux sont écrits hors du dépôt Git, dans /srv/ecoride/sauvegardes/journaux/
+
+30 2 * * * /bin/bash -lc 'umask 077; mkdir -p /srv/ecoride/sauvegardes/journaux; chmod 700 /srv/ecoride/sauvegardes /srv/ecoride/sauvegardes/journaux; /srv/ecoride/ecoride/docker/sauvegardes/production/sauvegarder_bases_production.sh 7 >> /srv/ecoride/sauvegardes/journaux/sauvegardes.log 2>&1'
