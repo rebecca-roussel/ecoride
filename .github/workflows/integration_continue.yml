@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Récupérer le dépôt
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Installer PHP 8.3 et les extensions requises
         uses: shivammathur/setup-php@v2
