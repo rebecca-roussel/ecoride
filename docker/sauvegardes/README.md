@@ -32,4 +32,14 @@ Ce dossier est ignoré par Git car les sauvegardes peuvent contenir des données
 
 ./docker/sauvegardes/nettoyer_sauvegardes.sh 7
 
-Cette procédure concerne l’environnement local du projet. Pour un déploiement en production, il faudrait compléter ce travail par des sauvegardes à l'externe planifiées et protégées, mais aussi des tests réguliers de restauration.
+## Sauvegardes de production
+
+Cette procédure locale est complétée par une procédure dédiée au VPS de production.
+
+Les fichiers de production sont placés dans :
+
+docker/sauvegardes/production/
+
+La procédure de production prévoit une sauvegarde applicative de PostgreSQL et MongoDB, une automatisation par cron, un stockage hors dépôt Git, des droits restrictifs, une durée de conservation limitée et un test de restauration dans un environnement séparé.
+
+Le VPS bénéficie aussi des sauvegardes proposées par Hostinger. Ces sauvegardes protègent le serveur complet. Les scripts EcoRide ajoutent une sauvegarde ciblée des bases de données.
