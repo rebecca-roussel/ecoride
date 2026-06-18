@@ -1,6 +1,13 @@
+
 name: Intégration continue EcoRide
 
+# Ce workflow sert à contrôler automatiquement la qualité du projet.
+# Il ne déploie pas l'application.
+# Il vérifie le code, la configuration Symfony, les templates Twig,
+# Docker Compose et les tests PHPUnit.
+
 on:
+  # Le workflow se lance quand du code est poussé sur ces branches.
   push:
     branches:
       - develop
@@ -8,6 +15,9 @@ on:
       - correction/**
       - fonctionnalite/**
       - amelioration/**
+
+  # Le workflow se lance aussi quand une pull request vise develop ou main.
+  # Cela permet de vérifier le code avant de l'intégrer dans une branche importante.
   pull_request:
     branches:
       - develop
@@ -16,38 +26,58 @@ on:
 jobs:
   verification_qualite:
     name: Vérifications qualité
+
+    # GitHub Actions lance les vérifications sur une machine Ubuntu temporaire.
     runs-on: ubuntu-latest
 
     steps:
+      # Cette étape récupère le code du dépôt dans la machine GitHub Actions.
       - name: Récupérer le dépôt
         uses: actions/checkout@v6
 
+      # Cette étape installe PHP 8.3 et les extensions nécessaires au projet EcoRide.
+      # pdo_pgsql sert à utiliser PostgreSQL avec PDO.
+      # mongodb sert à utiliser MongoDB dans le projet.
       - name: Installer PHP 8.3 et les extensions requises
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: "8.3"
           extensions: ctype, iconv, mongodb, pdo_pgsql
           coverage: none
 
+      # Cette étape vérifie que Composer est bien disponible.
+      # Composer sert à installer les dépendances PHP du projet.
       - name: Vérifier Composer
         run: composer --version
 
+      # Cette étape installe les dépendances PHP déclarées dans composer.json.
+      # Les options limitent les interactions et les affichages inutiles dans le workflow.
       - name: Installer les dépendances PHP
         run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
 
+      # Cette étape vérifie que Docker Compose est disponible.
+      # La commande docker compose config vérifie aussi que le fichier Compose est lisible et cohérent.
       - name: Vérifier Docker Compose
         run: |
           docker compose version
           docker compose config > /tmp/docker-compose-resolu.yml
 
+      # Cette étape vérifie la configuration du conteneur de services Symfony.
+      # Elle permet de détecter des erreurs de configuration ou d'injection de dépendances.
       - name: Vérifier la configuration du conteneur Symfony
         run: php bin/console lint:container
 
+      # Cette étape vérifie la syntaxe des templates Twig.
+      # Elle aide à détecter une erreur dans les fichiers d'affichage avant exécution.
       - name: Vérifier la syntaxe Twig
         run: php bin/console lint:twig templates
 
+      # Cette étape vérifie la syntaxe des fichiers PHP du dossier src.
+      # php -l analyse un fichier PHP sans l'exécuter.
       - name: Vérifier la syntaxe PHP
         run: find src -type f -name "*.php" -print0 | xargs -0 -n1 php -l
 
+      # Cette étape exécute les tests PHPUnit.
+      # Elle vérifie que les tests automatisés du projet passent correctement.
       - name: Exécuter les tests PHPUnit
         run: php bin/phpunit

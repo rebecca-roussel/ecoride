@@ -11,7 +11,7 @@ Ci-dessous, vous trouverez les informations principales du document PDF.
 
 ---
 
-## 1) Démarrer l'application
+## 1 Démarrer l'application
 
 1. Ouvrez EcoRide dans votre navigateur :
    - en production : `https://www.eco-ride.fr` (ou `www.eco-ride.fr`),
@@ -21,7 +21,7 @@ Ci-dessous, vous trouverez les informations principales du document PDF.
 
 ---
 
-## 2) Créer un compte et se connecter
+## 2 Créer un compte et se connecter
 
 ### Inscription
 
@@ -47,7 +47,7 @@ Ci-dessous, vous trouverez les informations principales du document PDF.
 
 ---
 
-## 3) Rechercher un covoiturage (passager)
+## 3 Rechercher un covoiturage (passager)
 
 1. Ouvrez la page **Recherche**.
 2. Saisissez :
@@ -65,7 +65,7 @@ Ci-dessous, vous trouverez les informations principales du document PDF.
 
 ---
 
-## 4) Publier un covoiturage (chauffeur)
+## 4 Publier un covoiturage (chauffeur)
 
 1. Connectez-vous avec un compte utilisateur chauffeur.
 2. Allez dans **Publier**.
@@ -80,7 +80,7 @@ Ci-dessous, vous trouverez les informations principales du document PDF.
 
 ---
 
-## 5) Gérer ses véhicules
+## 5 Gérer ses véhicules
 
 1. Ouvrez **Espace > Véhicules**.
 2. Vous pouvez :
@@ -91,7 +91,7 @@ Ci-dessous, vous trouverez les informations principales du document PDF.
 
 ---
 
-## 6) Tableau de bord, profil et crédits
+## 6 Tableau de bord, profil et crédits
 
 ### Tableau de bord
 
@@ -112,7 +112,7 @@ Dans **Crédits**, vous consultez votre solde actuel pour participer aux covoitu
 
 ---
 
-## 7) Historique et suivi des trajets
+## 7 Historique et suivi des trajets
 
 La page **Historique** permet de gérer deux volets :
 
@@ -128,7 +128,7 @@ La page **Historique** permet de gérer deux volets :
 
 ---
 
-## 8) Modération employé
+## 8 Modération employé
 
 Les comptes employés accèdent à **Espace employé** pour :
 
@@ -143,7 +143,7 @@ Les comptes employés accèdent à **Espace employé** pour :
 
 ---
 
-## 9) Administration
+## 9 Administration
 
 Les comptes administrateurs accèdent à **Espace administrateur** pour :
 
@@ -154,14 +154,14 @@ Les comptes administrateurs accèdent à **Espace administrateur** pour :
 
 ---
 
-## 10) Contact et informations légales
+## 10 Contact et informations légales
 
 - La page **Contact** permet d'envoyer une demande à l'équipe EcoRide.
 - La page **Mentions légales** expose les informations réglementaires du service.
 
 ---
 
-## 11) Conseils d'utilisation
+## 11 Conseils d'utilisation
 
 - Vérifiez votre solde de crédits avant de réserver.
 - Préparez vos véhicules en amont si vous êtes chauffeur.
