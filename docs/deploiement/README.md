@@ -1,94 +1,103 @@
 # Déploiement — EcoRide
 
-Ce dossier regroupe la **documentation de déploiement** de l’application **EcoRide** sur un **VPS Hostinger** avec **Docker** et **Docker Compose**.
+Ce dossier regroupe la documentation de déploiement de l’application EcoRide sur un VPS avec Docker, Docker Compose, Nginx et HTTPS.
 
-## 1. Vue d’ensemble de la stack Docker Compose
+Le déploiement repose sur quatre fichiers principaux :
 
-### Services déployés
+- `docker-compose.production.yaml` : décrit les services de production ;
+- `docker/nginx/default.production.conf` : configure Nginx pour la production ;
+- `docker/deploiement/deployer_production.sh` : script de déploiement utilisable sur le VPS ;
+- `.github/workflows/deploiement_continu.yml` : workflow GitHub Actions de déploiement continu.
 
-- `nginx` (conteneur `ecoride_nginx`) : serveur web
-  - exposition : **`8080:80`** (site accessible via `http://IP_DU_VPS:8080`)
-- `php` (conteneur `ecoride_php`) : exécution PHP (application Symfony)
-  - utilise `.env.docker` + variables d’environnement (dont `MAILER_DSN`)
-- `postgresql` (conteneur `ecoride_postgresql`) : base de données relationnelle
-  - exposition : `5432:5432`
-  - volume : `donnees_postgresql`
-- `mongodb` (conteneur `ecoride_mongodb`) : base NoSQL (journal d’événements)
-  - exposition : `27017:27017`
-  - volume : `donnees_mongodb`
-- `mailhog` (conteneur `ecoride_mailhog`) : capture des courriels (test)
-  - exposition : `1025:1025` (SMTP)
-  - exposition : `8025:8025` (interface web)
+## 1. Configuration Docker Compose de production
 
-### Réseau Docker
+Le fichier `docker-compose.production.yaml` déclare les services de production.
 
-- `ecoride_reseau` : réseau interne commun à tous les services
+Services utilisés :
 
-### Volumes Docker
+- `nginx` : serveur web exposé sur les ports 80 et 443 ;
+- `php` : conteneur qui exécute l’application Symfony ;
+- `postgresql` : base de données relationnelle ;
+- `mongodb` : base NoSQL utilisée pour le journal d’événements.
 
-- `donnees_postgresql` : persistance des données PostgreSQL
-- `donnees_mongodb` : persistance des données MongoDB
+Les données PostgreSQL et MongoDB sont conservées dans des volumes Docker.
 
-## 2. Accès après déploiement
+## 2. Configuration Nginx de production
 
-- Application EcoRide : `http://IP_DU_VPS:8080`
-- MailHog (interface web) : `http://IP_DU_VPS:8025`
+Le fichier `docker/nginx/default.production.conf` configure Nginx pour la production.
 
-> Remarque : la configuration Docker Compose peut exposer des ports (8080, 8025, 5432, 27017).  
-> L’accessibilité depuis Internet dépend du pare-feu (UFW) et de la configuration réseau du VPS.
+Il sert à :
 
-## 3. Environnement de déploiement (VPS Hostinger)
+- rediriger HTTP vers HTTPS ;
+- utiliser les certificats Let’s Encrypt ;
+- servir le dossier public de Symfony ;
+- transmettre les requêtes PHP au conteneur `php` ;
+- ajouter des en-têtes de sécurité HTTP.
 
-Informations relevées sur le serveur :
+## 3. Variables d’environnement
 
-- Fournisseur : VPS Hostinger
-- Nom machine : `srv1324090`
-- OS : Ubuntu 24.04.3 LTS
-- Virtualisation : KVM
-- Accès SSH : utilisateur `root`
-- IP publique : `72.61.161.107`
-- Pare-feu UFW : inactif
+Le fichier `.env.production.local` doit exister sur le VPS.
 
-Versions installées :
+Il contient les valeurs sensibles de production. Il ne doit pas être envoyé sur GitHub.
 
-- Docker : `28.2.2` (paquet `docker.io`)
-- Docker Compose : `2.37.1` (paquet `docker-compose-v2`)
+## 4. Script de déploiement
 
-## 4. Réseau : ports nécessaires
+Le script de déploiement est situé ici :
 
-Ports exposés par le `docker-compose.yml` :
+`docker/deploiement/deployer_production.sh`
 
-- `8080/tcp` : application EcoRide (Nginx)
-- `8025/tcp` : interface web MailHog (consultation des courriels capturés)
-- `1025/tcp` : SMTP MailHog (utilisé par l’application pour envoyer les courriels de test)
-- `5432/tcp` : PostgreSQL
-- `27017/tcp` : MongoDB
+Il sert à déployer une version précise du projet à partir d’un tag Git.
 
-Recommandation de sécurité (principe) :
+Exemple d’utilisation sur le VPS :
 
-- À exposer publiquement : `8080` (puis `80/443` en cas de passage HTTP/HTTPS), éventuellement `8025` si l’interface MailHog doit rester consultable à distance.
-- À ne pas exposer publiquement : `5432` et `27017` (bases de données), `1025` (SMTP de test).  
-  Ces services doivent idéalement rester accessibles uniquement depuis le serveur (ou un réseau privé).
+`./docker/deploiement/deployer_production.sh v1.0.1`
 
-État constaté côté VPS :
+Le script vérifie le tag, l’état Git du VPS, les fichiers de production, la configuration Docker Compose, l’état des conteneurs et la réponse du site.
 
-- Avant le démarrage des conteneurs, aucun service n’écoute sur ces ports (vérification via `ss -lntp`).
+En cas d’échec, le script revient à l’ancienne référence Git et relance les conteneurs.
 
-## 5. Accès au dépôt GitHub (SSH)
+## 5. Déploiement avec GitHub Actions
 
-- Dépôt : `git@github.com:rebecca-roussel/ecoride.git`
-- Authentification : clé SSH `~/.ssh/id_ed25519` (utilisateur `ecoride`)
-- Test : `ssh -T git@github.com`
+Le workflow `.github/workflows/deploiement_continu.yml` automatise le déploiement depuis GitHub.
 
-## 6. Déploiement (résumé opérationnel)
+Il peut être déclenché automatiquement avec un tag Git au format `vX.Y.Z`, ou manuellement avec `workflow_dispatch`.
 
-Après le clonage du dépôt sur le VPS :
+Le workflow se connecte au VPS en SSH, déploie la version taguée et vérifie que l’application répond.
 
-- Préparer le fichier `.env` (UID/GID) si requis par Docker Compose
-- Préparer le fichier `.env.docker` adapté au VPS (URI, secret, accès bases)
-- Lancer les services : `docker compose up -d --build`
-- Vérifier l’état : `docker compose ps`
-- Vérifier les journaux : `docker compose logs`
-- Vérifier l’écoute réseau : `ss -lntp`
+## 6. Commandes de contrôle
 
-Les étapes détaillées (commandes et contrôles) sont décrites dans la fiche de déploiement du dossier.
+Vérifier la configuration Docker Compose :
+
+`docker compose --env-file .env.production.local -f docker-compose.production.yaml config`
+
+Relancer les conteneurs :
+
+`docker compose --env-file .env.production.local -f docker-compose.production.yaml up -d --build --remove-orphans`
+
+Afficher l’état des conteneurs :
+
+`docker compose --env-file .env.production.local -f docker-compose.production.yaml ps`
+
+Vérifier que le site répond :
+
+`curl -fsSIL https://eco-ride.fr`
+
+## 7. Sécurité
+
+La production utilise HTTPS avec Let’s Encrypt.
+
+Les données sensibles restent dans `.env.production.local` sur le VPS.
+
+PostgreSQL et MongoDB ne sont pas exposés publiquement par le fichier Docker Compose de production.
+
+Nginx ajoute des en-têtes de sécurité HTTP.
+
+Le script bloque le déploiement si des modifications locales existent sur le VPS.
+
+Le script prévoit un retour arrière en cas d’échec.
+
+## 8. Document lié
+
+La fiche détaillée de déploiement est disponible ici :
+
+`docs/deploiement/deploiement_ecoride_sur_vps.pdf`

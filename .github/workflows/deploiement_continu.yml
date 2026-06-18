@@ -1,9 +1,14 @@
 name: Déploiement continu EcoRide
 
+# Ce workflow sert à déployer EcoRide en production.
+# Il se déclenche uniquement dans deux cas :
+# - quand un tag Git de version est poussé, par exemple v1.0.1 ;
+# - quand le déploiement est lancé manuellement depuis GitHub Actions.
 on:
   push:
     tags:
       - "v*.*.*"
+
   workflow_dispatch:
     inputs:
       tag:
@@ -11,6 +16,8 @@ on:
         required: true
         type: string
 
+# Cette règle évite de lancer deux déploiements de production en même temps.
+# Si un déploiement est déjà en cours, le suivant attendra.
 concurrency:
   group: deploiement-production
   cancel-in-progress: false
@@ -21,6 +28,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Cette étape choisit le tag à déployer.
+      # Si le workflow est lancé manuellement, il utilise le tag saisi dans GitHub.
+      # Si le workflow est lancé par un push de tag, il utilise le tag poussé.
       - name: Déterminer le tag à déployer
         id: tag
         run: |
@@ -30,6 +40,9 @@ jobs:
             echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
 
+      # Cette étape prépare la connexion SSH vers le VPS.
+      # La clé privée, le port SSH et l'adresse du VPS sont stockés dans les secrets GitHub.
+      # Les secrets évitent d'écrire des informations sensibles directement dans le dépôt.
       - name: Préparer la clé SSH
         env:
           VPS_CLE_SSH: ${{ secrets.VPS_CLE_SSH }}
@@ -38,16 +51,27 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Si un secret obligatoire manque, le déploiement s'arrête.
           if [ -z "${VPS_CLE_SSH:-}" ] || [ -z "${VPS_PORT_SSH:-}" ] || [ -z "${VPS_HOTE:-}" ]; then
             echo "::error::Un secret SSH obligatoire est manquant."
             exit 1
           fi
 
+          # Création du dossier SSH sur la machine GitHub Actions.
           mkdir -p ~/.ssh
+
+          # Écriture de la clé privée SSH dans un fichier temporaire.
           printf '%s\n' "$VPS_CLE_SSH" > ~/.ssh/id_ed25519
+
+          # Sécurisation des droits du fichier de clé.
           chmod 600 ~/.ssh/id_ed25519
+
+          # Ajout du VPS dans la liste des hôtes connus.
+          # Cela évite une demande de confirmation interactive pendant le workflow.
           ssh-keyscan -p "$VPS_PORT_SSH" "$VPS_HOTE" >> ~/.ssh/known_hosts
 
+      # Cette étape se connecte au VPS et exécute le déploiement.
+      # GitHub Actions déclenche la procédure, mais les commandes Docker sont exécutées sur le VPS.
       - name: Déployer la version taguée sur le VPS
         env:
           VPS_HOTE: ${{ secrets.VPS_HOTE }}
@@ -59,6 +83,8 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Vérification des variables nécessaires au déploiement.
+          # Si une variable est vide, le workflow s'arrête avant de se connecter au VPS.
           for variable in VPS_HOTE VPS_UTILISATEUR VPS_PORT_SSH VPS_CHEMIN_PROJET URL_PRODUCTION TAG_DEPLOIEMENT; do
             if [ -z "${!variable:-}" ]; then
               echo "::error::La variable $variable est vide ou manquante."
@@ -66,20 +92,32 @@ jobs:
             fi
           done
 
+          # Connexion SSH au VPS.
+          # Les variables utiles sont transmises au script exécuté sur le serveur.
           ssh -p "$VPS_PORT_SSH" "$VPS_UTILISATEUR@$VPS_HOTE" \
             "VPS_CHEMIN_PROJET='$VPS_CHEMIN_PROJET' URL_PRODUCTION='$URL_PRODUCTION' TAG_DEPLOIEMENT='$TAG_DEPLOIEMENT' bash -s" <<'SCRIPT'
+
+          # À partir d'ici, les commandes s'exécutent sur le VPS.
           set -euo pipefail
 
+          # Placement dans le dossier du projet EcoRide sur le VPS.
           cd "$VPS_CHEMIN_PROJET"
 
+          # Vérification de sécurité Git.
+          # Le déploiement s'arrête si des fichiers suivis par Git ont été modifiés directement sur le VPS.
+          # Cela évite d'écraser un changement local non prévu.
           if [ -n "$(git status --short --untracked-files=no)" ]; then
             echo "Des modifications locales suivies existent sur le VPS. Déploiement interrompu."
             git status --short --untracked-files=no
             exit 1
           fi
 
+          # Sauvegarde de la version actuellement déployée.
+          # Cette référence servira en cas de retour arrière.
           ancienne_reference="$(git rev-parse HEAD)"
 
+          # Fonction utilisée pour relancer les conteneurs.
+          # En production, le fichier docker-compose.production.yaml doit être utilisé.
           relancer_reference() {
             if [ -f docker-compose.production.yaml ]; then
               docker compose --env-file .env.production.local -f docker-compose.production.yaml up -d --build --remove-orphans
@@ -88,48 +126,72 @@ jobs:
             fi
           }
 
+          # Fonction de retour arrière.
+          # Si une erreur arrive pendant le déploiement, le serveur revient à l'ancienne version.
           rollback() {
             code_erreur="$?"
 
             if [ "$code_erreur" -ne 0 ]; then
               echo "Échec du déploiement. Retour à la référence précédente : $ancienne_reference"
+
+              # Désactivation du piège d'erreur pour éviter une boucle de rollback.
               trap - ERR
 
+              # Retour à l'ancienne version du code.
               git checkout "$ancienne_reference" || true
+
+              # Relance des conteneurs avec l'ancienne version.
               relancer_reference || true
+
+              # Tentative de contrôle du site après le retour arrière.
               curl -fsSIL "$URL_PRODUCTION" >/dev/null || true
 
               exit "$code_erreur"
             fi
           }
 
+          # Active le retour arrière automatique en cas d'erreur.
           trap rollback ERR
 
+          # Récupération des branches et tags disponibles sur le dépôt distant.
           git fetch --all --tags --prune
 
+          # Vérification que le tag demandé existe bien.
           if ! git rev-parse -q --verify "refs/tags/$TAG_DEPLOIEMENT" >/dev/null; then
             echo "Le tag $TAG_DEPLOIEMENT est introuvable."
             exit 1
           fi
 
+          # Placement du projet sur la version taguée à déployer.
           git checkout "$TAG_DEPLOIEMENT"
 
+          # Vérification du fichier d'environnement de production.
+          # Ce fichier doit exister sur le VPS et ne doit pas être versionné.
           if [ ! -f .env.production.local ]; then
             echo "Le fichier .env.production.local est introuvable sur le VPS."
             exit 1
           fi
 
+          # Vérification du fichier Docker Compose de production.
           if [ ! -f docker-compose.production.yaml ]; then
             echo "Le fichier docker-compose.production.yaml est introuvable dans le tag déployé."
             exit 1
           fi
 
+          # Vérification de la configuration Docker Compose avant relance.
           docker compose --env-file .env.production.local -f docker-compose.production.yaml config
+
+          # Reconstruction et relance des conteneurs de production.
           docker compose --env-file .env.production.local -f docker-compose.production.yaml up -d --build --remove-orphans
+
+          # Affichage de l'état des conteneurs après le déploiement.
           docker compose --env-file .env.production.local -f docker-compose.production.yaml ps
 
+          # Vérification que l'application répond en production.
           curl -fsSIL "$URL_PRODUCTION" >/dev/null
 
+          # Le déploiement est terminé avec succès.
+          # Le retour arrière automatique n'est plus nécessaire.
           trap - ERR
 
           echo "Déploiement terminé avec succès."
