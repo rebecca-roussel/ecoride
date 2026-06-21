@@ -1,6 +1,6 @@
 // public/js/roles.js
 /*
-  Objectif :
+  Objectif sur le rôle passager et le rôle chauffeur du tableau de bord :
   - autoriser ON/ON -> OFF/ON ou ON/OFF
   - interdire OFF/OFF
   - message visible seulement quand on bloque l’action
