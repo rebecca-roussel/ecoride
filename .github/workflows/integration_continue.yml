@@ -66,6 +66,10 @@ jobs:
           docker compose version
           docker compose config > /tmp/docker-compose-resolu.yml
 
+      # Compile l'image PHP de production pour valider l'installation de PECL MongoDB.
+      - name: Construire l'image PHP Docker
+        run: docker build --file docker/php/Dockerfile --tag ecoride-php:ci .
+
       # Cette étape vérifie la configuration du conteneur de services Symfony.
       # Elle permet de détecter des erreurs de configuration ou d'injection de dépendances.
       - name: Vérifier la configuration du conteneur Symfony
