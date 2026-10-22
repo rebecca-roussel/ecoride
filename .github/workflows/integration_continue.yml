@@ -55,12 +55,20 @@ jobs:
       - name: Installer les dépendances PHP
         run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
 
+      # Bloque l'intégration de dépendances PHP connues comme vulnérables.
+      - name: Auditer les dépendances Composer
+        run: composer audit --locked --no-interaction
+
       # Cette étape vérifie que Docker Compose est disponible.
       # La commande docker compose config vérifie aussi que le fichier Compose est lisible et cohérent.
       - name: Vérifier Docker Compose
         run: |
           docker compose version
           docker compose config > /tmp/docker-compose-resolu.yml
+
+      # Compile l'image PHP de production pour valider l'installation de PECL MongoDB.
+      - name: Construire l'image PHP Docker
+        run: docker build --file docker/php/Dockerfile --tag ecoride-php:ci .
 
       # Cette étape vérifie la configuration du conteneur de services Symfony.
       # Elle permet de détecter des erreurs de configuration ou d'injection de dépendances.

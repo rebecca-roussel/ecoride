@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         pdo_pgsql \
         intl \
         zip \
-    && pecl install mongodb-2.2.1 \
+    && pecl install mongodb-2.4.1 \
     && docker-php-ext-enable mongodb \
     && rm -rf /var/lib/apt/lists/*
 
