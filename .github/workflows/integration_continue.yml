@@ -55,6 +55,10 @@ jobs:
       - name: Installer les dépendances PHP
         run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
 
+      # Bloque l'intégration de dépendances PHP connues comme vulnérables.
+      - name: Auditer les dépendances Composer
+        run: composer audit --locked --no-interaction
+
       # Cette étape vérifie que Docker Compose est disponible.
       # La commande docker compose config vérifie aussi que le fichier Compose est lisible et cohérent.
       - name: Vérifier Docker Compose
